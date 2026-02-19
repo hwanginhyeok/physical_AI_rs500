@@ -1,0 +1,39 @@
+# ros_gz_bridge 토픽 매핑 설정
+# 방향: [ros_type_name, gz_type_name, direction]
+# direction: BIDIRECTIONAL / ROS_TO_GZ / GZ_TO_ROS
+
+- topic_name: /cmd_vel
+  ros_type_name: geometry_msgs/msg/Twist
+  gz_type_name: gz.msgs.Twist
+  direction: ROS_TO_GZ
+  gz_topic_name: /model/tracked_vehicle/cmd_vel
+
+- topic_name: /sensor/gps
+  ros_type_name: sensor_msgs/msg/NavSatFix
+  gz_type_name: gz.msgs.NavSat
+  direction: GZ_TO_ROS
+  gz_topic_name: /world/agricultural_field/model/tracked_vehicle/link/chassis/sensor/gps_sensor/navsat
+
+- topic_name: /sensor/imu
+  ros_type_name: sensor_msgs/msg/Imu
+  gz_type_name: gz.msgs.IMU
+  direction: GZ_TO_ROS
+  gz_topic_name: /world/agricultural_field/model/tracked_vehicle/link/chassis/sensor/imu_sensor/imu
+
+- topic_name: /sensor/camera/front
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+  gz_topic_name: /world/agricultural_field/model/tracked_vehicle/link/chassis/sensor/front_camera/image
+
+- topic_name: /sensor/lidar
+  ros_type_name: sensor_msgs/msg/LaserScan
+  gz_type_name: gz.msgs.LaserScan
+  direction: GZ_TO_ROS
+  gz_topic_name: /world/agricultural_field/model/tracked_vehicle/link/chassis/sensor/lidar_sensor/scan
+
+- topic_name: /odom
+  ros_type_name: nav_msgs/msg/Odometry
+  gz_type_name: gz.msgs.Odometry
+  direction: GZ_TO_ROS
+  gz_topic_name: /model/tracked_vehicle/odometry

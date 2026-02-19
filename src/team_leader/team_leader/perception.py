@@ -22,15 +22,21 @@ class PerceptionModule:
         self.vehicle_position = None  # 차량 현재 위치 (GPS)
         self.vehicle_orientation = None  # 차량 방향 (IMU)
 
+        # 토픽명 파라미터에서 읽기
+        camera_topic = node.get_parameter('topics.camera').value
+        lidar_topic = node.get_parameter('topics.lidar').value
+        gps_topic = node.get_parameter('topics.gps').value
+        imu_topic = node.get_parameter('topics.imu').value
+
         # 센서 구독 설정
         self._camera_sub = node.create_subscription(
-            Image, '/sensor/camera/front', self._camera_callback, 10)
+            Image, camera_topic, self._camera_callback, 10)
         self._lidar_sub = node.create_subscription(
-            PointCloud2, '/sensor/lidar', self._lidar_callback, 10)
+            PointCloud2, lidar_topic, self._lidar_callback, 10)
         self._gps_sub = node.create_subscription(
-            NavSatFix, '/sensor/gps', self._gps_callback, 10)
+            NavSatFix, gps_topic, self._gps_callback, 10)
         self._imu_sub = node.create_subscription(
-            Imu, '/sensor/imu', self._imu_callback, 10)
+            Imu, imu_topic, self._imu_callback, 10)
 
         node.get_logger().info('[인지] 모듈 초기화 완료')
 

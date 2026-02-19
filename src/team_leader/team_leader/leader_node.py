@@ -46,6 +46,13 @@ class LeaderNode(Node):
         self.declare_parameter('control.speed_kd', 0.1)
         self.declare_parameter('control.steer_kp', 1.5)
 
+        # 토픽명 파라미터
+        self.declare_parameter('topics.cmd_vel', '/cmd_vel')
+        self.declare_parameter('topics.camera', '/sensor/camera/front')
+        self.declare_parameter('topics.lidar', '/sensor/lidar')
+        self.declare_parameter('topics.gps', '/sensor/gps')
+        self.declare_parameter('topics.imu', '/sensor/imu')
+
     def _main_loop(self):
         """인지 → 판단 → 제어 파이프라인 1사이클 실행."""
         # 1. 인지: 센서 데이터 결과 수집

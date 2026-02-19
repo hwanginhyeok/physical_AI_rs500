@@ -17,7 +17,8 @@ class ControlModule:
         self._node = node
 
         # 제어 명령 퍼블리셔
-        self._cmd_pub = node.create_publisher(Twist, '/cmd_vel', 10)
+        cmd_vel_topic = node.get_parameter('topics.cmd_vel').value
+        self._cmd_pub = node.create_publisher(Twist, cmd_vel_topic, 10)
 
         # 현재 상태
         self._current_speed = 0.0

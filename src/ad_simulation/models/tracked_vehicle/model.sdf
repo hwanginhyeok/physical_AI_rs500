@@ -1,0 +1,250 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="tracked_vehicle">
+    <static>false</static>
+
+    <!-- ==================== 샤시 (차체) ==================== -->
+    <link name="chassis">
+      <pose>0 0 0.4 0 0 0</pose>
+      <inertial>
+        <mass>1000</mass>
+        <inertia>
+          <ixx>106.67</ixx>
+          <iyy>353.33</iyy>
+          <izz>426.67</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name="chassis_collision">
+        <geometry>
+          <box><size>2.0 1.2 0.8</size></box>
+        </geometry>
+      </collision>
+      <visual name="chassis_visual">
+        <geometry>
+          <box><size>2.0 1.2 0.8</size></box>
+        </geometry>
+        <material>
+          <ambient>0.2 0.4 0.1 1</ambient>
+          <diffuse>0.3 0.5 0.15 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- ==================== 센서 ==================== -->
+
+      <!-- NavSat (GPS) -->
+      <sensor name="gps_sensor" type="navsat">
+        <pose>0 0 0.4 0 0 0</pose>
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <topic>gps</topic>
+        <navsat>
+          <position_sensing>
+            <horizontal>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.5</stddev>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>1.0</stddev>
+              </noise>
+            </vertical>
+          </position_sensing>
+        </navsat>
+      </sensor>
+
+      <!-- IMU -->
+      <sensor name="imu_sensor" type="imu">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>
+        <topic>imu</topic>
+        <imu>
+          <angular_velocity>
+            <x><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+
+      <!-- 전방 카메라 -->
+      <sensor name="front_camera" type="camera">
+        <pose>1.0 0 0.5 0 0 0</pose>
+        <always_on>true</always_on>
+        <update_rate>15</update_rate>
+        <topic>camera</topic>
+        <camera>
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+        </camera>
+      </sensor>
+
+      <!-- LiDAR -->
+      <sensor name="lidar_sensor" type="gpu_lidar">
+        <pose>0.5 0 0.8 0 0 0</pose>
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <topic>lidar</topic>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>360</samples>
+              <resolution>1</resolution>
+              <min_angle>-3.14159</min_angle>
+              <max_angle>3.14159</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>16</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.2618</min_angle>
+              <max_angle>0.2618</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.3</min>
+            <max>50</max>
+            <resolution>0.01</resolution>
+          </range>
+        </lidar>
+      </sensor>
+    </link>
+
+    <!-- ==================== 좌측 트랙 ==================== -->
+    <link name="left_track">
+      <pose>0 0.7 0.2 0 0 0</pose>
+      <inertial>
+        <mass>50</mass>
+        <inertia>
+          <ixx>1.04</ixx>
+          <iyy>8.58</iyy>
+          <izz>8.58</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name="left_track_collision">
+        <geometry>
+          <box><size>2.0 0.3 0.4</size></box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="left_track_visual">
+        <geometry>
+          <box><size>2.0 0.3 0.4</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1</ambient>
+          <diffuse>0.2 0.2 0.2 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <joint name="left_track_joint" type="revolute">
+      <parent>chassis</parent>
+      <child>left_track</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- ==================== 우측 트랙 ==================== -->
+    <link name="right_track">
+      <pose>0 -0.7 0.2 0 0 0</pose>
+      <inertial>
+        <mass>50</mass>
+        <inertia>
+          <ixx>1.04</ixx>
+          <iyy>8.58</iyy>
+          <izz>8.58</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <collision name="right_track_collision">
+        <geometry>
+          <box><size>2.0 0.3 0.4</size></box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.0</mu>
+              <mu2>1.0</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+      <visual name="right_track_visual">
+        <geometry>
+          <box><size>2.0 0.3 0.4</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1</ambient>
+          <diffuse>0.2 0.2 0.2 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <joint name="right_track_joint" type="revolute">
+      <parent>chassis</parent>
+      <child>right_track</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+        </limit>
+      </axis>
+    </joint>
+
+    <!-- ==================== 플러그인 ==================== -->
+
+    <!-- TrackedVehicle 플러그인: cmd_vel → 좌/우 트랙 속도 변환 -->
+    <plugin
+      filename="gz-sim-tracked-vehicle-system"
+      name="gz::sim::systems::TrackedVehicle">
+      <left_track><link>left_track</link></left_track>
+      <right_track><link>right_track</link></right_track>
+      <tracks_separation>1.4</tracks_separation>
+      <track_surface_radius>0.2</track_surface_radius>
+      <steering_efficiency>0.8</steering_efficiency>
+      <topic>cmd_vel</topic>
+    </plugin>
+
+    <!-- Odometry 플러그인 -->
+    <plugin
+      filename="gz-sim-odometry-publisher-system"
+      name="gz::sim::systems::OdometryPublisher">
+      <odom_topic>odometry</odom_topic>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>chassis</robot_base_frame>
+      <dimensions>3</dimensions>
+    </plugin>
+
+  </model>
+</sdf>
