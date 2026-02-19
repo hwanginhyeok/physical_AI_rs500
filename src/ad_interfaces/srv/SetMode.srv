@@ -1,0 +1,9 @@
+# 주행 모드 변경 서비스
+# Request: 변경할 모드
+# 0=IDLE, 1=LANE_KEEPING, 2=LANE_CHANGE,
+# 3=OBSTACLE_AVOIDANCE, 4=EMERGENCY_STOP
+uint8 mode
+---
+# Response: 성공 여부 및 메시지
+bool success
+string message

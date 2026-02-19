@@ -1,0 +1,15 @@
+team_leader:
+  ros__parameters:
+    # 메인 루프 주기 (Hz)
+    control_rate: 20.0
+
+    # 주행 파라미터
+    max_speed: 15.0          # 최대 속도 (m/s)
+    safe_distance: 10.0      # 안전 거리 (m)
+
+    # PID 제어 게인
+    control:
+      speed_kp: 1.0
+      speed_ki: 0.01
+      speed_kd: 0.1
+      steer_kp: 1.5
