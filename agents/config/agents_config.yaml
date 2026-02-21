@@ -1,0 +1,36 @@
+# 에이전트 시스템 설정
+system:
+  log_level: INFO
+  log_format: "%(asctime)s [%(name)s] %(levelname)s: %(message)s"
+
+# 에이전트 정의
+agents:
+  project_leader:
+    enabled: true
+    description: "프로젝트 리딩, 작업 분배, 진행 관리"
+
+  modeling:
+    enabled: true
+    description: "SDF 모델/월드/물리 파라미터 조작"
+    paths:
+      model_sdf: "src/ad_simulation/models/tracked_vehicle/model.sdf"
+      world_sdf: "src/ad_simulation/worlds/agricultural_field.sdf"
+      bridge_config: "src/ad_simulation/config/bridge_config.yaml"
+
+  research:
+    enabled: true
+    description: "웹 검색, 논문 조사, 문서화"
+    search:
+      default_num_results: 5
+      keywords:
+        - autonomous driving
+        - tracked vehicle
+        - agricultural robot
+        - ROS2 Gazebo
+        - 궤도차량 자율주행
+
+# 프로젝트 경로
+paths:
+  project_root: "."
+  docs: "docs"
+  src: "src"
