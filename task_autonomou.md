@@ -36,6 +36,9 @@
 
 ### 시뮬레이션 고도화
 - [x] heightmap 기반 기복 지형 월드 생성 (농경지 고랑/농로/장애물 포함)
+- [x] 실제 지형 데이터 파이프라인 (SRTM DEM + OSM 도로/건물/수계 + 식생/바위)
+- [x] 영월군 주천면 신일리 실제 지형 월드 생성 (yeongwol_sinil.sdf)
+- [x] launch 파일 월드 선택 기능 (world:=yeongwol_sinil)
 - [ ] 다중 마찰 영역 설정 (포장/비포장/진흙)
 - [ ] SIL 테스트 프레임워크 구축 (launch_testing)
 - [ ] CI/CD headless 시뮬레이션 파이프라인
@@ -55,6 +58,8 @@
 
 ## 완료 (DONE)
 
+- [x] 실제 지형 월드: 영월군 주천면 신일리 (DEM+OSM+식생+바위, 500mx500m)
+- [x] launch 월드 선택 기능 (world:=agricultural_field|yeongwol_sinil)
 - [x] 즉시 조치 5건 완료 (TrackController, 브릿지, 센서 노이즈, use_sim_time)
 - [x] 농경지 heightmap 지형 + 구조물(창고, 나무, 돌) 추가
 - [x] 선행연구: 궤도차량 동역학/제어 (docs/literature_review_dynamics_control.md)
