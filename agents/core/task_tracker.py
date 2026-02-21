@@ -1,6 +1,6 @@
-"""task.md 파일 자동 업데이트 모듈.
+"""task_autonomou.md 파일 자동 업데이트 모듈.
 
-모든 에이전트가 작업 시작/완료/실패 시 task.md를 자동으로 갱신한다.
+모든 에이전트가 작업 시작/완료/실패 시 task_autonomou.md를 자동으로 갱신한다.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-_TASK_MD = _PROJECT_ROOT / "task.md"
+_TASK_MD = _PROJECT_ROOT / "task_autonomou.md"
 
 # 섹션 헤더 패턴
 _TODO_HEADER = "## 할 일 (TODO)"
