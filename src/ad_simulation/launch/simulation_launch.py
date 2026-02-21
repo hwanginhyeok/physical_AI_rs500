@@ -29,6 +29,7 @@ from launch_ros.actions import Node, SetParameter
 _WORLD_MAP = {
     'agricultural_field': os.path.join('worlds', 'agricultural_field.sdf'),
     'yeongwol_sinil': os.path.join('worlds', 'real_terrain', 'yeongwol_sinil.sdf'),
+    'cheongsong_orchard': os.path.join('worlds', 'real_terrain', 'cheongsong_orchard.sdf'),
 }
 
 
@@ -93,7 +94,7 @@ def generate_launch_description():
     )
     declare_world = DeclareLaunchArgument(
         'world', default_value='agricultural_field',
-        description='월드 선택: agricultural_field | yeongwol_sinil (또는 SDF 전체 경로)',
+        description='월드 선택: agricultural_field | yeongwol_sinil | cheongsong_orchard (또는 SDF 전체 경로)',
     )
 
     # 전역 설정: 시뮬레이션 시간 사용 (Nav2, robot_localization 등과 동기화 필수)
