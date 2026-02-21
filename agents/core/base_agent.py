@@ -9,6 +9,7 @@ from datetime import datetime
 
 from .message_bus import Message, MessageBus
 from .task import Task, TaskStatus
+from . import task_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +50,16 @@ class BaseAgent(ABC):
         logger.info("[%s] 작업 수신: %s", self.name, task.title)
         self._current_task = task
         task.start()
+        task_tracker.on_task_start(task.title, self.name)
 
         try:
             result = await self.handle_task(task)
             task.complete(result)
+            task_tracker.on_task_complete(task.title, self.name)
             await self.bus.publish("task.complete", self.name, task)
         except Exception as e:
             task.fail(str(e))
+            task_tracker.on_task_fail(task.title, self.name, str(e))
             await self.bus.publish("task.failed", self.name, task)
             logger.error("[%s] 작업 실패: %s - %s", self.name, task.title, e)
         finally:
@@ -90,12 +94,15 @@ class BaseAgent(ABC):
         """작업을 직접 실행 (메시지 버스를 거치지 않고 직접 호출)."""
         self._current_task = task
         task.start()
+        task_tracker.on_task_start(task.title, self.name)
 
         try:
             result = await self.handle_task(task)
             task.complete(result)
+            task_tracker.on_task_complete(task.title, self.name)
         except Exception as e:
             task.fail(str(e))
+            task_tracker.on_task_fail(task.title, self.name, str(e))
             logger.error("[%s] 작업 실패: %s - %s", self.name, task.title, e)
         finally:
             self._completed_tasks.append(task)

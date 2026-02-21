@@ -3,5 +3,6 @@
 from .base_agent import BaseAgent
 from .task import Task, TaskStatus
 from .message_bus import MessageBus
+from . import task_tracker
 
-__all__ = ["BaseAgent", "Task", "TaskStatus", "MessageBus"]
+__all__ = ["BaseAgent", "Task", "TaskStatus", "MessageBus", "task_tracker"]
