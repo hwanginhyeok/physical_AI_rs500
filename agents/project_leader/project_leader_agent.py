@@ -1,14 +1,18 @@
-"""프로젝트 팀장 에이전트 - 작업 분배, 진행 관리, 보고서 생성."""
+"""프로젝트 팀장 에이전트 - 작업 분배, 진행 관리, 보고서 생성, PROJECT_MAP 관리."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
 from datetime import datetime
+from pathlib import Path
 
 from ..core.base_agent import BaseAgent
 from ..core.message_bus import Message, MessageBus
 from ..core.task import Task, TaskPriority, TaskStatus
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_MAP_PATH = PROJECT_ROOT / "PROJECT_MAP.md"
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +24,7 @@ class ProjectLeaderAgent(BaseAgent):
     - 진행 상황 추적
     - 프로젝트 현황 보고서 생성
     - 계획을 세부 작업으로 분해
+    - **PROJECT_MAP.md 관리**: 파일/디렉토리 추가·삭제 시 지도 문서 갱신 지시 및 검증
     """
 
     def __init__(self, bus: MessageBus) -> None:
@@ -64,6 +69,7 @@ class ProjectLeaderAgent(BaseAgent):
             "generate_report": lambda: self.generate_report(),
             "coordinate": lambda: self._coordinate(params.get("plan", task.description)),
             "status": lambda: self._all_status(),
+            "update_map": lambda: self.verify_project_map(),
         }
 
         handler = dispatch.get(command)
@@ -236,6 +242,29 @@ class ProjectLeaderAgent(BaseAgent):
             "plan": plan,
             "tasks_created": len(tasks_created),
             "tasks": tasks_created,
+        }
+
+    def verify_project_map(self) -> dict:
+        """PROJECT_MAP.md 존재 여부 및 최종 수정일 확인.
+
+        팀장은 파일/디렉토리가 추가·삭제될 때마다
+        PROJECT_MAP.md를 갱신하도록 지시하고 검증해야 한다.
+        """
+        if PROJECT_MAP_PATH.exists():
+            mtime = datetime.fromtimestamp(PROJECT_MAP_PATH.stat().st_mtime)
+            content = PROJECT_MAP_PATH.read_text(encoding="utf-8")
+            line_count = content.count("\n")
+            return {
+                "exists": True,
+                "path": str(PROJECT_MAP_PATH),
+                "last_modified": mtime.strftime("%Y-%m-%d %H:%M"),
+                "lines": line_count,
+                "message": "PROJECT_MAP.md 확인 완료. 신규 파일 추가 시 갱신 필요.",
+            }
+        return {
+            "exists": False,
+            "path": str(PROJECT_MAP_PATH),
+            "message": "PROJECT_MAP.md가 없습니다. 즉시 생성해야 합니다.",
         }
 
     def _all_status(self) -> dict:

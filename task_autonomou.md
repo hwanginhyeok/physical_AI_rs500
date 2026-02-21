@@ -4,84 +4,82 @@
 
 ---
 
-## 할 일 (TODO)
+## 문서 규칙
 
-### 즉시 조치 (선행연구 도출) — 모두 완료
-- [x] model.sdf에 TrackController 플러그인 추가
-- [x] bridge_config.yaml 보완: `/clock`, `/tf`, `camera_info` 토픽 추가
-- [x] bridge_config.yaml: LiDAR `PointCloud2` 추가 (LaserScan도 하위 호환 유지)
-- [x] 센서 노이즈 모델 추가: LiDAR 노이즈, IMU bias/dynamic_bias, 카메라 왜곡
-- [x] launch 파일에 `use_sim_time:=true` 전역 설정 추가
+### 컬럼 정의
+- **작업 현황**: `# | 분야 | 작업 | 중요도 | 담당 | 발행일 | 상태 | 비고`
+- **완료 섹션**: `# | 분야 | 작업 | 중요도 | 담당 | 발행일 | 완료일`
 
-### 인지 (Perception)
-- [ ] LiDAR 장애물 감지: Ray Ground Filter + Euclidean Clustering + PointPillars
-- [ ] 카메라 객체 탐지: YOLO11n 적용 (640x480, ~2.9ms)
-- [ ] 시맨틱 세그멘테이션: ENet 또는 BiSeNetV2 적용
-- [ ] Camera + LiDAR Late Fusion 구현
-- [ ] 농경지 작물 행 인식 (시맨틱 세그멘테이션 기반)
-- [ ] 지형 traversability 분류 (Wild Visual Navigation 방식)
-
-### 판단/경로 계획 (Planning)
-- [ ] Nav2 SmacPlannerLattice 전역 경로 계획 연동
-- [ ] MPPI 지역 경로 계획 적용 (슬립 반영, Nav2 공식 지원)
-- [ ] Fields2Cover 농경지 커버리지 경로 계획 통합
-- [ ] robot_localization Dual-EKF 센서 퓨전 (GPS+IMU+Odom)
-- [ ] LIO-SAM SLAM 통합 (GPS 가용/불가 자동 전환)
-
-### 제어 (Control)
-- [ ] Pure Pursuit 경로 추종 구현 (Phase 1)
-- [ ] 슬립 보상 적응형 Pure Pursuit (Phase 2)
-- [ ] ICR 기반 스키드 스티어 조향 모델 구현
-- [ ] 유효 궤도 폭 보정 + 모터 비대칭 보상
-
-### 시뮬레이션 고도화
-- [x] heightmap 기반 기복 지형 월드 생성 (농경지 고랑/농로/장애물 포함)
-- [x] 실제 지형 데이터 파이프라인 (SRTM DEM + OSM 도로/건물/수계 + 식생/바위)
-- [x] 영월군 주천면 신일리 실제 지형 월드 생성 (yeongwol_sinil.sdf)
-- [x] launch 파일 월드 선택 기능 (world:=yeongwol_sinil)
-- [ ] 다중 마찰 영역 설정 (포장/비포장/진흙)
-- [ ] SIL 테스트 프레임워크 구축 (launch_testing)
-- [ ] CI/CD headless 시뮬레이션 파이프라인
-
-### 기타
-- [ ] aiohttp 설치하여 research 에이전트 웹 검색 기능 활성화
-- [ ] 에이전트 시스템 단위 테스트 작성
-- [ ] rich 라이브러리 적용하여 CLI 출력 개선
+### 운영 규칙
+- **발행일**: 작업이 등록된 날짜를 기록한다.
+- **지연 강조**: 발행 후 3일 이상 `예정` 상태로 미진행 시 `**[지연]**` 표시를 상태 앞에 붙인다.
+- **TODO 연동**: TODO는 아직 확정되지 않은 아이디어/검토 사항만 둔다. 구체화된 항목은 작업 현황으로 승격하고 TODO에서 제거한다.
+- **상태 값**: `예정` → `진행중` → `완료`
+- **중요도**: `상` / `중` / `하`
 
 ---
 
-## 진행 중 (IN PROGRESS)
+## 작업 현황
 
-(현재 진행 중인 작업 없음)
+| # | 분야 | 작업 | 중요도 | 담당 | 발행일 | 상태 | 비고 |
+|---|------|------|--------|------|--------|------|------|
+| 1 | 제어 | Pure Pursuit 경로 추종 구현 (Phase 1) | 상 | — | 2026-02-21 | 예정 | |
+| 2 | 제어 | ICR 기반 스키드 스티어 조향 모델 구현 | 상 | — | 2026-02-21 | 예정 | |
+| 3 | 제어 | 슬립 보상 적응형 Pure Pursuit (Phase 2) | 중 | — | 2026-02-21 | 예정 | #1 선행 |
+| 4 | 제어 | 유효 궤도 폭 보정 + 모터 비대칭 보상 | 중 | — | 2026-02-21 | 예정 | #2 선행 |
+| 5 | 판단 | robot_localization Dual-EKF 센서 퓨전 (GPS+IMU+Odom) | 상 | — | 2026-02-21 | 예정 | |
+| 6 | 판단 | Nav2 SmacPlannerLattice 전역 경로 계획 연동 | 상 | — | 2026-02-21 | 예정 | |
+| 7 | 판단 | MPPI 지역 경로 계획 적용 (슬립 반영) | 상 | — | 2026-02-21 | 예정 | |
+| 8 | 판단 | Fields2Cover 농경지 커버리지 경로 계획 통합 | 중 | — | 2026-02-21 | 예정 | |
+| 9 | 판단 | LIO-SAM SLAM 통합 (GPS 가용/불가 자동 전환) | 중 | — | 2026-02-21 | 예정 | |
+| 10 | 인지 | LiDAR 장애물 감지: Ray Ground Filter + Euclidean Clustering + PointPillars | 상 | — | 2026-02-21 | 예정 | |
+| 11 | 인지 | 카메라 객체 탐지: YOLO11n (640x480, ~2.9ms) | 상 | — | 2026-02-21 | 예정 | |
+| 12 | 인지 | 시맨틱 세그멘테이션: ENet 또는 BiSeNetV2 | 중 | — | 2026-02-21 | 예정 | |
+| 13 | 인지 | Camera + LiDAR Late Fusion 구현 | 중 | — | 2026-02-21 | 예정 | #10, #11 선행 |
+| 14 | 인지 | 농경지 작물 행 인식 (시맨틱 세그멘테이션 기반) | 중 | — | 2026-02-21 | 예정 | #12 선행 |
+| 15 | 인지 | 지형 traversability 분류 (Wild Visual Navigation) | 하 | — | 2026-02-21 | 예정 | |
+| 16 | 시뮬레이션 | 다중 마찰 영역 설정 (포장/비포장/진흙) | 중 | — | 2026-02-21 | 예정 | |
+| 17 | 시뮬레이션 | SIL 테스트 프레임워크 구축 (launch_testing) | 중 | — | 2026-02-21 | 예정 | |
+| 18 | 시뮬레이션 | CI/CD headless 시뮬레이션 파이프라인 | 하 | — | 2026-02-21 | 예정 | |
 
 ---
 
-## 완료 (DONE)
+## 완료
 
-- [x] 실제 지형 월드: 영월군 주천면 신일리 (DEM+OSM+식생+바위, 500mx500m)
-- [x] launch 월드 선택 기능 (world:=agricultural_field|yeongwol_sinil)
-- [x] 즉시 조치 5건 완료 (TrackController, 브릿지, 센서 노이즈, use_sim_time)
-- [x] 농경지 heightmap 지형 + 구조물(창고, 나무, 돌) 추가
-- [x] 선행연구: 궤도차량 동역학/제어 (docs/literature_review_dynamics_control.md)
-- [x] 선행연구: 경로계획/SLAM (docs/research/path_planning_and_slam_literature_review.md)
-- [x] 선행연구: 인지/센서융합 (docs/research/perception_sensor_fusion_survey.md)
-- [x] 선행연구: Gazebo 시뮬레이션 사례 (docs/research/gazebo_tracked_vehicle_simulation_research.md)
-- [x] Application 정의서 작성 (docs/application_definition.md)
-- [x] 에이전트 시스템 매뉴얼/체크리스트 작성 (agents/docs/)
-- [x] task.md 자동 업데이트 기능 구현 (task_tracker.py)
-- [x] AI 에이전트 시스템 구현 - core/modeling/research/project_leader (7d84ca0)
-  - [x] core 프레임워크 (BaseAgent, Task, MessageBus)
-  - [x] modeling 에이전트 (vehicle/world/physics modeler)
-  - [x] research 에이전트 (web_searcher, document_writer)
-  - [x] project_leader 에이전트 (작업 분배, 진행 관리)
-  - [x] CLI 진입점 (python -m agents)
-- [x] Gazebo gz-sim 시뮬레이션 연동 - ad_simulation 패키지 (deecbfb)
-- [x] ROS2 프로젝트 초기 구조 생성 (6ab5521)
+| # | 분야 | 작업 | 중요도 | 담당 | 발행일 | 완료일 |
+|---|------|------|--------|------|--------|--------|
+| C1 | 시뮬레이션 | 청송 사과 과수원 월드 생성 (2,400 나무 + 사과) | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C2 | 시뮬레이션 | 영월 신일리 실제 지형 월드 (DEM+OSM, 500mx500m) | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C3 | 시뮬레이션 | launch 월드 선택 기능 (world:= 인자) | 중 | Claude | 2026-02-21 | 2026-02-21 |
+| C4 | 시뮬레이션 | 실제 지형 데이터 파이프라인 (SRTM DEM + OSM) | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C5 | 시뮬레이션 | 농경지 heightmap 지형 + 구조물(창고, 나무, 돌) | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C6 | 시뮬레이션 | 즉시 조치 5건 (TrackController, 브릿지, 센서 노이즈, use_sim_time) | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C7 | 연구 | 선행연구: 궤도차량 동역학/제어 | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C8 | 연구 | 선행연구: 경로계획/SLAM | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C9 | 연구 | 선행연구: 인지/센서융합 | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C10 | 연구 | 선행연구: Gazebo 시뮬레이션 사례 | 중 | Claude | 2026-02-21 | 2026-02-21 |
+| C11 | 문서 | Application 정의서 작성 | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C12 | 문서 | 에이전트 시스템 매뉴얼/체크리스트 | 중 | Claude | 2026-02-21 | 2026-02-21 |
+| C13 | 인프라 | task.md 자동 업데이트 기능 (task_tracker.py) | 중 | Claude | 2026-02-21 | 2026-02-21 |
+| C14 | 인프라 | AI 에이전트 시스템 (core/modeling/research/leader) | 상 | Claude | 2026-02-21 | 2026-02-21 |
+| C15 | 시뮬레이션 | Gazebo gz-sim 시뮬레이션 연동 (ad_simulation) | 상 | Claude | 2026-02-19 | 2026-02-19 |
+| C16 | 인프라 | ROS2 프로젝트 초기 구조 생성 | 상 | Claude | 2026-02-19 | 2026-02-19 |
+
+---
+
+## TODO (아이디어/검토)
+
+> 아직 확정되지 않은 아이디어나 검토 사항만 기재. 구체화되면 작업 현황으로 승격.
+
+- aiohttp 설치하여 research 에이전트 웹 검색 기능 활성화
+- 에이전트 시스템 단위 테스트 작성
+- rich 라이브러리 적용하여 CLI 출력 개선
+- virtual_maize_field 패키지 활용한 절차적 밭 생성 검토
+- 실시간 Gazebo GUI 렌더링 해결 (WSLg Ogre2 호환성 문제)
 
 ---
 
 ## 참고
 
-- 작업 상태: `[ ]` 미완료, `[x]` 완료
 - 이 파일은 에이전트 시스템이 자동으로 관리합니다
-- 선행연구 기반 TODO는 카테고리별로 분류됨
+- 작업 번호: 현황은 숫자(1, 2, ...), 완료는 C 접두사(C1, C2, ...)
