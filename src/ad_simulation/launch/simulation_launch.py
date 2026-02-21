@@ -14,7 +14,7 @@ from launch.actions import (
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetParameter
 
 
 def generate_launch_description():
@@ -39,6 +39,9 @@ def generate_launch_description():
         'run_team_leader', default_value='true',
         description='team_leader 노드 실행 여부',
     )
+
+    # 전역 설정: 시뮬레이션 시간 사용 (Nav2, robot_localization 등과 동기화 필수)
+    use_sim_time = SetParameter(name='use_sim_time', value=True)
 
     # GZ_SIM_RESOURCE_PATH에 모델 경로 추가
     set_model_path = SetEnvironmentVariable(
@@ -94,6 +97,7 @@ def generate_launch_description():
     return LaunchDescription([
         declare_gui,
         declare_team_leader,
+        use_sim_time,
         set_model_path,
         gz_sim,
         spawn_vehicle,

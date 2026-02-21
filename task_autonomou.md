@@ -6,12 +6,12 @@
 
 ## 할 일 (TODO)
 
-### 즉시 조치 (선행연구 도출)
-- [ ] model.sdf에 TrackController 플러그인 추가 (현재 누락)
-- [ ] bridge_config.yaml 보완: `/clock`, `/tf`, `camera_info` 토픽 추가
-- [ ] bridge_config.yaml: LiDAR 토픽을 `LaserScan` → `PointCloud2`로 변경
-- [ ] 센서 노이즈 모델 추가: LiDAR 노이즈, IMU bias, 카메라 왜곡
-- [ ] launch 파일에 `use_sim_time:=true` 전역 설정 추가
+### 즉시 조치 (선행연구 도출) — 모두 완료
+- [x] model.sdf에 TrackController 플러그인 추가
+- [x] bridge_config.yaml 보완: `/clock`, `/tf`, `camera_info` 토픽 추가
+- [x] bridge_config.yaml: LiDAR `PointCloud2` 추가 (LaserScan도 하위 호환 유지)
+- [x] 센서 노이즈 모델 추가: LiDAR 노이즈, IMU bias/dynamic_bias, 카메라 왜곡
+- [x] launch 파일에 `use_sim_time:=true` 전역 설정 추가
 
 ### 인지 (Perception)
 - [ ] LiDAR 장애물 감지: Ray Ground Filter + Euclidean Clustering + PointPillars
@@ -35,7 +35,7 @@
 - [ ] 유효 궤도 폭 보정 + 모터 비대칭 보상
 
 ### 시뮬레이션 고도화
-- [ ] heightmap 기반 기복 지형 월드 생성
+- [x] heightmap 기반 기복 지형 월드 생성 (농경지 고랑/농로/장애물 포함)
 - [ ] 다중 마찰 영역 설정 (포장/비포장/진흙)
 - [ ] SIL 테스트 프레임워크 구축 (launch_testing)
 - [ ] CI/CD headless 시뮬레이션 파이프라인
@@ -55,6 +55,8 @@
 
 ## 완료 (DONE)
 
+- [x] 즉시 조치 5건 완료 (TrackController, 브릿지, 센서 노이즈, use_sim_time)
+- [x] 농경지 heightmap 지형 + 구조물(창고, 나무, 돌) 추가
 - [x] 선행연구: 궤도차량 동역학/제어 (docs/literature_review_dynamics_control.md)
 - [x] 선행연구: 경로계획/SLAM (docs/research/path_planning_and_slam_literature_review.md)
 - [x] 선행연구: 인지/센서융합 (docs/research/perception_sensor_fusion_survey.md)

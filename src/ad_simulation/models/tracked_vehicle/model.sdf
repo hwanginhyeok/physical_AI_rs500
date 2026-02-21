@@ -56,7 +56,7 @@
         </navsat>
       </sensor>
 
-      <!-- IMU -->
+      <!-- IMU (bias 모델 추가) -->
       <sensor name="imu_sensor" type="imu">
         <pose>0 0 0 0 0 0</pose>
         <always_on>true</always_on>
@@ -64,19 +64,73 @@
         <topic>imu</topic>
         <imu>
           <angular_velocity>
-            <x><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></x>
-            <y><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></y>
-            <z><noise type="gaussian"><mean>0</mean><stddev>0.01</stddev></noise></z>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.01</stddev>
+                <bias_mean>0.0001</bias_mean>
+                <bias_stddev>0.00001</bias_stddev>
+                <dynamic_bias_stddev>0.00001</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.01</stddev>
+                <bias_mean>0.0001</bias_mean>
+                <bias_stddev>0.00001</bias_stddev>
+                <dynamic_bias_stddev>0.00001</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.01</stddev>
+                <bias_mean>0.0001</bias_mean>
+                <bias_stddev>0.00001</bias_stddev>
+                <dynamic_bias_stddev>0.00001</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </z>
           </angular_velocity>
           <linear_acceleration>
-            <x><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></x>
-            <y><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></y>
-            <z><noise type="gaussian"><mean>0</mean><stddev>0.1</stddev></noise></z>
+            <x>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.1</stddev>
+                <bias_mean>0.01</bias_mean>
+                <bias_stddev>0.001</bias_stddev>
+                <dynamic_bias_stddev>0.001</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.1</stddev>
+                <bias_mean>0.01</bias_mean>
+                <bias_stddev>0.001</bias_stddev>
+                <dynamic_bias_stddev>0.001</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0</mean>
+                <stddev>0.1</stddev>
+                <bias_mean>0.01</bias_mean>
+                <bias_stddev>0.001</bias_stddev>
+                <dynamic_bias_stddev>0.001</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>300</dynamic_bias_correlation_time>
+              </noise>
+            </z>
           </linear_acceleration>
         </imu>
       </sensor>
 
-      <!-- 전방 카메라 -->
+      <!-- 전방 카메라 (왜곡/노이즈 추가) -->
       <sensor name="front_camera" type="camera">
         <pose>1.0 0 0.5 0 0 0</pose>
         <always_on>true</always_on>
@@ -93,10 +147,24 @@
             <near>0.1</near>
             <far>100</far>
           </clip>
+          <distortion>
+            <k1>-0.25</k1>
+            <k2>0.12</k2>
+            <k3>0.0</k3>
+            <p1>-0.00028</p1>
+            <p2>-0.00005</p2>
+            <center>0.5 0.5</center>
+          </distortion>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+          <camera_info_topic>camera_info</camera_info_topic>
         </camera>
       </sensor>
 
-      <!-- LiDAR -->
+      <!-- LiDAR (노이즈 모델 추가) -->
       <sensor name="lidar_sensor" type="gpu_lidar">
         <pose>0.5 0 0.8 0 0 0</pose>
         <always_on>true</always_on>
@@ -122,6 +190,11 @@
             <max>50</max>
             <resolution>0.01</resolution>
           </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0</mean>
+            <stddev>0.02</stddev>
+          </noise>
         </lidar>
       </sensor>
     </link>
@@ -149,6 +222,11 @@
               <mu2>1.0</mu2>
             </ode>
           </friction>
+          <contact>
+            <ode>
+              <min_depth>0.01</min_depth>
+            </ode>
+          </contact>
         </surface>
       </collision>
       <visual name="left_track_visual">
@@ -197,6 +275,11 @@
               <mu2>1.0</mu2>
             </ode>
           </friction>
+          <contact>
+            <ode>
+              <min_depth>0.01</min_depth>
+            </ode>
+          </contact>
         </surface>
       </collision>
       <visual name="right_track_visual">
@@ -234,6 +317,26 @@
       <track_surface_radius>0.2</track_surface_radius>
       <steering_efficiency>0.8</steering_efficiency>
       <topic>cmd_vel</topic>
+    </plugin>
+
+    <!-- TrackController 플러그인: 트랙 접촉면 속도 제어 (선행연구에서 누락 발견) -->
+    <plugin
+      filename="gz-sim-track-controller-system"
+      name="gz::sim::systems::TrackController">
+      <link>left_track</link>
+      <min_velocity>-3.0</min_velocity>
+      <max_velocity>3.0</max_velocity>
+      <min_acceleration>-5.0</min_acceleration>
+      <max_acceleration>5.0</max_acceleration>
+    </plugin>
+    <plugin
+      filename="gz-sim-track-controller-system"
+      name="gz::sim::systems::TrackController">
+      <link>right_track</link>
+      <min_velocity>-3.0</min_velocity>
+      <max_velocity>3.0</max_velocity>
+      <min_acceleration>-5.0</min_acceleration>
+      <max_acceleration>5.0</max_acceleration>
     </plugin>
 
     <!-- Odometry 플러그인 -->
