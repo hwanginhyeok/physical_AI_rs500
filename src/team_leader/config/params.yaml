@@ -14,6 +14,11 @@ team_leader:
       speed_kd: 0.1
       steer_kp: 1.5
 
+      # Phase 2: 캘리브레이션 파라미터
+      calibration_enabled: true         # 온라인 캘리브레이션 활성화 여부
+      calibration_ema_alpha: 0.05       # EMA 갱신 가중치 (0~1, 클수록 최근값에 민감)
+      calibration_file: "config/calibration_data.json"  # 보정 계수 저장/로드 파일
+
     # 토픽명 (Gazebo 브릿지와 일치)
     topics:
       cmd_vel: /cmd_vel
