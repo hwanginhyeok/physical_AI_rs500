@@ -581,13 +581,20 @@ class CoveragePlanner:
         vertices_ccw = _ensure_ccw(work_area)
         waypoints: List[Tuple[float, float]] = []
 
-        current_poly = list(vertices_ccw)
         offset = effective_width / 2.0  # 첫 패스: 경계로부터 반폭 안쪽
+        max_iterations = 1000  # 안전 상한
 
-        while len(current_poly) >= 3:
+        original_area = abs(_polygon_area_signed(vertices_ccw))
+
+        for _ in range(max_iterations):
             # 현재 경계의 오프셋 경로
             path_poly = _offset_polygon(vertices_ccw, offset)
             if len(path_poly) < 3:
+                break
+
+            # 오프셋 다각형의 면적이 너무 작거나 역전되면 중지
+            offset_area = abs(_polygon_area_signed(path_poly))
+            if offset_area < effective_width * effective_width or offset_area > original_area:
                 break
 
             # 경계를 따라 한 바퀴
@@ -595,15 +602,6 @@ class CoveragePlanner:
                 waypoints.append(pt)
 
             offset += effective_width
-            # 다음 루프를 위해 영역 축소 확인
-            inner = _offset_polygon(vertices_ccw, offset + effective_width / 2.0)
-            if len(inner) < 3:
-                # 마지막 루프 - 남은 중심 영역 한 바퀴
-                last_poly = _offset_polygon(vertices_ccw, offset)
-                if len(last_poly) >= 3:
-                    for pt in last_poly:
-                        waypoints.append(pt)
-                break
 
         return waypoints
 
