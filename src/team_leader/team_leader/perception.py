@@ -2,6 +2,8 @@
 
 카메라, LiDAR, GPS, IMU 센서 데이터를 구독하고,
 LidarProcessor와 CameraDetector를 통해 장애물 및 객체 탐지 결과를 생성한다.
+SensorFusion을 통해 LiDAR + Camera Late Fusion 결과를 제공한다.
+SemanticSegmenter를 통해 픽셀 단위 시맨틱 세그멘테이션 결과를 제공한다.
 """
 
 from __future__ import annotations
@@ -23,6 +25,12 @@ except ImportError:
 
 from team_leader.lidar_processor import LidarProcessor, Obstacle
 from team_leader.camera_detector import CameraDetector, Detection
+from team_leader.sensor_fusion import SensorFusion, FusedObject
+from team_leader.semantic_segmenter import (
+    SemanticSegmenter,
+    SegmentationResult,
+    SegmentationClass,
+)
 
 
 class PerceptionModule:
@@ -32,7 +40,10 @@ class PerceptionModule:
     장애물 목록, 차선 정보, 차량 위치 등의 인지 결과를 제공한다.
 
     LidarProcessor를 통해 포인트클라우드 기반 장애물 감지를,
-    CameraDetector를 통해 이미지 기반 객체 탐지를 수행한다.
+    CameraDetector를 통해 이미지 기반 객체 탐지를 수행하며,
+    SensorFusion을 통해 두 센서의 결과를 후기 융합(late fusion)한다.
+    SemanticSegmenter를 통해 픽셀 단위 시맨틱 세그멘테이션을 수행하여
+    주행 가능 영역과 장애물 영역을 분류한다.
     """
 
     def __init__(self, node: Node):
@@ -41,6 +52,8 @@ class PerceptionModule:
         # 인지 결과 저장
         self.obstacles: List[Obstacle] = []       # LiDAR 기반 장애물 목록
         self.detections: List[Detection] = []     # 카메라 기반 탐지 결과
+        self.fused_objects: List[FusedObject] = []  # 센서 융합 결과
+        self.segmentation: Optional[SegmentationResult] = None  # 세그멘테이션 결과
         self.lane_info = None                     # 차선 정보
         self.vehicle_position = None              # 차량 현재 위치 (GPS)
         self.vehicle_orientation = None           # 차량 방향 (IMU)
@@ -48,6 +61,8 @@ class PerceptionModule:
         # 인지 서브모듈 초기화
         self._lidar_processor = LidarProcessor()
         self._camera_detector = CameraDetector()
+        self._sensor_fusion = SensorFusion()
+        self._semantic_segmenter = SemanticSegmenter()
 
         # 토픽명 파라미터에서 읽기
         camera_topic = node.get_parameter('topics.camera').value
@@ -68,20 +83,27 @@ class PerceptionModule:
         node.get_logger().info('[인지] 모듈 초기화 완료')
         if self._camera_detector.is_dummy_mode:
             node.get_logger().warn('[인지] 카메라 탐지기: 더미 모드 (YOLO 모델 미로드)')
+        if self._semantic_segmenter.is_fallback_mode:
+            node.get_logger().warn(
+                '[인지] 세그멘터: 색상 규칙 fallback 모드 (PyTorch 미설치)'
+            )
 
     # ------------------------------------------------------------------
     # 콜백
     # ------------------------------------------------------------------
 
     def _camera_callback(self, msg: Image) -> None:
-        """카메라 이미지 수신 콜백. 객체 탐지 수행."""
+        """카메라 이미지 수신 콜백. 객체 탐지, 세그멘테이션, 센서 융합 수행."""
         self._node.get_logger().debug('[인지] 카메라 이미지 수신')
         self.process_camera(msg)
+        self._run_segmentation(msg)
+        self._run_fusion()
 
     def _lidar_callback(self, msg: PointCloud2) -> None:
-        """라이다 포인트클라우드 수신 콜백. 장애물 감지 수행."""
+        """라이다 포인트클라우드 수신 콜백. 장애물 감지 후 센서 융합 수행."""
         self._node.get_logger().debug('[인지] 라이다 데이터 수신')
         self.process_lidar(msg)
+        self._run_fusion()
 
     def _gps_callback(self, msg: NavSatFix) -> None:
         """GPS 수신 콜백. 차량 위치 업데이트."""
@@ -232,6 +254,98 @@ class PerceptionModule:
             return None
 
     # ------------------------------------------------------------------
+    # 시맨틱 세그멘테이션
+    # ------------------------------------------------------------------
+
+    def _run_segmentation(self, msg: Image) -> Optional[SegmentationResult]:
+        """카메라 이미지에 대해 시맨틱 세그멘테이션을 수행한다.
+
+        Args:
+            msg: ROS2 Image 메시지.
+
+        Returns:
+            SegmentationResult 또는 None (처리 실패 시).
+        """
+        if not _HAS_NUMPY:
+            return None
+
+        image = self._image_to_numpy(msg)
+        if image is None:
+            self.segmentation = None
+            return None
+
+        self.segmentation = self._semantic_segmenter.segment(image)
+        self._node.get_logger().debug(
+            f'[인지] 세그멘테이션 완료: '
+            f'{self.segmentation.width}x{self.segmentation.height}, '
+            f'{len(self.segmentation.unique_classes)}개 클래스, '
+            f'{self.segmentation.processing_time:.3f}초'
+        )
+        return self.segmentation
+
+    def get_segmentation(self) -> Optional[SegmentationResult]:
+        """현재 시맨틱 세그멘테이션 결과를 반환한다.
+
+        Returns:
+            SegmentationResult 또는 None (아직 처리되지 않은 경우).
+        """
+        return self.segmentation
+
+    def get_navigable_area(self) -> Optional["np.ndarray"]:
+        """현재 세그멘테이션 결과에서 주행 가능 영역 마스크를 반환한다.
+
+        Returns:
+            (H, W) bool 배열 또는 None.
+        """
+        if self.segmentation is None:
+            return None
+        return self._semantic_segmenter.get_navigable_area(self.segmentation)
+
+    def get_obstacle_area(self) -> Optional["np.ndarray"]:
+        """현재 세그멘테이션 결과에서 장애물 영역 마스크를 반환한다.
+
+        Returns:
+            (H, W) bool 배열 또는 None.
+        """
+        if self.segmentation is None:
+            return None
+        return self._semantic_segmenter.get_obstacle_area(self.segmentation)
+
+    # ------------------------------------------------------------------
+    # 센서 융합
+    # ------------------------------------------------------------------
+
+    def _run_fusion(self) -> List[FusedObject]:
+        """현재 LiDAR 장애물과 카메라 탐지 결과를 융합한다.
+
+        LiDAR 또는 카메라 콜백에서 호출되어 최신 데이터를 융합한다.
+        어느 한쪽 데이터만 있어도 동작한다 (미매칭으로 처리).
+
+        Returns:
+            FusedObject 리스트.
+        """
+        self.fused_objects = self._sensor_fusion.fuse(
+            self.obstacles, self.detections,
+        )
+        fused_count = sum(1 for o in self.fused_objects if o.source == "fused")
+        lidar_only = sum(1 for o in self.fused_objects if o.source == "lidar")
+        camera_only = sum(1 for o in self.fused_objects if o.source == "camera")
+        self._node.get_logger().debug(
+            f'[인지] 센서 융합 완료: '
+            f'fused={fused_count}, lidar_only={lidar_only}, '
+            f'camera_only={camera_only}, total={len(self.fused_objects)}'
+        )
+        return self.fused_objects
+
+    def get_fused_objects(self) -> List[FusedObject]:
+        """현재 센서 융합 결과를 반환한다.
+
+        Returns:
+            FusedObject 리스트 (거리순 정렬).
+        """
+        return self.fused_objects
+
+    # ------------------------------------------------------------------
     # 결과 조회
     # ------------------------------------------------------------------
 
@@ -255,11 +369,14 @@ class PerceptionModule:
         """현재 인지 결과를 반환한다.
 
         Returns:
-            장애물, 탐지 결과, 차선 정보, 위치, 방향을 포함하는 딕셔너리.
+            장애물, 탐지 결과, 융합 결과, 세그멘테이션, 차선 정보,
+            위치, 방향을 포함하는 딕셔너리.
         """
         return {
             'obstacles': self.obstacles,
             'detections': self.detections,
+            'fused_objects': self.fused_objects,
+            'segmentation': self.segmentation,
             'lane_info': self.lane_info,
             'position': self.vehicle_position,
             'orientation': self.vehicle_orientation,
