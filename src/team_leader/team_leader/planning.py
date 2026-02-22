@@ -1,4 +1,8 @@
-"""판단/경로 계획 모듈 - 인지 결과를 기반으로 주행 계획 수립."""
+"""판단/경로 계획 모듈 - 인지 결과를 기반으로 주행 계획 수립.
+
+Fields2Cover 스타일 커버리지 경로 계획(CoveragePlanner)을 통합하여
+Boustrophedon, Spiral, Racetrack 3종 패턴을 지원한다.
+"""
 
 import math
 from enum import Enum, auto
@@ -8,6 +12,13 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 from std_msgs.msg import Header
+
+from team_leader.coverage_planner import (
+    CoveragePlanner,
+    CoverageConfig,
+    CoveragePattern,
+    FieldBoundary,
+)
 
 
 class DrivingMode(Enum):
@@ -24,28 +35,46 @@ class DrivingMode(Enum):
 class PathPlanner:
     """경로 생성기 - 커버리지 패턴 및 웨이포인트 경로 생성.
 
-    면적 커버리지(boustrophedon) 패턴 생성 및
+    면적 커버리지(boustrophedon/spiral/racetrack) 패턴 생성 및
     웨이포인트 기반 Nav2 Path 메시지 생성 기능을 제공한다.
+
+    내부적으로 CoveragePlanner를 활용하여 Fields2Cover 스타일의
+    고급 커버리지 경로 계획을 지원한다.
     """
 
     def __init__(self, node: Node):
         self._node = node
+        self._coverage_planner = CoveragePlanner()
         node.get_logger().info('[경로생성] PathPlanner 초기화 완료')
+
+    @property
+    def coverage_planner(self) -> CoveragePlanner:
+        """CoveragePlanner 인스턴스 접근자."""
+        return self._coverage_planner
 
     def generate_coverage_path(
         self,
         field_boundary: List[Tuple[float, float]],
         swath_width: float,
+        pattern: CoveragePattern = CoveragePattern.BOUSTROPHEDON,
+        overlap_ratio: float = 0.0,
+        headland_width: float = 0.0,
+        swath_angle_deg: Optional[float] = None,
     ) -> List[Tuple[float, float]]:
-        """면적 커버리지 경로 생성 (boustrophedon 패턴).
+        """면적 커버리지 경로 생성.
 
-        직사각형 또는 다각형 영역을 지그재그(왕복) 패턴으로 커버하는
-        웨이포인트 리스트를 생성한다.
+        CoveragePlanner를 활용하여 Boustrophedon, Spiral, Racetrack
+        3종 패턴을 지원한다. 기본값으로 호출하면 기존과 동일한
+        Boustrophedon 경로를 생성한다 (하위 호환성 유지).
 
         Args:
             field_boundary: 영역 경계 좌표 리스트 [(x1,y1), (x2,y2), ...]
                 최소 3개 이상의 꼭짓점이 필요하다.
             swath_width: 작업 폭 (m) - 인접 경로 간 간격
+            pattern: 커버리지 패턴 (기본: BOUSTROPHEDON)
+            overlap_ratio: 오버랩 비율 (0.0 ~ 0.5)
+            headland_width: 헤드랜드 폭 (m). 0이면 헤드랜드 없음.
+            swath_angle_deg: 스와스 각도 (도). None이면 자동 최적화.
 
         Returns:
             커버리지 웨이포인트 리스트 [(x, y), ...]
@@ -62,48 +91,20 @@ class PathPlanner:
             )
             return []
 
-        # 영역 바운딩 박스 계산
-        xs = [p[0] for p in field_boundary]
-        ys = [p[1] for p in field_boundary]
-        x_min, x_max = min(xs), max(xs)
-        y_min, y_max = min(ys), max(ys)
-
-        # Boustrophedon(왕복) 패턴 생성
-        # Y축 방향으로 swath_width 간격의 스트립을 X축 방향으로 왕복
-        waypoints: List[Tuple[float, float]] = []
-        y = y_min + swath_width / 2.0  # 첫 번째 스트립 중심
-        strip_index = 0
-
-        while y <= y_max:
-            # 현재 Y 좌표에서 영역 경계와의 교차 구간 계산
-            x_intersections = self._find_x_intersections(
-                field_boundary, y
-            )
-
-            if len(x_intersections) >= 2:
-                # 교차 구간의 최소/최대 X 값 사용
-                strip_x_min = min(x_intersections)
-                strip_x_max = max(x_intersections)
-            else:
-                # 교차점이 부족하면 바운딩 박스 사용
-                strip_x_min = x_min
-                strip_x_max = x_max
-
-            # 짝수 인덱스: 왼쪽→오른쪽, 홀수 인덱스: 오른쪽→왼쪽
-            if strip_index % 2 == 0:
-                waypoints.append((strip_x_min, y))
-                waypoints.append((strip_x_max, y))
-            else:
-                waypoints.append((strip_x_max, y))
-                waypoints.append((strip_x_min, y))
-
-            y += swath_width
-            strip_index += 1
+        # CoveragePlanner에 위임
+        waypoints = self._coverage_planner.generate_coverage_path_compat(
+            field_boundary=field_boundary,
+            swath_width=swath_width,
+            pattern=pattern,
+            overlap_ratio=overlap_ratio,
+            headland_width=headland_width,
+            swath_angle_deg=swath_angle_deg,
+        )
 
         self._node.get_logger().info(
             f'[경로생성] 커버리지 경로 생성 완료: '
             f'{len(waypoints)}개 웨이포인트, '
-            f'{strip_index}개 스트립'
+            f'패턴={pattern.name}'
         )
         return waypoints
 
@@ -270,6 +271,11 @@ class PlanningModule:
                 COVERAGE 모드:
                     field_boundary: 영역 경계 좌표 리스트
                     swath_width: 작업 폭 (m)
+                    pattern: 커버리지 패턴 문자열 또는 CoveragePattern
+                        ('BOUSTROPHEDON', 'SPIRAL', 'RACETRACK')
+                    overlap_ratio: 오버랩 비율 (0.0~0.5, 기본 0.0)
+                    headland_width: 헤드랜드 폭 (m, 기본 0.0)
+                    swath_angle_deg: 스와스 각도 (도, None이면 자동)
                 WAYPOINT_NAV 모드:
                     waypoints: 웨이포인트 좌표 리스트 [(x, y), ...]
                 LANE_KEEPING 모드:
@@ -279,11 +285,37 @@ class PlanningModule:
 
         if mode == DrivingMode.COVERAGE:
             # 면적 커버리지 경로 생성
+            # 기존 파라미터 (하위 호환)
             field_boundary = kwargs.get('field_boundary', [])
             swath_width = kwargs.get('swath_width', 2.0)
+            # 확장 파라미터 (CoveragePlanner 연동)
+            pattern_name = kwargs.get('pattern', 'BOUSTROPHEDON')
+            overlap_ratio = kwargs.get('overlap_ratio', 0.0)
+            headland_width = kwargs.get('headland_width', 0.0)
+            swath_angle_deg = kwargs.get('swath_angle_deg', None)
+
+            # 패턴 문자열 -> CoveragePattern 변환
+            if isinstance(pattern_name, str):
+                try:
+                    pattern = CoveragePattern[pattern_name.upper()]
+                except KeyError:
+                    self._node.get_logger().warn(
+                        f'[판단] 미지원 패턴: {pattern_name}, '
+                        f'BOUSTROPHEDON 사용'
+                    )
+                    pattern = CoveragePattern.BOUSTROPHEDON
+            elif isinstance(pattern_name, CoveragePattern):
+                pattern = pattern_name
+            else:
+                pattern = CoveragePattern.BOUSTROPHEDON
 
             self._coverage_waypoints = self._path_planner.generate_coverage_path(
-                field_boundary, swath_width
+                field_boundary=field_boundary,
+                swath_width=swath_width,
+                pattern=pattern,
+                overlap_ratio=overlap_ratio,
+                headland_width=headland_width,
+                swath_angle_deg=swath_angle_deg,
             )
             self._current_waypoint_index = 0
 
@@ -295,7 +327,8 @@ class PlanningModule:
                 self.target_speed = self.max_speed * 0.7  # 커버리지는 감속 주행
                 self._node.get_logger().info(
                     f'[판단] 커버리지 모드 시작: '
-                    f'{len(self._coverage_waypoints)}개 웨이포인트'
+                    f'{len(self._coverage_waypoints)}개 웨이포인트, '
+                    f'패턴={pattern.name}'
                 )
             else:
                 self._node.get_logger().warn(
@@ -458,5 +491,6 @@ class PlanningModule:
             result['total_waypoints'] = len(self._coverage_waypoints)
             result['target_waypoint'] = target_wp
             result['has_nav_path'] = self._nav_path is not None
+            result['coverage_planner_available'] = True
 
         return result
