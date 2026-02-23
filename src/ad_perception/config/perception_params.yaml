@@ -1,0 +1,8 @@
+perception_node:
+  ros__parameters:
+    # 센서 토픽명
+    topics:
+      camera: /sensor/camera/front
+      lidar: /sensor/lidar
+      gps: /sensor/gps
+      imu: /sensor/imu

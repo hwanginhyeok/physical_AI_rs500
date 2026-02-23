@@ -1,0 +1,9 @@
+can_bridge_node:
+  ros__parameters:
+    # CAN 버스 설정
+    can_interface: "can0"      # SocketCAN 인터페이스 (실차)
+    can_bitrate: 500000        # 500kbps
+    can_bus: "CAN2"            # ADT는 CAN2에 연결
+
+    # 전송 주기 (ms)
+    send_period_ms: 50         # ADT2VCU1 전송 주기

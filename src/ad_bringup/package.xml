@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ad_bringup</name>
+  <version>0.1.0</version>
+  <description>자율주행 시스템 통합 런처</description>
+  <maintainer email="team@todo.todo">team</maintainer>
+  <license>MIT</license>
+
+  <exec_depend>ad_perception</exec_depend>
+  <exec_depend>ad_planning</exec_depend>
+  <exec_depend>ad_control</exec_depend>
+  <exec_depend>ad_can_bridge</exec_depend>
+  <exec_depend>ad_interfaces</exec_depend>
+  <exec_depend>ad_core</exec_depend>
+  <exec_depend>robot_localization</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

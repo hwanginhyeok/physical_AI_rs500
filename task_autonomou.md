@@ -1,6 +1,6 @@
 # 프로젝트 작업 관리
 
-> 최종 업데이트: 2026-02-22 (Phase 2 코드 구현 완료, 통합 테스트 진행 중)
+> 최종 업데이트: 2026-02-23 (프로젝트 구조 재설계 완료 - 7개 패키지, 테스트 144건 통과)
 
 ---
 
@@ -26,7 +26,9 @@
 | 14 | 인지 | 농경지 작물 행 인식 (시맨틱 세그멘테이션 기반) | 중 | — | 2026-02-21 | 예정 | #12 완료됨 |
 | 15 | 인지 | 지형 traversability 분류 (Wild Visual Navigation) | 하 | — | 2026-02-21 | 예정 | |
 | 18 | 시뮬레이션 | CI/CD headless 시뮬레이션 파이프라인 | 하 | — | 2026-02-21 | 예정 | |
-| 19 | 통합 | 시뮬레이션 통합 테스트 (colcon build + Gazebo 검증) | 상 | Claude | 2026-02-22 | 진행중 | Phase 2 코드 검증 |
+| 20 | 인프라 | PC 업그레이드 후 Gazebo Harmonic 풀 시뮬레이션 환경 구축 | 중 | — | 2026-02-23 | 예정 | RTX 3060+ GPU 필요 |
+| 21 | 인프라 | 프로젝트 구조 재설계 (실제 운용 환경 기반) | **상** | Claude | 2026-02-23 | **완료** | Phase 1~4 완료, 7개 패키지, 144건 테스트 |
+| 22 | 통합 | control.py / planning.py Mock 노드 테스트 작성 | 중 | — | 2026-02-23 | 예정 | ROS2 Node 의존 모듈 |
 
 ---
 
@@ -65,6 +67,12 @@
 | C29 | 판단 | LIO-SAM SLAM 통합 런처 + LocalizationManager | 중 | Claude | 2026-02-21 | 2026-02-22 |
 | C30 | 인지 | 시맨틱 세그멘테이션 (fallback 모드 포함) | 중 | Claude | 2026-02-21 | 2026-02-22 |
 | C31 | 인지 | Camera + LiDAR Late Fusion 구현 | 중 | Claude | 2026-02-21 | 2026-02-22 |
+| C32 | 통합 | WSL2 ROS2 Jazzy 환경 구축 + colcon build 성공 | 상 | Claude | 2026-02-22 | 2026-02-23 |
+| C33 | 통합 | 단위 테스트 83건 추가 (coverage, skid_steer, fusion, lidar) | 상 | Claude | 2026-02-23 | 2026-02-23 |
+| C34 | 인프라 | 프로젝트 구조 재설계: ad_core 순수 알고리즘 분리 (120 테스트) | 상 | Claude | 2026-02-23 | 2026-02-23 |
+| C35 | 인프라 | ROS2 노드 패키지 분리 (ad_perception, ad_planning, ad_control) | 상 | Claude | 2026-02-23 | 2026-02-23 |
+| C36 | 인프라 | SS500 CAN 코덱 + CAN 브릿지 패키지 (24 테스트) | 상 | Claude | 2026-02-23 | 2026-02-23 |
+| C37 | 인프라 | ad_bringup 통합 런처 (navigation + full_system) | 중 | Claude | 2026-02-23 | 2026-02-23 |
 
 ---
 
@@ -77,6 +85,9 @@
 - rich 라이브러리 적용하여 CLI 출력 개선
 - virtual_maize_field 패키지 활용한 절차적 밭 생성 검토
 - 실시간 Gazebo GUI 렌더링 해결 (WSLg Ogre2 호환성 문제)
+- MVSim 2.5D 경량 시뮬레이터 도입 검토 (GPU 없이 네비게이션 테스트 가능)
+- Gazebo 대안: Webots (경량), Stage (2D 전용) 비교 검토
+- 현재 PC 사양: i7-12650P / 16GB RAM / MX550 2GB → Gazebo 3D 부적합, PC 업그레이드 예정
 
 ---
 

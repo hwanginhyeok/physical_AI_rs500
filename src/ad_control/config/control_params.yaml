@@ -1,0 +1,17 @@
+control_node:
+  ros__parameters:
+    # 토픽명
+    topics:
+      cmd_vel: /cmd_vel
+
+    # PID 제어 게인
+    control:
+      speed_kp: 1.0
+      speed_ki: 0.01
+      speed_kd: 0.1
+      steer_kp: 1.5
+
+      # 캘리브레이션 파라미터
+      calibration_enabled: true
+      calibration_ema_alpha: 0.05
+      calibration_file: "config/calibration_data.json"
