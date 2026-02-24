@@ -32,6 +32,10 @@ class TerrainType(Enum):
     CROP_FIELD = 0.4   # 농작물 밭
     MUD = 0.6          # 진흙
     OBSTACLE = 1.0     # 장애물 (통행 불가)
+    PADDY_WET = 0.7    # 젖은 논
+    PADDY_DRY = 0.45   # 마른 논
+    FIELD_SOFT = 0.55  # 부드러운 밭
+    FIELD_HARD = 0.35  # 단단한 밭
 
 
 class TerrainClassifier:

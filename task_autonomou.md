@@ -1,6 +1,6 @@
 # 프로젝트 작업 관리
 
-> 최종 업데이트: 2026-02-23 (프로젝트 구조 재설계 완료 - 7개 패키지, 테스트 144건 통과)
+> 최종 업데이트: 2026-02-24 (Level 2 물리 시뮬레이션 구현 완료 - 테스트 178건 통과)
 
 ---
 
@@ -29,6 +29,7 @@
 | 20 | 인프라 | PC 업그레이드 후 Gazebo Harmonic 풀 시뮬레이션 환경 구축 | 중 | — | 2026-02-23 | 예정 | RTX 3060+ GPU 필요 |
 | 21 | 인프라 | 프로젝트 구조 재설계 (실제 운용 환경 기반) | **상** | Claude | 2026-02-23 | **완료** | Phase 1~4 완료, 7개 패키지, 144건 테스트 |
 | 22 | 통합 | control.py / planning.py Mock 노드 테스트 작성 | 중 | — | 2026-02-23 | 예정 | ROS2 Node 의존 모듈 |
+| 23 | 시뮬레이션 | Level 2 물리 시뮬레이션 업그레이드 (5 Phase) | **상** | Claude | 2026-02-24 | **완료** | 동역학/구동계/지면상호작용/센서노이즈/통합시뮬, 58건 테스트 |
 
 ---
 
@@ -73,6 +74,13 @@
 | C35 | 인프라 | ROS2 노드 패키지 분리 (ad_perception, ad_planning, ad_control) | 상 | Claude | 2026-02-23 | 2026-02-23 |
 | C36 | 인프라 | SS500 CAN 코덱 + CAN 브릿지 패키지 (24 테스트) | 상 | Claude | 2026-02-23 | 2026-02-23 |
 | C37 | 인프라 | ad_bringup 통합 런처 (navigation + full_system) | 중 | Claude | 2026-02-23 | 2026-02-23 |
+| C38 | 시뮬레이션 | VehicleDynamics: F=ma 종방향 + tau=I*alpha 요회전 + 하중전이 + 경사면 | 상 | Claude | 2026-02-24 | 2026-02-24 |
+| C39 | 시뮬레이션 | DrivetrainModel: 1차 지연 모터 응답 + 데드존 + 좌/우 독립 + 감속기 효율 | 상 | Claude | 2026-02-24 | 2026-02-24 |
+| C40 | 시뮬레이션 | TrackTerrainInteraction: Bekker 침하 + Mohr-Coulomb 견인력 + 10개 지형 | 상 | Claude | 2026-02-24 | 2026-02-24 |
+| C41 | 시뮬레이션 | SensorNoiseModel: GPS/IMU/LiDAR/Camera 노이즈 (Allan Variance, 멀티패스) | 상 | Claude | 2026-02-24 | 2026-02-24 |
+| C42 | 시뮬레이션 | PhysicsSimulator: L1/L2 전환 + 지형변경 + 4패널 시각화 통합 GUI | 상 | Claude | 2026-02-24 | 2026-02-24 |
+| C43 | 시뮬레이션 | terrain_classifier.py TerrainType 확장 (PADDY_WET/DRY, FIELD_SOFT/HARD) | 중 | Claude | 2026-02-24 | 2026-02-24 |
+| C44 | 테스트 | Level 2 물리 시뮬레이션 단위 테스트 58건 추가 (총 178건) | 상 | Claude | 2026-02-24 | 2026-02-24 |
 
 ---
 
