@@ -46,7 +46,27 @@
       "Bash(wmic memorychip get Capacity,Speed /format:list 2>/dev/null && wmic OS get TotalVisibleMemorySize /format:list 2>/dev/null)",
       "Bash(wmic path:*)",
       "Bash(nvidia-smi:*)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "WebFetch(domain:apps.dtic.mil)",
+      "WebFetch(domain:www.mdpi.com)",
+      "WebFetch(domain:hae-journals.org)",
+      "WebFetch(domain:vortexstudio.atlassian.net)",
+      "WebFetch(domain:onlinelibrary.wiley.com)",
+      "WebFetch(domain:help.altair.com)",
+      "WebFetch(domain:www.mail-archive.com)",
+      "WebFetch(domain:api.projectchrono.org)",
+      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
+      "WebFetch(domain:huei.engin.umich.edu)",
+      "WebFetch(domain:roboshare.esa.int)",
+      "WebFetch(domain:core.ac.uk)",
+      "WebFetch(domain:www.sciencedirect.com)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:fileserver-az.core.ac.uk)",
+      "WebFetch(domain:www.matec-conferences.org)",
+      "WebFetch(domain:www.atlantis-press.com)",
+      "WebFetch(domain:www.ecorisq.org)",
+      "WebFetch(domain:proceedings.sbmac.org.br)",
+      "WebFetch(domain:www.geotechdata.info)"
     ]
   }
 }
