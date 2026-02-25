@@ -64,12 +64,14 @@ class VehicleDynamics:
         self,
         config: VehicleDynamicsConfig | None = None,
         kinematic_model: SkidSteerModel | None = None,
+        terrain_interaction: "TrackTerrainInteraction | None" = None,
     ) -> None:
         self.config = config or VehicleDynamicsConfig()
         self.kinematic = kinematic_model or SkidSteerModel(
             track_width=self.config.track_width,
             max_speed=self.config.max_speed * 2.0,
         )
+        self.terrain_interaction = terrain_interaction
 
         # 내부 상태
         self._current_linear_vel: float = 0.0
@@ -81,6 +83,10 @@ class VehicleDynamics:
         half_weight = self.config.mass * GRAVITY / 2.0
         self._front_normal_force: float = half_weight
         self._rear_normal_force: float = half_weight
+
+        # 지면 상호작용 결과 (외부 조회용)
+        self.last_sinkage: float = 0.0
+        self.last_slip_ratio: float = 0.0
 
     # ------------------------------------------------------------------ #
     #  공개 API
@@ -155,13 +161,45 @@ class VehicleDynamics:
         # 2. 경사면 중력 효과
         gravity_accel = self._compute_slope_acceleration()
 
-        # 3. 저항력 계산
+        # 3. 저항력 계산 (지면 상호작용 반영)
         resistance_accel = self._compute_resistance_deceleration()
+        terrain_rolling_resistance = 0.0
+        terrain_turning_resistance = 0.0
+        sinkage_drag = 0.0
+
+        if self.terrain_interaction is not None:
+            total_normal = self._front_normal_force + self._rear_normal_force
+            half_normal = total_normal / 2.0
+
+            # 슬립비 계산: 명령 속도 vs 실제 속도 차이
+            cmd_speed = (abs(commanded_left) + abs(commanded_right)) / 2.0
+            slip_ratio = abs(cmd_speed - abs(self._current_linear_vel)) / max(cmd_speed, 0.1)
+            self.last_slip_ratio = slip_ratio
+
+            # 침하량 → 추가 구름 저항
+            sinkage = self.terrain_interaction.compute_sinkage(half_normal)
+            self.last_sinkage = sinkage
+            # 침하에 비례하는 저항 (침하 깊을수록 더 많은 흙을 밀어야 함)
+            sinkage_drag = sinkage * cfg.mass * GRAVITY * 0.5 / max(cfg.mass, 1e-6)
+
+            # 지면 구름 저항 (지형별 다른 계수)
+            rolling_force = self.terrain_interaction.compute_rolling_resistance(total_normal)
+            terrain_rolling_resistance = rolling_force / max(cfg.mass, 1e-6)
+
+            # 선회 저항 모멘트
+            turning_moment = self.terrain_interaction.compute_turning_resistance(
+                self._current_angular_vel, total_normal
+            )
+            terrain_turning_resistance = turning_moment
+        else:
+            self.last_sinkage = 0.0
+            self.last_slip_ratio = 0.0
 
         # 4. 종방향 가속도 제한 (F=ma)
         desired_accel = (target_linear - self._current_linear_vel) / max(dt, 1e-6)
-        # 중력 + 저항을 가속 요구에 반영
-        desired_accel += gravity_accel - resistance_accel
+        # 중력 + 저항 + 지면 저항을 가속 요구에 반영
+        total_resistance = resistance_accel + terrain_rolling_resistance + sinkage_drag
+        desired_accel += gravity_accel - total_resistance
 
         # 가속도 클램프
         if desired_accel > 0:
@@ -181,9 +219,15 @@ class VehicleDynamics:
         desired_alpha = (target_angular - self._current_angular_vel) / max(dt, 1e-6)
 
         # 최대 요 토크를 트랙 견인력으로 추정
-        # 단순 추정: max_torque = mass * max_accel * track_width / 2
         max_yaw_torque = cfg.mass * cfg.max_accel * cfg.track_width / 2.0
         max_alpha = max_yaw_torque / max(cfg.Izz, 1e-6)
+
+        # 선회 저항을 요 각가속도에 반영
+        if self.terrain_interaction is not None and abs(self._current_angular_vel) > 1e-6:
+            resistance_alpha = terrain_turning_resistance / max(cfg.Izz, 1e-6)
+            # 선회 저항은 각속도 반대 방향
+            sign = -1.0 if self._current_angular_vel > 0 else 1.0
+            desired_alpha += sign * resistance_alpha
 
         clamped_alpha = max(-max_alpha, min(desired_alpha, max_alpha))
         self._current_angular_vel += clamped_alpha * dt
