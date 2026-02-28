@@ -1,0 +1,148 @@
+{
+  "configById": {},
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1.0
+  },
+  "layout": {
+    "direction": "row",
+    "first": {
+      "direction": "column",
+      "first": "3d-panel",
+      "second": {
+        "direction": "row",
+        "first": "service-panel",
+        "second": "status-panel",
+        "splitPercentage": 50
+      },
+      "splitPercentage": 70
+    },
+    "second": {
+      "direction": "column",
+      "first": "camera-panel",
+      "second": "log-panel",
+      "splitPercentage": 50
+    },
+    "splitPercentage": 70
+  },
+  "configById": {
+    "3d-panel": {
+      "id": "3d-panel",
+      "type": "3D",
+      "config": {
+        "followTf": "base_link",
+        "scene": {
+          "backgroundColor": "#1a1a2e",
+          "enableStats": false
+        },
+        "cameraState": {
+          "distance": 30,
+          "perspective": true,
+          "phi": 45,
+          "target": [0, 0, 0],
+          "thetaOffset": 0
+        },
+        "publish": {
+          "type": "pose_estimate",
+          "poseTopic": "/goal_pose",
+          "pointTopic": "/clicked_point",
+          "poseEstimateTopic": "/initialpose",
+          "poseEstimateXDeviation": 0.5,
+          "poseEstimateYDeviation": 0.5,
+          "poseEstimateThetaDeviation": 0.26
+        },
+        "topics": {
+          "/waypoint_manager/markers": {
+            "visible": true
+          },
+          "/global_costmap/costmap": {
+            "visible": true,
+            "colorMode": "costmap",
+            "alpha": 0.5
+          },
+          "/local_costmap/costmap": {
+            "visible": true,
+            "colorMode": "costmap",
+            "alpha": 0.3
+          },
+          "/plan": {
+            "visible": true,
+            "lineWidth": 3,
+            "gradient": ["#00ff88", "#00ff88"]
+          },
+          "/sensor/lidar": {
+            "visible": true,
+            "pointSize": 2,
+            "colorMode": "flat",
+            "flatColor": "#ff4444"
+          },
+          "/map": {
+            "visible": true,
+            "alpha": 0.6
+          }
+        },
+        "layers": {
+          "grid": {
+            "layerId": "foxglove.Grid",
+            "visible": true,
+            "size": 100,
+            "divisions": 100,
+            "color": "#333355"
+          }
+        }
+      }
+    },
+    "service-panel": {
+      "id": "service-panel",
+      "type": "CallService",
+      "config": {
+        "serviceName": "/waypoint_manager/start",
+        "serviceType": "std_srvs/srv/Trigger",
+        "layout": "vertical",
+        "advancedView": false,
+        "requestPayload": "{}"
+      }
+    },
+    "status-panel": {
+      "id": "status-panel",
+      "type": "RawMessages",
+      "config": {
+        "topicPath": "/waypoint_manager/status",
+        "diffEnabled": false,
+        "showFullMessageForDiff": false,
+        "fontSize": 14
+      }
+    },
+    "camera-panel": {
+      "id": "camera-panel",
+      "type": "Image",
+      "config": {
+        "cameraTopic": "/sensor/camera/front",
+        "enabledMarkerTopics": [],
+        "synchronize": false,
+        "transformMarkers": false,
+        "smooth": true,
+        "flipHorizontal": false,
+        "flipVertical": false,
+        "minValue": 0,
+        "maxValue": 1,
+        "rotation": 0
+      }
+    },
+    "log-panel": {
+      "id": "log-panel",
+      "type": "Log",
+      "config": {
+        "searchTerms": [],
+        "minLogLevel": 1,
+        "nameFilter": {
+          "waypoint_manager": true,
+          "bt_navigator": true,
+          "controller_server": true,
+          "planner_server": true
+        }
+      }
+    }
+  }
+}

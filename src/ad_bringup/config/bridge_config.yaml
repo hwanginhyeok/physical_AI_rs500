@@ -1,0 +1,52 @@
+# =============================================================================
+# ros_gz_bridge 토픽 매핑 설정
+# Gazebo Harmonic ↔ ROS2 토픽 브릿지
+# =============================================================================
+
+# --- 제어 입력 (ROS2 → Gazebo) ---
+- topic_name: /cmd_vel
+  ros_type_name: geometry_msgs/msg/Twist
+  gz_type_name: gz.msgs.Twist
+  direction: ROS_TO_GZ
+
+# --- 오도메트리 (Gazebo → ROS2) ---
+- topic_name: /odom
+  ros_type_name: nav_msgs/msg/Odometry
+  gz_type_name: gz.msgs.Odometry
+  direction: GZ_TO_ROS
+
+# --- GPS 센서 (Gazebo → ROS2) ---
+- topic_name: /sensor/gps
+  ros_type_name: sensor_msgs/msg/NavSatFix
+  gz_type_name: gz.msgs.NavSat
+  direction: GZ_TO_ROS
+
+# --- IMU 센서 (Gazebo → ROS2) ---
+- topic_name: /sensor/imu
+  ros_type_name: sensor_msgs/msg/Imu
+  gz_type_name: gz.msgs.IMU
+  direction: GZ_TO_ROS
+
+# --- LiDAR 센서 (Gazebo → ROS2) ---
+- topic_name: /sensor/lidar
+  ros_type_name: sensor_msgs/msg/LaserScan
+  gz_type_name: gz.msgs.LaserScan
+  direction: GZ_TO_ROS
+
+# --- 전방 카메라 (Gazebo → ROS2) ---
+- topic_name: /sensor/camera/front
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+# --- 시뮬레이션 시계 (Gazebo → ROS2) ---
+- topic_name: /clock
+  ros_type_name: rosgraph_msgs/msg/Clock
+  gz_type_name: gz.msgs.Clock
+  direction: GZ_TO_ROS
+
+# --- Joint States (Gazebo → ROS2) ---
+- topic_name: /joint_states
+  ros_type_name: sensor_msgs/msg/JointState
+  gz_type_name: gz.msgs.Model
+  direction: GZ_TO_ROS

@@ -1,0 +1,194 @@
+<?xml version="1.0"?>
+<!--
+  SS500 궤도차량 URDF (robot_state_publisher용 TF 트리)
+
+  TF 트리:
+    base_footprint → base_link → imu_link
+                                → lidar_link
+                                → camera_link
+                                → gps_link
+                                → left_track
+                                → right_track
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ss500">
+
+  <!-- ================================================================ -->
+  <!-- base_footprint: 지면 투영 프레임 -->
+  <!-- ================================================================ -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.4" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- base_link: 차체 중심 -->
+  <!-- ================================================================ -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="2.0 1.2 0.8"/>
+      </geometry>
+      <material name="olive">
+        <color rgba="0.45 0.5 0.4 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="2.0 1.2 0.8"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1000.0"/>
+      <inertia ixx="106.67" iyy="153.33" izz="113.33"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <!-- ================================================================ -->
+  <!-- 좌측 궤도 -->
+  <!-- ================================================================ -->
+  <link name="left_track">
+    <visual>
+      <geometry>
+        <box size="2.0 0.3 0.4"/>
+      </geometry>
+      <material name="dark_grey">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="2.0 0.3 0.4"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="80.0"/>
+      <inertia ixx="4.27" iyy="27.47" izz="24.27"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="left_track_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="left_track"/>
+    <origin xyz="0 0.7 -0.2" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- 우측 궤도 -->
+  <!-- ================================================================ -->
+  <link name="right_track">
+    <visual>
+      <geometry>
+        <box size="2.0 0.3 0.4"/>
+      </geometry>
+      <material name="dark_grey">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="2.0 0.3 0.4"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="80.0"/>
+      <inertia ixx="4.27" iyy="27.47" izz="24.27"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="right_track_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="right_track"/>
+    <origin xyz="0 -0.7 -0.2" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- LiDAR -->
+  <!-- ================================================================ -->
+  <link name="lidar_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.05" length="0.08"/>
+      </geometry>
+      <material name="lidar_black">
+        <color rgba="0.15 0.15 0.15 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.001" iyy="0.001" izz="0.001"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0 0 0.5" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- IMU -->
+  <!-- ================================================================ -->
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" iyy="0.0001" izz="0.0001"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- Camera (전방) -->
+  <!-- ================================================================ -->
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <box size="0.05 0.08 0.05"/>
+      </geometry>
+      <material name="camera_black">
+        <color rgba="0.1 0.1 0.1 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.0002" iyy="0.0002" izz="0.0002"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.9 0 0.3" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- GPS -->
+  <!-- ================================================================ -->
+  <link name="gps_link">
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" iyy="0.0001" izz="0.0001"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="gps_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="gps_link"/>
+    <origin xyz="-0.3 0 0.5" rpy="0 0 0"/>
+  </joint>
+
+</robot>

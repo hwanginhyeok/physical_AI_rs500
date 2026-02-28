@@ -1,0 +1,398 @@
+<?xml version="1.0"?>
+<!--
+  SS500 궤도차량 SDF 모델 (Gazebo Harmonic)
+  차체: 2.0m x 1.2m x 0.8m, 1000kg
+  궤도: track_width=1.4m, TrackedVehicle 플러그인
+  센서: GPU LiDAR(360°, 10Hz), IMU(100Hz), Camera(640x480, 15Hz), GPS(10Hz)
+-->
+<sdf version="1.9">
+  <model name="ss500">
+    <static>false</static>
+
+    <!-- ================================================================ -->
+    <!-- base_link: 차체 -->
+    <!-- ================================================================ -->
+    <link name="base_link">
+      <pose>0 0 0.4 0 0 0</pose>
+
+      <inertial>
+        <mass>1000.0</mass>
+        <inertia>
+          <!-- I = 1/12 * m * (h^2 + d^2) 등 -->
+          <ixx>106.67</ixx>  <!-- 1/12 * 1000 * (0.8^2 + 1.2^2) -->
+          <iyy>153.33</iyy>  <!-- 1/12 * 1000 * (0.8^2 + 2.0^2) -->
+          <izz>113.33</izz>  <!-- 1/12 * 1000 * (1.2^2 + 2.0^2) -->
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <collision name="body_collision">
+        <geometry>
+          <box><size>2.0 1.2 0.8</size></box>
+        </geometry>
+      </collision>
+
+      <visual name="body_visual">
+        <geometry>
+          <box><size>2.0 1.2 0.8</size></box>
+        </geometry>
+        <material>
+          <ambient>0.3 0.35 0.3 1</ambient>
+          <diffuse>0.45 0.5 0.4 1</diffuse>
+          <specular>0.2 0.2 0.2 1</specular>
+        </material>
+      </visual>
+    </link>
+
+    <!-- ================================================================ -->
+    <!-- 좌측 궤도 -->
+    <!-- ================================================================ -->
+    <link name="left_track">
+      <pose relative_to="base_link">0 0.7 -0.2 0 0 0</pose>
+
+      <inertial>
+        <mass>80.0</mass>
+        <inertia>
+          <ixx>4.27</ixx>
+          <iyy>27.47</iyy>
+          <izz>24.27</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <collision name="left_track_collision">
+        <geometry>
+          <box><size>2.0 0.3 0.4</size></box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.5</mu>
+              <mu2>0.8</mu2>
+            </ode>
+          </friction>
+          <contact>
+            <ode>
+              <kp>1e7</kp>
+              <kd>1e3</kd>
+            </ode>
+          </contact>
+        </surface>
+      </collision>
+
+      <visual name="left_track_visual">
+        <geometry>
+          <box><size>2.0 0.3 0.4</size></box>
+        </geometry>
+        <material>
+          <ambient>0.15 0.15 0.15 1</ambient>
+          <diffuse>0.2 0.2 0.2 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <joint name="left_track_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>left_track</child>
+    </joint>
+
+    <!-- ================================================================ -->
+    <!-- 우측 궤도 -->
+    <!-- ================================================================ -->
+    <link name="right_track">
+      <pose relative_to="base_link">0 -0.7 -0.2 0 0 0</pose>
+
+      <inertial>
+        <mass>80.0</mass>
+        <inertia>
+          <ixx>4.27</ixx>
+          <iyy>27.47</iyy>
+          <izz>24.27</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <collision name="right_track_collision">
+        <geometry>
+          <box><size>2.0 0.3 0.4</size></box>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>1.5</mu>
+              <mu2>0.8</mu2>
+            </ode>
+          </friction>
+          <contact>
+            <ode>
+              <kp>1e7</kp>
+              <kd>1e3</kd>
+            </ode>
+          </contact>
+        </surface>
+      </collision>
+
+      <visual name="right_track_visual">
+        <geometry>
+          <box><size>2.0 0.3 0.4</size></box>
+        </geometry>
+        <material>
+          <ambient>0.15 0.15 0.15 1</ambient>
+          <diffuse>0.2 0.2 0.2 1</diffuse>
+        </material>
+      </visual>
+    </link>
+
+    <joint name="right_track_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>right_track</child>
+    </joint>
+
+    <!-- ================================================================ -->
+    <!-- LiDAR 센서 링크 -->
+    <!-- ================================================================ -->
+    <link name="lidar_link">
+      <pose relative_to="base_link">0 0 0.5 0 0 0</pose>
+      <inertial>
+        <mass>0.5</mass>
+        <inertia>
+          <ixx>0.001</ixx><iyy>0.001</iyy><izz>0.001</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <visual name="lidar_visual">
+        <geometry>
+          <cylinder><radius>0.05</radius><length>0.08</length></cylinder>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1</ambient>
+          <diffuse>0.15 0.15 0.15 1</diffuse>
+        </material>
+      </visual>
+
+      <sensor name="gpu_lidar" type="gpu_lidar">
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <topic>/sensor/lidar</topic>
+        <visualize>true</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>720</samples>
+              <resolution>1</resolution>
+              <min_angle>-3.14159</min_angle>
+              <max_angle>3.14159</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0</min_angle>
+              <max_angle>0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.3</min>
+            <max>80.0</max>
+            <resolution>0.01</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </lidar>
+      </sensor>
+    </link>
+
+    <joint name="lidar_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>lidar_link</child>
+    </joint>
+
+    <!-- ================================================================ -->
+    <!-- IMU 센서 링크 -->
+    <!-- ================================================================ -->
+    <link name="imu_link">
+      <pose relative_to="base_link">0 0 0.1 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <sensor name="imu_sensor" type="imu">
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>
+        <topic>/sensor/imu</topic>
+        <imu>
+          <angular_velocity>
+            <x><noise><type>gaussian</type><mean>0</mean><stddev>0.0002</stddev></noise></x>
+            <y><noise><type>gaussian</type><mean>0</mean><stddev>0.0002</stddev></noise></y>
+            <z><noise><type>gaussian</type><mean>0</mean><stddev>0.0002</stddev></noise></z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x><noise><type>gaussian</type><mean>0</mean><stddev>0.017</stddev></noise></x>
+            <y><noise><type>gaussian</type><mean>0</mean><stddev>0.017</stddev></noise></y>
+            <z><noise><type>gaussian</type><mean>0</mean><stddev>0.017</stddev></noise></z>
+          </linear_acceleration>
+        </imu>
+      </sensor>
+    </link>
+
+    <joint name="imu_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>imu_link</child>
+    </joint>
+
+    <!-- ================================================================ -->
+    <!-- 카메라 센서 링크 -->
+    <!-- ================================================================ -->
+    <link name="camera_link">
+      <pose relative_to="base_link">0.9 0 0.3 0 0 0</pose>
+      <inertial>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.0002</ixx><iyy>0.0002</iyy><izz>0.0002</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <visual name="camera_visual">
+        <geometry>
+          <box><size>0.05 0.08 0.05</size></box>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+        </material>
+      </visual>
+
+      <sensor name="front_camera" type="camera">
+        <always_on>true</always_on>
+        <update_rate>15</update_rate>
+        <topic>/sensor/camera/front</topic>
+        <visualize>true</visualize>
+        <camera>
+          <horizontal_fov>1.396</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </link>
+
+    <joint name="camera_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>camera_link</child>
+    </joint>
+
+    <!-- ================================================================ -->
+    <!-- GPS 센서 링크 -->
+    <!-- ================================================================ -->
+    <link name="gps_link">
+      <pose relative_to="base_link">-0.3 0 0.5 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <sensor name="gps_sensor" type="navsat">
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <topic>/sensor/gps</topic>
+        <navsat>
+          <position_sensing>
+            <horizontal>
+              <noise><type>gaussian</type><mean>0</mean><stddev>0.5</stddev></noise>
+            </horizontal>
+            <vertical>
+              <noise><type>gaussian</type><mean>0</mean><stddev>1.0</stddev></noise>
+            </vertical>
+          </position_sensing>
+        </navsat>
+      </sensor>
+    </link>
+
+    <joint name="gps_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>gps_link</child>
+    </joint>
+
+    <!-- ================================================================ -->
+    <!-- Gazebo 플러그인 -->
+    <!-- ================================================================ -->
+
+    <!-- TrackedVehicle 플러그인: 궤도차량 물리 + /cmd_vel 수신 -->
+    <plugin filename="gz-sim-tracked-vehicle-system"
+            name="gz::sim::systems::TrackedVehicle">
+      <body_link>base_link</body_link>
+      <left_track>
+        <link>left_track</link>
+        <velocity_topic>/cmd_vel</velocity_topic>
+        <min_velocity>-2.0</min_velocity>
+        <max_velocity>3.0</max_velocity>
+      </left_track>
+      <right_track>
+        <link>right_track</link>
+        <velocity_topic>/cmd_vel</velocity_topic>
+        <min_velocity>-2.0</min_velocity>
+        <max_velocity>3.0</max_velocity>
+      </right_track>
+      <track_width>1.4</track_width>
+      <steering_efficiency>0.9</steering_efficiency>
+    </plugin>
+
+    <!-- DiffDrive 플러그인: TrackedVehicle 미지원 시 폴백 -->
+    <!--
+    <plugin filename="gz-sim-diff-drive-system"
+            name="gz::sim::systems::DiffDrive">
+      <left_joint>left_track_joint</left_joint>
+      <right_joint>right_track_joint</right_joint>
+      <wheel_separation>1.4</wheel_separation>
+      <wheel_radius>0.2</wheel_radius>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <topic>/cmd_vel</topic>
+      <odom_topic>/odom</odom_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_link</child_frame_id>
+    </plugin>
+    -->
+
+    <!-- Odometry Publisher: /odom (odom → base_link) -->
+    <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+      <odom_topic>/odom</odom_topic>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <dimensions>3</dimensions>
+    </plugin>
+
+    <!-- Joint State Publisher: /joint_states -->
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>/joint_states</topic>
+      <update_rate>50</update_rate>
+    </plugin>
+
+  </model>
+</sdf>

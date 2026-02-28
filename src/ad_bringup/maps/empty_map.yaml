@@ -1,0 +1,8 @@
+# Nav2 빈 맵 설정
+# 100m x 100m 완전 자유 공간 — 시뮬레이션 테스트용
+image: empty_map.pgm
+resolution: 0.1          # 0.1m/pixel → 1000x1000 pixels = 100m x 100m
+origin: [-50.0, -50.0, 0.0]  # 맵 원점 (중앙 = (0,0))
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.25
