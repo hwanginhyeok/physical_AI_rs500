@@ -1,6 +1,7 @@
 """task_autonomou.md 파일 자동 업데이트 모듈.
 
-모든 에이전트가 작업 시작/완료/실패 시 task_autonomou.md를 자동으로 갱신한다.
+[비활성] 2026-03-01 — task_autonomou.md 폐기로 이 모듈의 역할 종료.
+공식 TASK 관리는 docs/프로젝트/TASK.md에서 수기로 운영한다. (C13 완료 참조)
 """
 
 from __future__ import annotations

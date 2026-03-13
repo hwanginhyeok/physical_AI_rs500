@@ -27,15 +27,15 @@ from launch.actions import (
     GroupAction,
     ExecuteProcess,
     LogInfo,
+    TimerAction,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     LaunchConfiguration,
-    PathJoinSubstitution,
     Command,
 )
 from launch_ros.actions import Node, SetParameter
-from launch_ros.substitutions import FindPackageShare
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -105,7 +105,9 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'use_sim_time': use_sim_time,
-            'robot_description': Command(['xacro ', urdf_xacro]),
+            'robot_description': ParameterValue(
+                Command(['xacro ', urdf_xacro]), value_type=str
+            ),
         }],
     )
 
@@ -121,10 +123,13 @@ def generate_launch_description():
         output='screen',
     )
 
-    gazebo_gui = ExecuteProcess(
-        cmd=['gz', 'sim', '-g'],  # GUI 모드 (-g = GUI only)
-        output='screen',
-    )
+    # gazebo_gui: WSL2에서 Mesa 소프트웨어 렌더러 사용으로 CPU 400% 점유 → RTF 0.006x
+    # Foxglove Studio(ws://localhost:8765)로 시각화하므로 GUI 비활성화
+    # 필요 시 별도 터미널에서: gz sim -g
+    # gazebo_gui = ExecuteProcess(
+    #     cmd=['gz', 'sim', '-g'],  # GUI 모드 (-g = GUI only)
+    #     output='screen',
+    # )
 
     # 로봇 스폰
     spawn_robot = Node(
@@ -137,6 +142,52 @@ def generate_launch_description():
             '-file', default_sdf_model,
             '-x', '0', '-y', '0', '-z', '0.5',
         ],
+    )
+
+    # ================================================================
+    # 2b. map → odom Static TF (C50: AMCL 대체)
+    # AMCL은 빈 평지에서 LiDAR 특징점 부족으로 초기화 실패 → map 프레임 미발행.
+    # static_transform_publisher로 map→odom identity 변환을 고정 발행한다.
+    # (C51 GPS datum 고정 + ekf_global.publish_tf: true 완료 시 이 노드를 제거)
+    # ================================================================
+    map_to_odom_static = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='map_to_odom_static',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+    )
+
+    # ================================================================
+    # 2c. Gazebo Scoped 센서 Frame ID 브릿지 (Static TF)
+    # Gazebo Harmonic은 센서 메시지 frame_id를 "ss500/link/sensor" 형태로 발행.
+    # URDF TF 트리에는 단순 이름(lidar_link, imu_link)만 있으므로,
+    # 두 네임스페이스 사이에 identity transform을 추가한다.
+    # ================================================================
+    lidar_frame_bridge = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='lidar_frame_bridge',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'lidar_link', 'ss500/lidar_link/gpu_lidar'],
+    )
+
+    imu_frame_bridge = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='imu_frame_bridge',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'imu_link', 'ss500/imu_link/imu_sensor'],
+    )
+
+    # GPS 센서도 Gazebo scoped frame_id "ss500/gps_link/gps_sensor" 발행
+    # navsat_transform_node가 base_footprint→gps_sensor TF를 찾으므로 브릿지 필요
+    gps_frame_bridge = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='gps_frame_bridge',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'gps_link', 'ss500/gps_link/gps_sensor'],
     )
 
     # ================================================================
@@ -193,7 +244,7 @@ def generate_launch_description():
     )
 
     # ================================================================
-    # 5. Nav2 Bringup
+    # 5. Nav2 Bringup (C61-fix: smoother_server 파라미터 수정)
     # ================================================================
     nav2_bringup_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -204,7 +255,8 @@ def generate_launch_description():
             'map': map_yaml,
             'params_file': params_file,
             'autostart': autostart,
-            'use_composition': 'false',
+            'use_composition': 'False',
+            'log_level': 'info',  # C61-fix: info 로깅으로 정리
         }.items(),
     )
 
@@ -236,6 +288,18 @@ def generate_launch_description():
     )
 
     # ================================================================
+    # 7b. cmd_vel Relay (C61-fix: collision_monitor 우회)
+    # velocity_smoother의 cmd_vel_smoothed를 cmd_vel로 publish
+    # ================================================================
+    cmd_vel_relay = Node(
+        package='ad_bringup',
+        executable='cmd_vel_relay',
+        name='cmd_vel_relay',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+
+    # ================================================================
     # Launch Description 조합
     # ================================================================
     return LaunchDescription([
@@ -253,10 +317,18 @@ def generate_launch_description():
         # 1. TF 발행
         robot_state_publisher,
 
-        # 2. Gazebo 시뮬레이터
+        # 2. Gazebo 시뮬레이터 (GUI 제거 — RTF 개선)
         gazebo_server,
-        gazebo_gui,
+        # gazebo_gui,  # WSL2 CPU 병목 — Foxglove로 대체
         spawn_robot,
+
+        # 2b. map→odom 정적 변환 (AMCL 대체 — C50)
+        map_to_odom_static,
+
+        # 2c. 센서 Frame ID 브릿지 (Gazebo scoped name → URDF name)
+        lidar_frame_bridge,
+        imu_frame_bridge,
+        gps_frame_bridge,
 
         # 3. 토픽 브릿지
         ros_gz_bridge,
@@ -269,12 +341,23 @@ def generate_launch_description():
             navsat_transform_node,
         ]),
 
-        # 5. 네비게이션 스택
-        nav2_bringup_launch,
+        # 5~7: Gazebo 기동 대기 후 실행 (TF base_link→odom 준비 시간 확보)
+        TimerAction(
+            period=15.0,
+            actions=[
+                LogInfo(msg='[Simulation] 15s 경과 — Nav2 + WaypointManager + Foxglove 시작'),
 
-        # 6. 웨이포인트 매니저
-        waypoint_manager,
+                # 5. 네비게이션 스택 (C61-fix: debug 로깅으로 smoother_server 문제 확인)
+                nav2_bringup_launch,
 
-        # 7. Foxglove Bridge
-        foxglove_bridge,
+                # 6. 웨이포인트 매니저
+                waypoint_manager,
+
+                # 7. Foxglove Bridge
+                foxglove_bridge,
+
+                # 7b. cmd_vel Relay (collision_monitor 우회)
+                cmd_vel_relay,
+            ],
+        ),
     ])

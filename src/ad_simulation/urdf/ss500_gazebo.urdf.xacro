@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Gazebo Harmonic Plugins for SS500 -->
+
+  <!-- Base Link Gazebo Properties -->
+  <gazebo reference="base_link">
+    <material>Gazebo/Green</material>
+    <mu1>0.8</mu1>
+    <mu2>0.8</mu2>
+  </gazebo>
+
+  <!-- Wheel Properties -->
+  <gazebo reference="front_left_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+  </gazebo>
+  <gazebo reference="front_right_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+  </gazebo>
+  <gazebo reference="rear_left_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+  </gazebo>
+  <gazebo reference="rear_right_wheel">
+    <material>Gazebo/Black</material>
+    <mu1>0.9</mu1>
+    <mu2>0.9</mu2>
+  </gazebo>
+
+  <!-- Differential Drive Plugin (Gazebo Harmonic) -->
+  <gazebo>
+    <plugin filename="libgz-sim-diff-drive-system.so" name="gz::sim::systems::DiffDrive">
+      <left_joint>front_left_wheel_joint</left_joint>
+      <right_joint>front_right_wheel_joint</right_joint>
+      <wheel_separation>1.2</wheel_separation>
+      <wheel_radius>0.4</wheel_radius>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <topic>cmd_vel</topic>
+      <odom_topic>odom</odom_topic>
+      <frame_id>odom</frame_id>
+      <child_frame_id>base_footprint</child_frame_id>
+      <linear_velocity>5</linear_velocity>
+      <angular_velocity>2</angular_velocity>
+    </plugin>
+  </gazebo>
+
+  <!-- Odometry Publisher -->
+  <gazebo>
+    <plugin filename="libgz-sim-odometry-publisher-system.so" name="gz::sim::systems::OdometryPublisher">
+      <odom_topic>odom</odom_topic>
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <dimensions>2</dimensions>
+    </plugin>
+  </gazebo>
+
+  <!-- Joint State Publisher -->
+  <gazebo>
+    <plugin filename="libgz-sim-joint-state-publisher-system.so" name="gz::sim::systems::JointStatePublisher">
+      <joint_name>front_left_wheel_joint</joint_name>
+      <joint_name>front_right_wheel_joint</joint_name>
+      <joint_name>rear_left_wheel_joint</joint_name>
+      <joint_name>rear_right_wheel_joint</joint_name>
+    </plugin>
+  </gazebo>
+
+</robot>

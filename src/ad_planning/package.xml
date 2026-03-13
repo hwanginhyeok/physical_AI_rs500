@@ -3,18 +3,21 @@
 <package format="3">
   <name>ad_planning</name>
   <version>0.1.0</version>
-  <description>자율주행 판단/경로 계획 ROS2 노드 패키지</description>
-  <maintainer email="team@todo.todo">team</maintainer>
-  <license>MIT</license>
+  <description>Learned Planning for agricultural autonomous driving (Diffusion-based)</description>
+  <maintainer email="user@example.com">user</maintainer>
+  <license>Apache-2.0</license>
 
   <depend>rclpy</depend>
+  <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>std_msgs</depend>
-  <depend>ad_core</depend>
-  <depend>ad_interfaces</depend>
+  <depend>python3-torch</depend>
+  <depend>python3-numpy</depend>
 
-  <buildtool_depend>ament_python</buildtool_depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
 
   <export>
     <build_type>ament_python</build_type>

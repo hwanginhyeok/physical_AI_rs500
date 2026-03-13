@@ -1,0 +1,37 @@
+"""Learned Perception 설정.
+
+MX550 (2GB VRAM) 환경에 최적화된 설정.
+"""
+
+learned_perception_node:
+  ros__parameters:
+    # 모델 설정
+    model_dir: ""  # 비어있으면 패키지 내 models/ 사용
+    device: ""     # 비어있으면 auto (cuda > cpu)
+    
+    # 추론 설정
+    inference_rate: 10.0      # Hz (최대 10fps)
+    conf_threshold: 0.3       # 기본 신뢰도 임계값
+    
+    # 출력 설정
+    publish_debug_image: true
+    
+    # 칵메라 설정
+    camera_height: 1.2        # m, 지면으로부터 높이
+    row_spacing: 0.75         # m, 작물 행 간격 (표준 75cm)
+    
+    # 모델별 설정
+    terrain_segmentation:
+      model: "yolov8n-seg"    # yolov8n-seg, yolov8s-seg
+      conf_threshold: 0.3
+      
+    obstacle_detection:
+      model: "yolov8n"        # yolov8n, yolov8s
+      conf_threshold: 0.4
+      nms_threshold: 0.5
+      max_distance: 20.0      # m
+      
+    crop_row_extraction:
+      min_row_length: 3.0     # m
+      expected_spacing: 0.75  # m
+      spacing_tolerance: 0.3  # 30%

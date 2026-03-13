@@ -44,3 +44,9 @@ desktop.ini
 
 # colcon
 .colcon/
+
+# Model weights
+*.pt
+
+# Simulation results
+results/

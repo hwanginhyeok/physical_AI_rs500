@@ -11,10 +11,17 @@ Phase 2 확장:
 import json
 import math
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
 from ad_core.datatypes import Pose2D
+from ad_core.utils import normalize_angle, EPSILON, clamp
+
+# 상수 정의
+DEFAULT_STEERING_EFFICIENCY = 0.8
+DEFAULT_CALIBRATION_ALPHA = 0.05
+DEFAULT_TRACK_WIDTH = 1.4
+DEFAULT_MAX_SPEED = 1.0
 
 
 class SkidSteerModel:
@@ -32,9 +39,9 @@ class SkidSteerModel:
 
     def __init__(
         self,
-        track_width: float = 1.4,
-        max_speed: float = 1.0,
-        steering_efficiency: float = 0.8,
+        track_width: float = DEFAULT_TRACK_WIDTH,
+        max_speed: float = DEFAULT_MAX_SPEED,
+        steering_efficiency: float = DEFAULT_STEERING_EFFICIENCY,
     ) -> None:
         """초기화.
 
@@ -68,7 +75,7 @@ class SkidSteerModel:
             (v_left, v_right) 포화 처리된 트랙 속도 (m/s).
         """
         # 조향 효율을 반영한 유효 트랙 간격
-        effective_width = self.track_width / max(self.steering_efficiency, 1e-6)
+        effective_width = self.track_width / max(self.steering_efficiency, EPSILON)
         half_w = effective_width / 2.0
 
         v_left = linear - angular * half_w
@@ -139,7 +146,7 @@ class SkidSteerModel:
             yaw=current_pose.yaw,
         )
 
-        if abs(angular) < 1e-6:
+        if abs(angular) < EPSILON:
             # 직진 모델: 곡률이 거의 0
             new_pose.x += linear * math.cos(current_pose.yaw) * dt
             new_pose.y += linear * math.sin(current_pose.yaw) * dt
@@ -150,7 +157,7 @@ class SkidSteerModel:
             icr_y = current_pose.y + radius * math.cos(current_pose.yaw)
 
             d_theta = angular * dt
-            new_pose.yaw = _normalize_angle(current_pose.yaw + d_theta)
+            new_pose.yaw = normalize_angle(current_pose.yaw + d_theta)
 
             # ICR을 중심으로 회전
             new_pose.x = icr_x + radius * math.sin(new_pose.yaw)
@@ -183,7 +190,7 @@ class SkidSteerModel:
         eff_right = v_right * (1.0 - self.slip_ratio)
 
         diff = eff_right - eff_left
-        if abs(diff) < 1e-9:
+        if abs(diff) < EPSILON:
             return float('inf')  # 직진 — ICR이 무한대
 
         half_w = self.track_width / 2.0
@@ -209,27 +216,11 @@ class SkidSteerModel:
             포화 처리된 (v_left, v_right).
         """
         max_abs = max(abs(v_left), abs(v_right))
-        if max_abs > self.max_speed and max_abs > 1e-9:
+        if max_abs > self.max_speed and max_abs > EPSILON:
             scale = self.max_speed / max_abs
             v_left *= scale
             v_right *= scale
         return v_left, v_right
-
-
-def _normalize_angle(angle: float) -> float:
-    """각도를 [-pi, pi) 범위로 정규화한다.
-
-    Args:
-        angle: 입력 각도 (rad).
-
-    Returns:
-        정규화된 각도 (rad).
-    """
-    while angle > math.pi:
-        angle -= 2.0 * math.pi
-    while angle <= -math.pi:
-        angle += 2.0 * math.pi
-    return angle
 
 
 # ====================================================================== #
@@ -332,10 +323,10 @@ class CalibratedSkidSteerModel(SkidSteerModel):
 
     def __init__(
         self,
-        track_width: float = 1.4,
-        max_speed: float = 1.0,
-        steering_efficiency: float = 0.8,
-        ema_alpha: float = 0.05,
+        track_width: float = DEFAULT_TRACK_WIDTH,
+        max_speed: float = DEFAULT_MAX_SPEED,
+        steering_efficiency: float = DEFAULT_STEERING_EFFICIENCY,
+        ema_alpha: float = DEFAULT_CALIBRATION_ALPHA,
         calibration_file: Optional[str] = None,
         calibration_enabled: bool = True,
         min_angular_for_track_cal: float = 0.1,
@@ -377,7 +368,7 @@ class CalibratedSkidSteerModel(SkidSteerModel):
         )
 
         # EMA 파라미터
-        self.ema_alpha: float = max(0.001, min(1.0, ema_alpha))
+        self.ema_alpha: float = clamp(ema_alpha, 0.001, 1.0)
 
         # 캘리브레이션 설정
         self.calibration_enabled: bool = calibration_enabled

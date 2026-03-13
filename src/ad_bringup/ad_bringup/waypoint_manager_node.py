@@ -28,8 +28,9 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from geometry_msgs.msg import PoseStamped
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import String, ColorRGBA
-from std_srvs.srv import Trigger
+from std_srvs.srv import Trigger, Trigger_Request, Trigger_Response
 from nav2_msgs.action import FollowWaypoints, NavigateThroughPoses
+from rclpy.action.client import ClientGoalHandle
 
 from builtin_interfaces.msg import Duration
 
@@ -113,7 +114,7 @@ class WaypointManagerNode(Node):
     # 구독 콜백
     # ------------------------------------------------------------------
 
-    def _goal_pose_cb(self, msg: PoseStamped):
+    def _goal_pose_cb(self, msg: PoseStamped) -> None:
         """Foxglove 클릭으로 들어온 goal_pose를 웨이포인트로 추가."""
         if self._navigating:
             self.get_logger().warn('네비게이션 진행 중 — 웨이포인트 추가 무시')
@@ -133,7 +134,7 @@ class WaypointManagerNode(Node):
     # 서비스 콜백
     # ------------------------------------------------------------------
 
-    def _start_cb(self, request, response):
+    def _start_cb(self, request: Trigger_Request, response: Trigger_Response) -> Trigger_Response:
         """수집된 웨이포인트로 네비게이션 시작."""
         if self._navigating:
             response.success = False
@@ -157,7 +158,7 @@ class WaypointManagerNode(Node):
         response.message = f'{len(self._waypoints)}개 웨이포인트 네비게이션 시작'
         return response
 
-    def _clear_cb(self, request, response):
+    def _clear_cb(self, request: Trigger_Request, response: Trigger_Response) -> Trigger_Response:
         """웨이포인트 목록 초기화."""
         if self._navigating:
             response.success = False
@@ -171,7 +172,7 @@ class WaypointManagerNode(Node):
         self.get_logger().info('웨이포인트 초기화')
         return response
 
-    def _cancel_cb(self, request, response):
+    def _cancel_cb(self, request: Trigger_Request, response: Trigger_Response) -> Trigger_Response:
         """진행 중인 네비게이션 취소."""
         if not self._navigating or self._goal_handle is None:
             response.success = False
@@ -184,7 +185,7 @@ class WaypointManagerNode(Node):
         response.message = '네비게이션 취소 요청 전송'
         return response
 
-    def _remove_last_cb(self, request, response):
+    def _remove_last_cb(self, request: Trigger_Request, response: Trigger_Response) -> Trigger_Response:
         """마지막 웨이포인트 제거."""
         if self._navigating:
             response.success = False
@@ -209,9 +210,33 @@ class WaypointManagerNode(Node):
     # Nav2 액션 전송
     # ------------------------------------------------------------------
 
+    def _wait_for_action_server(self, client, name: str, 
+                                  timeout_sec: float = 5.0, 
+                                  retries: int = 3) -> bool:
+        """액션 서버 연결을 재시도하며 대기한다.
+
+        Args:
+            client: ActionClient 인스턴스.
+            name: 액션 서버 이름 (로깅용).
+            timeout_sec: 각 시도별 타임아웃 (초).
+            retries: 재시도 횟수.
+
+        Returns:
+            연결 성공 여부.
+        """
+        for attempt in range(retries):
+            if client.wait_for_server(timeout_sec=timeout_sec):
+                return True
+            self.get_logger().warn(
+                f'{name} 액션 서버 대기 중... ({attempt + 1}/{retries})'
+            )
+        return False
+
     def _send_follow_waypoints(self):
         """FollowWaypoints 액션 전송."""
-        if not self._follow_wp_client.wait_for_server(timeout_sec=5.0):
+        if not self._wait_for_action_server(
+            self._follow_wp_client, 'FollowWaypoints', timeout_sec=5.0, retries=3
+        ):
             self.get_logger().error('FollowWaypoints 액션 서버 연결 실패')
             self._navigating = False
             return
@@ -227,7 +252,7 @@ class WaypointManagerNode(Node):
         )
         future.add_done_callback(self._follow_wp_goal_response_cb)
 
-    def _follow_wp_goal_response_cb(self, future):
+    def _follow_wp_goal_response_cb(self, future) -> None:
         """FollowWaypoints goal 응답 처리."""
         self._goal_handle = future.result()
         if not self._goal_handle.accepted:
@@ -239,12 +264,12 @@ class WaypointManagerNode(Node):
         result_future = self._goal_handle.get_result_async()
         result_future.add_done_callback(self._follow_wp_result_cb)
 
-    def _follow_wp_feedback_cb(self, feedback_msg):
+    def _follow_wp_feedback_cb(self, feedback_msg) -> None:
         """FollowWaypoints 피드백 처리."""
         self._current_waypoint_idx = feedback_msg.feedback.current_waypoint
         self._publish_markers()
 
-    def _follow_wp_result_cb(self, future):
+    def _follow_wp_result_cb(self, future) -> None:
         """FollowWaypoints 결과 처리."""
         result = future.result()
         status = result.status
@@ -269,7 +294,9 @@ class WaypointManagerNode(Node):
 
     def _send_navigate_through_poses(self):
         """NavigateThroughPoses 액션 전송."""
-        if not self._nav_through_client.wait_for_server(timeout_sec=5.0):
+        if not self._wait_for_action_server(
+            self._nav_through_client, 'NavigateThroughPoses', timeout_sec=5.0, retries=3
+        ):
             self.get_logger().error('NavigateThroughPoses 액션 서버 연결 실패')
             self._navigating = False
             return
@@ -285,7 +312,7 @@ class WaypointManagerNode(Node):
         )
         future.add_done_callback(self._nav_through_goal_response_cb)
 
-    def _nav_through_goal_response_cb(self, future):
+    def _nav_through_goal_response_cb(self, future) -> None:
         """NavigateThroughPoses goal 응답 처리."""
         self._goal_handle = future.result()
         if not self._goal_handle.accepted:
@@ -297,14 +324,14 @@ class WaypointManagerNode(Node):
         result_future = self._goal_handle.get_result_async()
         result_future.add_done_callback(self._nav_through_result_cb)
 
-    def _nav_through_feedback_cb(self, feedback_msg):
+    def _nav_through_feedback_cb(self, feedback_msg) -> None:
         """NavigateThroughPoses 피드백 — 남은 포즈 수로 진행률 추정."""
         remaining = feedback_msg.feedback.number_of_poses_remaining
         total = len(self._waypoints)
         self._current_waypoint_idx = max(0, total - remaining)
         self._publish_markers()
 
-    def _nav_through_result_cb(self, future):
+    def _nav_through_result_cb(self, future) -> None:
         """NavigateThroughPoses 결과 처리."""
         result = future.result()
         status = result.status

@@ -40,6 +40,7 @@ setup(
     entry_points={
         'console_scripts': [
             'waypoint_manager = ad_bringup.waypoint_manager_node:main',
+            'cmd_vel_relay = ad_bringup.cmd_vel_relay:main',
         ],
     },
 )

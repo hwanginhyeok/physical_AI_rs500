@@ -28,7 +28,7 @@
 ├── .claude/                # Claude Code 설정
 ├── README.md               # 프로젝트 개요
 ├── PROJECT_MAP.md          # [이 문서] 프로젝트 지도
-├── task_autonomou.md       # 작업 현황 관리 (테이블 형식)
+├── docs/프로젝트/TASK.md    # 작업 현황 관리 (통합 단일 파일)
 └── .gitignore              # Git 추적 제외 규칙
 ```
 
@@ -36,7 +36,7 @@
 |------|------|
 | `README.md` | 프로젝트 소개, 패키지 구성, 빌드/실행 방법 |
 | `PROJECT_MAP.md` | 디렉토리/파일별 역할 설명 (이 문서). 팀장이 관리 |
-| `task_autonomou.md` | 작업 현황 테이블, 완료 이력, TODO 아이디어 |
+| `docs/프로젝트/TASK.md` | 작업 현황 테이블, 완료 이력, TODO 아이디어 (통합 관리) |
 | `.gitignore` | build/, install/, log/, __pycache__/ 등 제외 |
 
 ---

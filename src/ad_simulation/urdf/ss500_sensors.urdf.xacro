@@ -1,0 +1,209 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- SS500 Sensors Configuration for Gazebo Harmonic -->
+
+  <!-- Camera Link -->
+  <link name="camera_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.1"/>
+      <inertia ixx="0.001" ixy="0" ixz="0"
+               iyy="0.001" iyz="0"
+               izz="0.001"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.05 0.1 0.05"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="camera_mount"/>
+    <child link="camera_link"/>
+    <origin xyz="0.05 0 0.15" rpy="0 0.1 0"/>
+    <!-- Slightly tilted down (0.1 rad ~ 5.7 degrees) -->
+  </joint>
+
+  <!-- Camera Optical Frame (for ROS convention) -->
+  <link name="camera_optical_frame"/>
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+    <!-- Rotate to match camera optical convention -->
+  </joint>
+
+  <!-- Gazebo Camera (Gazebo Harmonic) -->
+  <gazebo reference="camera_link">
+    <sensor type="camera" name="front_camera">
+      <camera>
+        <horizontal_fov>1.047</horizontal_fov>  <!-- 60 degrees -->
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.05</near>
+          <far>100</far>
+        </clip>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.007</stddev>
+        </noise>
+      </camera>
+      <always_on>true</always_on>
+      <update_rate>30</update_rate>
+      <visualize>true</visualize>
+      <topic>camera/image_raw</topic>
+    </sensor>
+  </gazebo>
+
+  <!-- GPS Link -->
+  <link name="gps_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.03" length="0.02"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+
+  <joint name="gps_joint" type="fixed">
+    <parent link="gps_imu_mount"/>
+    <child link="gps_link"/>
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gazebo GPS (Gazebo Harmonic) -->
+  <gazebo reference="gps_link">
+    <sensor type="navsat" name="gps_sensor">
+      <always_on>true</always_on>
+      <update_rate>10</update_rate>
+      <topic>gps/fix</topic>
+    </sensor>
+  </gazebo>
+
+  <!-- IMU Link -->
+  <link name="imu_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.05 0.05 0.02"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="gps_imu_mount"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gazebo IMU (Gazebo Harmonic) -->
+  <gazebo reference="imu_link">
+    <sensor type="imu" name="imu_sensor">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <topic>imu/data</topic>
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0</mean>
+              <stddev>0.01</stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <!-- 2D LiDAR (Optional) -->
+  <link name="lidar_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.04" length="0.06"/>
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.8 0 0.9" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gazebo LiDAR (Gazebo Harmonic) -->
+  <gazebo reference="lidar_link">
+    <sensor type="gpu_lidar" name="lidar_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <topic>scan</topic>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.3</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+    </sensor>
+  </gazebo>
+
+</robot>

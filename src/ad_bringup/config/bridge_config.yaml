@@ -4,6 +4,8 @@
 # =============================================================================
 
 # --- 제어 입력 (ROS2 → Gazebo) ---
+# C61-fix: velocity_smoother 출력을 Gazebo로 직접 연결 (collision_monitor 우회)
+# Gazebo TrackedVehicle plugin은 /cmd_vel 수신
 - topic_name: /cmd_vel
   ros_type_name: geometry_msgs/msg/Twist
   gz_type_name: gz.msgs.Twist

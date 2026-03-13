@@ -17,11 +17,11 @@ ekf_local:
     # 프레임 설정
     map_frame: map
     odom_frame: odom
-    base_link_frame: base_link
+    base_link_frame: base_footprint
     world_frame: odom                   # 로컬 EKF는 odom 프레임 기준
 
     # 변환 발행 설정
-    publish_tf: true                    # odom -> base_link 변환 발행
+    publish_tf: true                    # odom -> base_footprint 변환 발행
     publish_acceleration: true          # 가속도 토픽 발행
 
     # ----- odom0: 휠 오도메트리 -----
@@ -99,11 +99,11 @@ ekf_global:
     # 프레임 설정
     map_frame: map
     odom_frame: odom
-    base_link_frame: base_link
+    base_link_frame: base_footprint
     world_frame: map                    # 글로벌 EKF는 map 프레임 기준
 
     # 변환 발행 설정
-    publish_tf: true                    # map -> odom 변환 발행
+    publish_tf: false                   # C50: static_transform_publisher가 map→odom 담당. C51(datum 고정) 완료 후 true로 전환 예정
     publish_acceleration: false
 
     # ----- odom0: ekf_local 출력 (로컬 EKF 결과) -----
@@ -180,10 +180,14 @@ navsat_transform:
     zero_altitude: true                 # 고도를 0으로 고정 (2D 주행)
     broadcast_cartesian_transform: false  # UTM 변환 TF 발행 안 함
     publish_filtered_gps: true          # 필터링된 GPS 발행
-    wait_for_datum: false               # datum 대기 없이 첫 GPS로 원점 설정
 
-    # 입력 토픽 리매핑용 파라미터
-    # - GPS 입력: /sensor/gps (NavSatFix)
-    # - IMU 입력: /sensor/imu (Imu)
-    # - Odometry 입력: /odometry/filtered (글로벌 EKF 출력)
-    # - Odometry 출력: /odometry/gps
+    # C51: GPS datum 고정 (flat_field.sdf spherical_coordinates와 동일)
+    wait_for_datum: true                # 하드코딩 datum 사용
+    datum: [37.5665, 126.978, 0.0]     # flat_field.sdf <spherical_coordinates>와 일치
+
+    # C58-fix: GPS 프레임 설정 (URDF의 gps_link 사용)
+    # Gazebo는 ss500/gps_link/gps_sensor를 발행하지만,
+    # TF 브릿지로 gps_link <-> ss500/gps_link/gps_sensor 연결됨
+    gps_frame_id: "gps_link"            # URDF의 gps_link 프레임 사용
+    base_link_frame: "base_footprint"   # 기준 프레임
+    world_frame: "map"                  # 월드 프레임
