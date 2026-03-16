@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-16 (C60 Diffusion 연결, C66 Mono Depth 노드 완료)
+> 마지막 갱신: 2026-03-16 (C68 CAN 버그 수정, C66 완료, C60 Diffusion 연결)
 >
 > **관리 룰**
 > - 상태: `예정` → `진행` → `완료` (완료 즉시 완료 섹션 최상단으로 이동)
@@ -62,7 +62,6 @@
 | C46 | 인지 | 지형 traversability 분류 (Wild Visual Navigation 방식) | P3 | — | 예정 | |
 | C47 | 인프라 | CI/CD headless 시뮬레이션 파이프라인 | P3 | — | 예정 | |
 | C49 | 인프라 | CLAUDE.md 매뉴얼 트리거 기반 전환 | P3 | 그린 | 예정 | `.claude/rules/` 파일이 5개 이상으로 늘어날 때 착수 |
-| C68 | 제어 | CAN 브릿지 실차 통합 테스트 | P3 | — | 예정 | C36 코드 완료. STP 수령 + 실차 연결 후 검증 |
 | C69 | 아키텍처 | 미션 관리 플러그인 설계 (농업/군사/탐사) | P3 | — | 예정 | Application Layer 교체 구조. Phase 1 안정화 후 착수 |
 
 ---
@@ -71,6 +70,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C68 | CAN 브릿지 Twist→트랙 변환 수정 | P2 | 그린 | 2026-03-16 | angular.z 미반영 버그 수정. SkidSteerModel 연결. 실차 조향 가능하도록 |
 | C66 | 실물 Mono Depth 노드 | P2 | 그린 | 2026-03-16 | mono_depth_node.py: MiDaS/DepthAnything → PointCloud2. 실차 테스트 대기 |
 | C48 | ad_perception / ad_control Mock 노드 테스트 | P2 | 그린 | 2026-03-16 | 25 tests (hybrid_e2e_logic 11 + perception_logic 14). 전체 211/211 통과 |
 | C65 | C64 반영 — 상위 문서 갱신 + TASK 정합성 정리 | P1 | 그린 | 2026-03-16 | App Definition, SYSTEM_OVERVIEW, TASK.md C64 Camera-Only 반영. 누락 TASK 5건(C66~C69) 등록 |
