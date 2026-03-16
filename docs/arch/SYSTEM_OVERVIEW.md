@@ -175,15 +175,16 @@
 │              └─ Decision: proceed/slow_down/replan/stop              │
 │                    │                                                  │
 │                    ▼                                                  │
-│              Hybrid E2E Node (통합 제어)                              │
-│              ├─ 20Hz control loop                                    │
+│              Hybrid E2E Node (통합 제어) ✅ cmd_vel 발행 연결          │
+│              ├─ 20Hz control loop + /odometry/local 구독             │
+│              ├─ 멀티카메라(front/left/right) 인지 연결               │
 │              └─ 4-level fallback:                                     │
-│                  L0: Diffusion (⬜ 미훈련)                            │
+│                  L0: Diffusion ✅ 연결 (미훈련 — 랜덤 궤적 생성)      │
 │                  L1: Fields2Cover (⬜ stub)                           │
-│                  L2: Pure Pursuit (⬜ stub)                           │
-│                  L3: Emergency Stop (✅)                              │
+│                  L2: Pure Pursuit ✅ 직진 fallback 궤적               │
+│                  L3: Emergency Stop ✅ cmd_vel zero                   │
 │                                                                       │
-│  ★ Phase 1 (기반 구조) 완료 — Phase 2 (모델 훈련) 미착수             │
+│  ★ Phase 1~2 (구조 + 연결) 완료 — Phase 3 (모델 훈련) 미착수        │
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
