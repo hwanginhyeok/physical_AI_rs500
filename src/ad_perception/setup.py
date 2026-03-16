@@ -29,6 +29,7 @@ setup(
     entry_points={
         'console_scripts': [
             'learned_perception_node = ad_perception.learned_perception_node:main',
+            'mono_depth_node = ad_perception.mono_depth_node:main',
         ],
     },
 )
