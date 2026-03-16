@@ -250,12 +250,12 @@ class HybridE2ENode(Node):
 
         # 다음 웨이포인트를 향해 Pure Pursuit 스타일로 cmd_vel 계산
         import math
-        target = trajectory.waypoints[min(2, len(trajectory.waypoints) - 1)]
-        dx = target[0] - self._current_pose.x
-        dy = target[1] - self._current_pose.y
+        wp = trajectory.waypoints[min(2, len(trajectory.waypoints) - 1)]
+        dx = wp.pose.x - self._current_pose.x
+        dy = wp.pose.y - self._current_pose.y
         distance = math.hypot(dx, dy)
         target_angle = math.atan2(dy, dx)
-        angle_diff = target_angle - self._current_pose.theta
+        angle_diff = target_angle - self._current_pose.yaw
         # normalize to [-pi, pi]
         angle_diff = math.atan2(math.sin(angle_diff), math.cos(angle_diff))
 
