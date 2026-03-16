@@ -24,6 +24,7 @@ from ad_core.hybrid_e2e_types import (
     TerrainClass,
 )
 from ad_core.datatypes import Pose2D
+from ad_core.pure_pursuit import PurePursuitTracker
 from ad_control.safety_guardian import SafetyGuardian, GuardianConfig
 
 
@@ -48,6 +49,16 @@ class HybridE2ENode(Node):
         # 현재 차량 상태
         self._current_pose: Optional[Pose2D] = None
         self._current_speed: float = 0.0
+
+        # Diffusion Planner (Level 0)
+        if self.get_parameter('use_learned_planning').value:
+            try:
+                from ad_planning.diffusion_planner import DiffusionPlanner, PlannerConfig
+                planner_config = PlannerConfig(device="cpu", num_diffusion_steps=10)
+                self._diffusion_planner = DiffusionPlanner(planner_config)
+                self.get_logger().info('Diffusion Planner loaded (Level 0)')
+            except Exception as e:
+                self.get_logger().warn(f'Diffusion Planner unavailable: {e}')
 
         # Fallback 레벨
         self._fallback_level = 0  # 0: normal, 1: fields2cover, 2: pure_pursuit, 3: emergency
@@ -227,10 +238,42 @@ class HybridE2ENode(Node):
     
     def _run_learned_planning(self, perception: PerceptionFeatures) -> Optional[PlannedTrajectory]:
         """Learned Planning (Diffusion Model) 실행."""
-        # TODO: Diffusion Planner 통합
-        # 현재는 미구현
-        self.get_logger().debug('Learned planning not yet implemented')
-        return None
+        if not hasattr(self, '_diffusion_planner'):
+            return None
+
+        if not self._current_pose:
+            return None
+
+        try:
+            results = self._diffusion_planner.generate(
+                perception,
+                self._current_pose,
+                self._current_speed,
+                num_samples=1,
+            )
+            if not results:
+                return None
+
+            # dict waypoints → TrajectoryPoint 변환
+            wp_dicts = results[0]['waypoints']
+            from ad_core.hybrid_e2e_types import TrajectoryPoint
+            waypoints = []
+            for wp in wp_dicts:
+                waypoints.append(TrajectoryPoint(
+                    pose=Pose2D(x=wp['x'], y=wp['y'], yaw=wp['yaw']),
+                    velocity=wp['velocity'],
+                    acceleration=0.0,
+                    curvature=0.0,
+                    timestamp=wp['timestamp'],
+                ))
+
+            return PlannedTrajectory(
+                waypoints=waypoints,
+                confidence=results[0]['confidence'],
+            )
+        except Exception as e:
+            self.get_logger().warn(f'Diffusion planner error: {e}')
+            return None
     
     def _run_fields2cover_planning(self, perception: PerceptionFeatures) -> Optional[PlannedTrajectory]:
         """Fields2Cover 기반 계획."""
@@ -239,9 +282,34 @@ class HybridE2ENode(Node):
         return None
     
     def _run_pure_pursuit_planning(self, perception: PerceptionFeatures) -> Optional[PlannedTrajectory]:
-        """기존 Pure Pursuit 방식."""
-        # TODO: 기존 ad_planning 연동
-        return None
+        """기존 Pure Pursuit 방식 — 직진 fallback 궤적 생성."""
+        if not self._current_pose:
+            return None
+
+        import math
+        from ad_core.hybrid_e2e_types import TrajectoryPoint
+
+        # 현재 방향으로 5m 직진 궤적 (0.5m 간격, 10 waypoints)
+        waypoints = []
+        for i in range(10):
+            dist = 0.5 * (i + 1)
+            waypoints.append(TrajectoryPoint(
+                pose=Pose2D(
+                    x=self._current_pose.x + dist * math.cos(self._current_pose.yaw),
+                    y=self._current_pose.y + dist * math.sin(self._current_pose.yaw),
+                    yaw=self._current_pose.yaw,
+                ),
+                velocity=0.5,
+                acceleration=0.0,
+                curvature=0.0,
+                timestamp=dist / 0.5,
+            ))
+
+        return PlannedTrajectory(
+            waypoints=waypoints,
+            confidence=0.6,
+            generation_method="pure_pursuit",
+        )
     
     def _execute_trajectory(self, trajectory: PlannedTrajectory):
         """경로 실행 → cmd_vel 발행."""
