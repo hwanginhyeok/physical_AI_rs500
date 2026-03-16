@@ -13,6 +13,7 @@ from std_msgs.msg import String, Bool, Float32
 
 from ad_core.datatypes import VehicleCommand, VehicleFeedback
 from ad_core.can_interface import VehicleInterface
+from ad_core.skid_steer_model import SkidSteerModel
 
 from ad_can_bridge.ss500_codec import (
     CAN_ID_ADT2VCU1,
@@ -88,6 +89,9 @@ class CANBridgeNode(Node):
         self._encoder = SS500Encoder()
         self._decoder = SS500Decoder()
 
+        # 스키드 스티어 모델 (Twist → 좌/우 트랙 속도 변환)
+        self._skid_steer = SkidSteerModel(track_width=1.4, max_speed=1.5)
+
         # Alive Counter (0~15 순환)
         self._alive_counter = 0
 
@@ -117,12 +121,18 @@ class CANBridgeNode(Node):
 
     def _periodic_send(self) -> None:
         """주기적 CAN 메시지 전송 (50ms)."""
+        # Twist → 좌/우 트랙 속도 (m/s) → km/h
+        left_ms, right_ms = self._skid_steer.twist_to_tracks(
+            self._last_cmd.linear.x,
+            self._last_cmd.angular.z,
+        )
+
         # cmd_vel -> ADT2VCU1 인코딩
         adt_msg = ADT2VCU1(
             adt_valid=1,
             auto_ctrl_enable=1,
-            left_speed_cmd_kmh=self._last_cmd.linear.x * 3.6,  # m/s -> km/h
-            right_speed_cmd_kmh=self._last_cmd.linear.x * 3.6,
+            left_speed_cmd_kmh=left_ms * 3.6,   # m/s -> km/h
+            right_speed_cmd_kmh=right_ms * 3.6,  # m/s -> km/h
             alive_counter=self._alive_counter,
         )
 
