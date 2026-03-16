@@ -29,16 +29,44 @@
   gz_type_name: gz.msgs.IMU
   direction: GZ_TO_ROS
 
-# --- LiDAR 센서 (Gazebo → ROS2) ---
-- topic_name: /sensor/lidar
-  ros_type_name: sensor_msgs/msg/LaserScan
-  gz_type_name: gz.msgs.LaserScan
-  direction: GZ_TO_ROS
+# --- RGBD 카메라 3대 (Gazebo → ROS2) ---
+# C64-2: rgbd_camera → RGB Image + PointCloud2 브릿지
+# rgbd_camera 토픽 구조: {base}/image (RGB), {base}/depth_image, {base}/points
 
-# --- 전방 카메라 (Gazebo → ROS2) ---
-- topic_name: /sensor/camera/front
+# 전면 카메라 RGB
+- topic_name: /sensor/camera/front/image
   ros_type_name: sensor_msgs/msg/Image
   gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+# 전면 카메라 PointCloud2 (Nav2 costmap 장애물 소스)
+- topic_name: /sensor/camera/front/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+
+# 좌전방 카메라 RGB
+- topic_name: /sensor/camera/left/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+# 좌전방 카메라 PointCloud2
+- topic_name: /sensor/camera/left/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+
+# 우전방 카메라 RGB
+- topic_name: /sensor/camera/right/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+
+# 우전방 카메라 PointCloud2
+- topic_name: /sensor/camera/right/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
   direction: GZ_TO_ROS
 
 # --- 시뮬레이션 시계 (Gazebo → ROS2) ---

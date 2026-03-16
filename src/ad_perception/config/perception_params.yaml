@@ -1,8 +1,9 @@
 perception_node:
   ros__parameters:
-    # 센서 토픽명
+    # C64: Camera-Only 멀티카메라 토픽명
     topics:
-      camera: /sensor/camera/front
-      lidar: /sensor/lidar
+      camera_front: /sensor/camera/front/image
+      camera_left: /sensor/camera/left/image
+      camera_right: /sensor/camera/right/image
       gps: /sensor/gps
       imu: /sensor/imu

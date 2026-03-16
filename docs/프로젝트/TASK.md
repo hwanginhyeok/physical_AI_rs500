@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-11 (C61 Root Cause 확인 — DDS SharedMemory 충돌. 문서 정리 완료)
+> 마지막 갱신: 2026-03-16 (C65 완료 — 문서 정합성 정리, C66~C69 등록)
 >
 > **관리 룰**
 > - 상태: `예정` → `진행` → `완료` (완료 즉시 완료 섹션 최상단으로 이동)
@@ -15,8 +15,7 @@
 
 | # | 작업 | 담당 | 진행 상황 | 다음 할 일 |
 |---|------|------|-----------|-----------|
-| C61 | 차량 물리 동작 검증 | 그린 | Root Cause 확인: FastRTPS SharedMemory 포트 충돌 → velocity_smoother activate 실패. 알고리즘 분석 완료 (Rate Limiter). cmd_vel_relay 우회 노드 추가됨 | CycloneDDS 전환 → velocity_smoother active 확인 → cmd_vel 체인 검증 → Gazebo 차량 이동 확인 ([상세](task/C61_velocity_chain_debug.md)) |
-| C60 | 농업용 Hybrid E2E 아키텍처 구축 | 그린 | ARCH-004 설계, Safety Guardian 구현 완료. HybridE2E 노드 구현 진행 중 | Learned Perception/Planning 통합 준비 |
+| C60 | 농업용 Hybrid E2E 아키텍처 구축 | 그린 | ARCH-004 설계, Safety Guardian 완료. C64 Camera-Only 반영 완료 | Learned Perception/Planning 통합 |
 
 ---
 
@@ -26,8 +25,14 @@
 
 | 파일 | 변경 내용 | 확인 포인트 |
 |------|-----------|-------------|
-| `src/ad_bringup/launch/simulation_launch.py` | ① `gazebo_gui` 주석 처리 (GUI 제거), ② `gps_frame_bridge` 노드 추가 | GPU LiDAR 없이도 동작 OK 여부. GPS TF 브릿지 `gps_link → ss500/gps_link/gps_sensor` 방향 맞는지 |
-| `src/ad_bringup/config/nav2_params.yaml` | ① `global_costmap`: `rolling_window: true`, `width: 100`, `height: 100`, `static_layer` 제거, ② `local_costmap.voxel_layer.z_voxels`: 16 → 20 | rolling 100m 글로벌 맵으로 SmacPlannerLattice 경로 계획이 정상 동작하는지. VoxelLayer Z 확장 후 경고 해소 여부 |
+| `src/ad_bringup/models/ss500/model.sdf` | **C64**: LiDAR 제거, 카메라 3대 추가 (front/left/right), `camera` → `rgbd_camera` 전환, `depth_camera` 설정 추가 | Gazebo에서 RGB + PointCloud2 정상 발행 확인 |
+| `src/ad_bringup/config/bridge_config.yaml` | **C64**: LiDAR 브릿지 제거, 카메라 3대 RGB + PointCloud2 브릿지 추가 (6개 토픽) | ros2 topic list에서 /sensor/camera/*/points 확인 |
+| `src/ad_bringup/config/nav2_params.yaml` | **C64**: obstacle_layer에 PointCloud2 ×3 소스 연결 (global+local), collision_monitor에 pointcloud 소스 추가 | costmap에 장애물이 정상 표시되는지 |
+| `src/ad_bringup/urdf/ss500.urdf.xacro` | **C64**: LiDAR 링크/조인트 제거, 카메라 3대 링크/조인트 추가 | TF 트리에 camera_front/left/right_link 확인 |
+| `src/ad_bringup/launch/simulation_launch.py` | **C64**: LiDAR frame bridge 제거, 카메라 3대 frame bridge 추가 | 프레임 ID 브릿지 정상 동작 |
+| `src/ad_bringup/launch/record_launch.py` | **C64**: 토픽명 `/sensor/camera/*/image`로 변경 | — |
+| `src/ad_perception/ad_perception/perception_node.py` | **C64**: LiDAR 구독/처리 전면 제거, 멀티카메라(front/left/right) 구독 전환 | 카메라 3대 이미지 수신 확인 |
+| `src/ad_perception/config/perception_params.yaml` | **C64**: 토픽 파라미터 멀티카메라로 갱신 | — |
 
 ---
 
@@ -35,6 +40,7 @@
 
 | # | 작업 | 남은 사용자 액션 |
 |---|------|-----------------|
+| C61 | 차량 물리 동작 검증 | 시뮬레이션 실행 검증: ① `ros2 launch ad_bringup simulation_launch.py` ② `ros2 lifecycle get /velocity_smoother` → active 확인 ③ `ros2 topic pub /cmd_vel ... --once` → Gazebo 차량 이동 확인 ④ Nav2 end-to-end 웨이포인트 검증 ([상세](task/C61_velocity_chain_debug.md)) |
 | C44 | 집 PC WSL2 시뮬레이션 준비 | 체크리스트 Step 2~8 순차 진행 ([상세](task/C44_wsl2_simulation_setup.md)) |
 
 ---
@@ -44,17 +50,22 @@
 | # | 분야 | 작업 | 중요도 | 담당 | 상태 | 비고 |
 |---|------|------|--------|------|------|------|
 | | | **── P1 긴급 ──** | | | | |
-| C61 | 시뮬레이션 | 차량 물리 동작 검증 (cmd_vel → Gazebo) | P2 | 그린 | **진행** | Root Cause: DDS SharedMemory 포트 충돌 → velocity_smoother activate 실패. 해결: CycloneDDS 전환 예정 ([상세](task/C61_velocity_chain_debug.md)) |
-| C60 | 아키텍처 | 농업용 Hybrid E2E 아키텍처 구축 | P2 | 그린 | **진행** | ARCH-004 설계, Safety Guardian 구현 완료. HybridE2E 노드 구현 진행 중 ([상세](task/C60_hybrid_e2e_architecture.md)) |
-| C41 | 인프라 | 집 PC Gazebo 시뮬레이션 환경 구축 | P1 | 사용자 | 예정 | ⏳ C44 완료 후 진행. RTX 2060급 |
+| C63 | 인프라 | STP 도면 반영 → model.sdf 물리 파라미터 + 메시 갱신 | P1 | 그린 | 예정 | 실차 하드웨어 출고 완료. STP 파일 ~3/20 수령 예정. `scripts/stp_to_sdf.py` 준비 완료 |
+| C41 | 인프라 | 집 PC Gazebo 시뮬레이션 환경 구축 | P1 | 사용자+그린 | **진행** | Step 1~4 완료 (WSL2+ROS2+Gazebo+Nav2). Step 5~8 남음 (클론+빌드+Foxglove+E2E) |
 | | | **── P2 중요 ──** | | | | |
+| C61 | 시뮬레이션 | 차량 물리 동작 검증 (cmd_vel → Gazebo) | P2 | 사용자 | **사용자 대기** | CycloneDDS 전환 + cmd_vel_relay 수정 완료. 집 PC에서 시뮬레이션 실행 검증 대기 ([상세](task/C61_velocity_chain_debug.md)) |
+| C60 | 아키텍처 | 농업용 Hybrid E2E 아키텍처 구축 | P2 | 그린 | **진행** | ARCH-004 설계, Safety Guardian 완료. C64 Camera-Only 반영 후 Learned Perception/Planning 통합 ([상세](task/C60_hybrid_e2e_architecture.md)) |
 | C48 | 테스트 | ad_perception / ad_planning / ad_control Mock 노드 테스트 작성 | P2 | — | 예정 | ROS2 Node 의존 모듈. 단위 테스트 불가 구간 |
-| C57 | 인프라 | 시뮬/실물 네임스페이스 분리 (라이브 동시 비교) | P2 | — | 예정 | `/sim/*` / `/real/*` 분리. simulation_launch.py namespace 인자, waypoint_manager namespace 파라미터, foxglove 양쪽 구독 |
+| C57 | 인프라 | 시뮬/실물 네임스페이스 분리 (라이브 동시 비교) | P2 | — | 예정 | `/sim/*` / `/real/*` 분리 |
+| C66 | 인지 | 실물 Mono Depth 노드 (MiDaS/DepthAnything → PointCloud2) | P2 | — | 예정 | 시뮬에서는 Gazebo rgbd_camera로 대체. 실차 배포 전 필수 |
+| C67 | 인지 | Camera-Only Visual SLAM 검토 (ORB-SLAM3 / Stella-SLAM) | P2 | — | 예정 | LiDAR 미탑재로 LIO-SAM 불가. GPS-denied 환경 대응 |
 | | | **── P3 향후 ──** | | | | |
 | C45 | 인지 | 농경지 작물 행 인식 (시맨틱 세그멘테이션 기반) | P3 | — | 예정 | |
 | C46 | 인지 | 지형 traversability 분류 (Wild Visual Navigation 방식) | P3 | — | 예정 | |
 | C47 | 인프라 | CI/CD headless 시뮬레이션 파이프라인 | P3 | — | 예정 | |
 | C49 | 인프라 | CLAUDE.md 매뉴얼 트리거 기반 전환 | P3 | 그린 | 예정 | `.claude/rules/` 파일이 5개 이상으로 늘어날 때 착수 |
+| C68 | 제어 | CAN 브릿지 실차 통합 테스트 | P3 | — | 예정 | C36 코드 완료. STP 수령 + 실차 연결 후 검증 |
+| C69 | 아키텍처 | 미션 관리 플러그인 설계 (농업/군사/탐사) | P3 | — | 예정 | Application Layer 교체 구조. Phase 1 안정화 후 착수 |
 
 ---
 
@@ -62,6 +73,9 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C65 | C64 반영 — 상위 문서 갱신 + TASK 정합성 정리 | P1 | 그린 | 2026-03-16 | App Definition, SYSTEM_OVERVIEW, TASK.md C64 Camera-Only 반영. 누락 TASK 5건(C66~C69) 등록 |
+| C64 | 센서 스펙 확정 반영 — Camera-Only 전환 | P1 | 그린 | 2026-03-13 | LiDAR 전면 제거, 카메라 3대 rgbd_camera 전환, Nav2 costmap PointCloud2 연결, perception_node 멀티카메라 재구성, ARCH-005 작성. 10개 파일 수정, 테스트 29/29 통과 ([상세](task/C64_sensor_spec_camera_only.md)) |
+| C62 | STP→SDF 변환 파이프라인 구축 | P3 | 그린 | 2026-03-13 | `.venv-tools/` + cadquery/trimesh 설치, `scripts/stp_to_sdf.py` 작성. STP 파일 수령 시 즉시 실행 가능 |
 | C52 | Gazebo 시뮬레이션 통합 검증 (end-to-end) | P1 | 그린 | 2026-03-04 | bt_navigator 타임아웃 수정, voxel_layer 높이/z_voxels 수정, BT XML 경로 설정. Goal accepted → controller_server 응답 → cmd_vel_nav 발행 확인 ([상세](task/C52_verification_report.md)) |
 | C58 | bt_navigator `follow_path` 타임아웃 해결 | P1 | 그린 | 2026-03-04 | 타임아웃 20ms→1000ms. Goal accepted 확인. C52의 하위 작업 ([상세](task/C58_bt_navigator_timeout_fix.md)) |
 | C56 | Foxglove rosbag 시뮬/실물 비교 체계 구축 | P2 | 그린 | 2026-03-01 | record_launch.py (zstd 압축, robot=sim/real 인자), foxglove_comparison_layout.json (4탭: Navigation/속도/GPS/Diagnostics) ([상세](task/C56_rosbag_comparison.md)) |
@@ -115,11 +129,21 @@
 
 ---
 
+## 확정 사항 (2026-03-13)
+
+- **실차 하드웨어**: 출고 완료. STP 도면 ~3/20 수령 예정
+- **센서 스펙**: RGBD 카메라 ×3 (front/left/right) + IMU + GPS (LiDAR 미탑재 — **확정**)
+- **운용 시나리오**: 과수원 행간 주행, 논 방제, 밭 커버리지 — 3개 시나리오 전부 대응
+- **집 PC 시뮬레이션**: 주말(3/15~16) 사용자+그린 공동 세팅
+
+---
+
 ## TODO
 
 - [ ] GitHub 기본 브랜치 master→main 변경 (Settings → Default branch) + 원격 master 삭제
-- [ ] aiohttp 설치하여 research 에이전트 웹 검색 활성화
-- [ ] LIO-SAM 실제 설치 및 실행 테스트 (WSL2 환경)
+- [ ] STP 도면 수령 시 `scripts/stp_to_sdf.py` 실행 → model.sdf 물리 파라미터 + 메시 갱신 (→ C63)
 - [ ] 실차 데이터 확보 시 System Identification으로 물리 파라미터 튜닝
 - [ ] YOLO 모델 가중치 파일 확보 및 추론 파이프라인 검증
 - [ ] Drivetrain 정상상태 오차 17.65% FAIL 원인 검토 — 효율이 delta에 반복 적용되어 목표 초과 수렴. 모델 수정 vs 기록만 할지 결정 필요
+- [x] ~~실물 Mono Depth 노드 개발~~ → C66 TASK로 승격
+- [x] ~~LIO-SAM 실제 설치 및 실행 테스트~~ → C64: LiDAR 미탑재 확정으로 불필요. C67(Camera SLAM)으로 대체

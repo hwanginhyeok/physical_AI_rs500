@@ -1,7 +1,7 @@
 # SS500 자율주행 시스템 아키텍처 개요
 
 > **문서 성격**: Living Document — 시스템 구조가 변경될 때마다 갱신한다.
-> **최종 갱신**: 2026-03-11 (C61 velocity chain 분석 반영)
+> **최종 갱신**: 2026-03-16 (C64 Camera-Only 전환 반영, ARCH-005 추가)
 
 ---
 
@@ -43,11 +43,11 @@
 | `skid_steer_model.py` | ICR 기반 스키드 스티어 운동학 |
 | `drivetrain_model.py` | 모터/감속기 드라이브트레인 |
 | `pure_pursuit.py` | 슬립 보상 Pure Pursuit 경로 추종 |
-| `lidar_processor.py` | Ray Ground Filter + Euclidean Clustering |
+| `lidar_processor.py` | Ray Ground Filter + Euclidean Clustering (**비활성** — LiDAR 미탑재, 향후 재사용 보존) |
 | `camera_detector.py` | YOLO v8n 기반 객체 탐지 |
 | `semantic_segmenter.py` | 7-class 지형 세그멘테이션 |
 | `terrain_classifier.py` | 지형 traversability 분류 |
-| `sensor_fusion.py` | Camera-LiDAR Late Fusion |
+| `sensor_fusion.py` | Camera-LiDAR Late Fusion (**비활성** — LiDAR 미탑재, 향후 재사용 보존) |
 | `coverage_planner.py` | Boustrophedon 커버리지 경로 |
 | `sensor_noise_model.py` | GPS/IMU/LiDAR 센서 노이즈 모델 |
 | `track_terrain_interaction.py` | 궤도-지면 상호작용 |
@@ -61,7 +61,8 @@
 ┌───────────────────────────── Gazebo Harmonic ─────────────────────────┐
 │  SS500 Vehicle (1000kg, 궤도차량)                                      │
 │  TrackedVehicle Plugin ← /cmd_vel (Twist)                             │
-│  Sensors: GPS(10Hz) IMU(100Hz) LiDAR(10Hz) Camera(15Hz) Odom(50Hz)   │
+│  Sensors: GPS(10Hz) IMU(100Hz) Camera×3(15Hz,RGBD) Odom(50Hz)        │
+│  ★ LiDAR 미탑재 확정 (ARCH-005, C64)                                  │
 └──────────────────────────────┬────────────────────────────────────────┘
                                │ ros_gz_bridge (bridge_config.yaml)
                                ▼
@@ -89,7 +90,7 @@
 │             1000 samples, 2.8s horizon, 7 critics                    │
 │                                                                       │
 │  Global Costmap: 100m×100m rolling, 0.1m res                        │
-│  Local Costmap:  6m×6m, 0.05m res, VoxelLayer (z=16)                │
+│  Local Costmap:  6m×6m, 0.05m res, ObstacleLayer (Camera PC2 ×3)    │
 └───────────────────────────────────────────────────────────────────────┘
                                │
                                ▼
@@ -101,7 +102,7 @@
 │  velocity_smoother (Rate Limiter, 20Hz)                              │
 │       │ /cmd_vel_smoothed                                             │
 │       ▼                                                               │
-│  collision_monitor (FootprintApproach, LiDAR 기반)                   │
+│  collision_monitor (FootprintApproach, Camera PointCloud2 ×3 기반)   │
 │       │ /cmd_vel                                                      │
 │       ▼                                                               │
 │  ros_gz_bridge → Gazebo TrackedVehicle                               │
@@ -124,15 +125,13 @@
                                         (robot_state_publisher)
                                                       │
                                                 /base_link
-                                              /    |    |    \
-                                             /     |    |     \
-                                    /lidar  /imu  /gps  /camera  /left_track  /right_track
-                                       │      │     │
-                                  (static TF bridges — Gazebo scoped frame 보정, C55)
-                                       │      │     │
-                            /ss500/lidar_link  │  /ss500/gps_link
-                             /gpu_lidar    /ss500/imu_link   /gps_sensor
-                                            /imu_sensor
+                                        /     |     |     |     \
+                                       /      |     |     |      \
+                              /camera_front  /camera_left  /camera_right  /imu  /gps  /left_track  /right_track
+                                   │           │              │            │     │
+                              (static TF bridges — Gazebo scoped frame 보정, C55/C64)
+                                   │           │              │            │     │
+                          /ss500/camera_front  /ss500/camera_left  ...  /ss500/imu_link  /ss500/gps_link
 ```
 
 **각 프레임 발행 책임:**
@@ -143,7 +142,7 @@
 | odom → base_footprint | `ekf_local` (50Hz) | IMU + 휠 오도메트리 융합 |
 | base_footprint → base_link | `robot_state_publisher` | URDF 정의 |
 | base_link → sensor frames | `robot_state_publisher` | URDF 정의 |
-| sensor → ss500/scoped | `*_frame_bridge` (3개) | Gazebo scoped name 브릿지 |
+| sensor → ss500/scoped | `*_frame_bridge` (5개: camera×3 + imu + gps) | Gazebo scoped name 브릿지 |
 
 ---
 
@@ -225,6 +224,7 @@
 
 | ID | 문제 | 해결일 |
 |----|------|--------|
+| C64 | LiDAR→Camera-Only 전환 (ARCH-005) | 2026-03-13 |
 | C50 | AMCL 빈 평지 초기화 실패 | 2026-03-01 |
 | C51 | GPS datum 점핑 | 2026-03-01 |
 | C53 | SDF noise 포맷 오류 | 2026-03-01 |
@@ -242,6 +242,7 @@
 | ARCH-002 | Dual-EKF 센서 퓨전 | 채택됨 | 로컬(50Hz, IMU+Odom) + 글로벌(10Hz, GPS) 분리 |
 | ARCH-003 | Nav2 스택 구성 | 채택됨 | SmacLattice + MPPI, rolling_window costmap |
 | ARCH-004 | Hybrid E2E 농업 자율주행 | 채택됨 | Learned Perception + Diffusion Planning + Rule-based Guardian |
+| ARCH-005 | Camera-Only 인지 아키텍처 | 채택됨 | LiDAR 미탑재 확정. RGBD Camera ×3 → Nav2 costmap PointCloud2 직접 연결 |
 
 ---
 
@@ -249,4 +250,5 @@
 
 | 날짜 | 변경 내용 |
 |------|-----------|
+| 2026-03-16 | C64 Camera-Only 반영: 센서 목록, TF 트리, costmap, collision_monitor, ad_core 모듈 비활성 표시, ARCH-005 추가 |
 | 2026-03-11 | 최초 작성 (C61 velocity chain 분석, 7일 공백 후 현황 정리) |

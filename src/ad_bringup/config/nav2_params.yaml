@@ -11,7 +11,7 @@ amcl:
     base_frame_id: "base_footprint"     # EKF가 odom→base_footprint 발행
     odom_frame_id: "odom"
     global_frame_id: "map"
-    scan_topic: /sensor/lidar           # Gazebo 브릿지 토픽
+    scan_topic: /scan                    # C64: LiDAR 제거 — AMCL 비활성화 상태 (C50)
     max_particles: 2000
     min_particles: 500
     update_min_d: 0.25
@@ -298,11 +298,26 @@ collision_monitor:
       min_points: 6
       visualize: true
       enabled: false                                 # C61-fix: true → false (충돌 모니터링 일시 비활성화)
-    observation_sources: ["scan"]
-    scan:
-      type: "scan"
-      topic: "/sensor/lidar"
-      enabled: true
+    # C64-2: rgbd_camera PointCloud2 장애물 소스
+    observation_sources: ["camera_front_pc", "camera_left_pc", "camera_right_pc"]
+    camera_front_pc:
+      type: "pointcloud"
+      topic: /sensor/camera/front/points
+      min_height: 0.1
+      max_height: 2.0
+      source_timeout: 2.0
+    camera_left_pc:
+      type: "pointcloud"
+      topic: /sensor/camera/left/points
+      min_height: 0.1
+      max_height: 2.0
+      source_timeout: 2.0
+    camera_right_pc:
+      type: "pointcloud"
+      topic: /sensor/camera/right/points
+      min_height: 0.1
+      max_height: 2.0
+      source_timeout: 2.0
 
 # -----------------------------------------------------------------------------
 # Docking Server: 충전 도킹 (시뮬레이션에서 미사용 — Nav2 Jazzy 기본 포함)
@@ -357,13 +372,13 @@ amcl:
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
     global_frame_id: "map"
-    scan_topic: /sensor/lidar
+    scan_topic: /scan                    # C64: LiDAR 제거 — AMCL 비활성화 상태 (C50)
     # C58-fix: AMCL을 inactive 상태로 시작 (lifecycle 통해 비활성화)
     # 실제로는 lifecycle_manager가 activate하지 않도록 수정 필요
 
 # -----------------------------------------------------------------------------
 # Global Costmap: 글로벌 비용 지도
-# static_layer + obstacle_layer + inflation_layer
+# obstacle_layer (PointCloud2 × 3) + inflation_layer
 # resolution: 0.1m
 # -----------------------------------------------------------------------------
 global_costmap:
@@ -382,24 +397,50 @@ global_costmap:
       height: 100                                    # 창 높이 (m)
       always_send_full_costmap: true
       # static_layer 제거: map_server 미동작 시에도 동작하도록 (C52)
+      # C64-2: rgbd_camera PointCloud2 → obstacle_layer 장애물 소스
       plugins: ["obstacle_layer", "inflation_layer"]
 
-      # 장애물 레이어: 실시간 센서 데이터 기반 장애물
+      # 장애물 레이어: 카메라 3대 PointCloud2 기반 장애물 감지
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: true
-        observation_sources: lidar_scan
-        lidar_scan:
-          topic: /sensor/lidar
-          max_obstacle_height: 2.0                   # 최대 장애물 높이 (m)
-          min_obstacle_height: 0.1                    # 최소 장애물 높이 (m)
+        observation_sources: "camera_front camera_left camera_right"
+        camera_front:
+          topic: /sensor/camera/front/points
+          data_type: "PointCloud2"
+          sensor_frame: "camera_front_link"
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.1
+          obstacle_max_range: 8.0
+          obstacle_min_range: 0.5
           clearing: true
           marking: true
-          data_type: "LaserScan"
-          raytrace_max_range: 30.0                   # 레이트레이스 최대 범위 (m)
-          raytrace_min_range: 0.0
-          obstacle_max_range: 25.0                   # 장애물 감지 최대 범위 (m)
-          obstacle_min_range: 0.0
+          raytrace_max_range: 10.0
+          raytrace_min_range: 0.5
+        camera_left:
+          topic: /sensor/camera/left/points
+          data_type: "PointCloud2"
+          sensor_frame: "camera_left_link"
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.1
+          obstacle_max_range: 8.0
+          obstacle_min_range: 0.5
+          clearing: true
+          marking: true
+          raytrace_max_range: 10.0
+          raytrace_min_range: 0.5
+        camera_right:
+          topic: /sensor/camera/right/points
+          data_type: "PointCloud2"
+          sensor_frame: "camera_right_link"
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.1
+          obstacle_max_range: 8.0
+          obstacle_min_range: 0.5
+          clearing: true
+          marking: true
+          raytrace_max_range: 10.0
+          raytrace_min_range: 0.5
 
       # 팽창 레이어: 장애물 주변 안전 여유 공간
       inflation_layer:
@@ -412,7 +453,7 @@ global_costmap:
 
 # -----------------------------------------------------------------------------
 # Local Costmap: 로컬 비용 지도
-# obstacle_layer + voxel_layer + inflation_layer
+# obstacle_layer (PointCloud2 × 3) + inflation_layer
 # resolution: 0.05m, rolling window
 # -----------------------------------------------------------------------------
 local_costmap:
@@ -429,48 +470,50 @@ local_costmap:
       width: 6                                       # 윈도우 너비 (m, 정수 — Jazzy 요구)
       height: 6                                      # 윈도우 높이 (m, 정수 — Jazzy 요구)
       always_send_full_costmap: true
-      plugins: ["obstacle_layer", "voxel_layer", "inflation_layer"]
+      # C64-2: rgbd_camera PointCloud2 → obstacle_layer 장애물 소스
+      plugins: ["obstacle_layer", "inflation_layer"]
 
-      # 장애물 레이어: 2D 장애물 감지
+      # 장애물 레이어: 카메라 3대 PointCloud2 기반 장애물 감지 (로컬)
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: true
-        observation_sources: lidar_scan
-        lidar_scan:
-          topic: /sensor/lidar
+        observation_sources: "camera_front camera_left camera_right"
+        camera_front:
+          topic: /sensor/camera/front/points
+          data_type: "PointCloud2"
+          sensor_frame: "camera_front_link"
           max_obstacle_height: 2.0
           min_obstacle_height: 0.1
+          obstacle_max_range: 5.0                    # 로컬은 근거리에 집중
+          obstacle_min_range: 0.3
           clearing: true
           marking: true
-          data_type: "LaserScan"
-          raytrace_max_range: 15.0                   # 로컬은 더 짧은 범위
-          raytrace_min_range: 0.0
-          obstacle_max_range: 10.0
-          obstacle_min_range: 0.0
-
-      # 복셀 레이어: 3D 장애물 감지 (포인트클라우드 사용 시)
-      voxel_layer:
-        plugin: "nav2_costmap_2d::VoxelLayer"
-        enabled: true
-        publish_voxel_map: true
-        origin_z: 0.0
-        z_resolution: 0.05                           # Z축 해상도 (m)
-        z_voxels: 16                                 # Z축 복셀 수 (최대 16개)
-        max_obstacle_height: 2.0                     # C58-fix: 0.78 → 2.0 (LiDAR 0.9m 커버)
-        min_obstacle_height: 0.05                    # C58-fix: 0.1 → 0.05 (지면 근접 장애물)
-        mark_threshold: 0                            # 마킹 임계값
-        observation_sources: lidar_scan
-        lidar_scan:
-          topic: /sensor/lidar
+          raytrace_max_range: 6.0
+          raytrace_min_range: 0.3
+        camera_left:
+          topic: /sensor/camera/left/points
+          data_type: "PointCloud2"
+          sensor_frame: "camera_left_link"
           max_obstacle_height: 2.0
           min_obstacle_height: 0.1
+          obstacle_max_range: 5.0
+          obstacle_min_range: 0.3
           clearing: true
           marking: true
-          data_type: "LaserScan"
-          raytrace_max_range: 15.0
-          raytrace_min_range: 0.0
-          obstacle_max_range: 10.0
-          obstacle_min_range: 0.0
+          raytrace_max_range: 6.0
+          raytrace_min_range: 0.3
+        camera_right:
+          topic: /sensor/camera/right/points
+          data_type: "PointCloud2"
+          sensor_frame: "camera_right_link"
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.1
+          obstacle_max_range: 5.0
+          obstacle_min_range: 0.3
+          clearing: true
+          marking: true
+          raytrace_max_range: 6.0
+          raytrace_min_range: 0.3
 
       # 팽창 레이어: 로컬 장애물 팽창
       inflation_layer:

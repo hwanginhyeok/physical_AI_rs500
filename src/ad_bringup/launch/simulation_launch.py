@@ -161,15 +161,32 @@ def generate_launch_description():
     # ================================================================
     # 2c. Gazebo Scoped 센서 Frame ID 브릿지 (Static TF)
     # Gazebo Harmonic은 센서 메시지 frame_id를 "ss500/link/sensor" 형태로 발행.
-    # URDF TF 트리에는 단순 이름(lidar_link, imu_link)만 있으므로,
+    # URDF TF 트리에는 단순 이름만 있으므로,
     # 두 네임스페이스 사이에 identity transform을 추가한다.
+    # C64: LiDAR 제거, 카메라 3대 브릿지 추가
     # ================================================================
-    lidar_frame_bridge = Node(
+    camera_front_frame_bridge = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        name='lidar_frame_bridge',
+        name='camera_front_frame_bridge',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'lidar_link', 'ss500/lidar_link/gpu_lidar'],
+        arguments=['0', '0', '0', '0', '0', '0', 'camera_front_link', 'ss500/camera_front_link/front_camera'],
+    )
+
+    camera_left_frame_bridge = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='camera_left_frame_bridge',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'camera_left_link', 'ss500/camera_left_link/left_camera'],
+    )
+
+    camera_right_frame_bridge = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='camera_right_frame_bridge',
+        output='screen',
+        arguments=['0', '0', '0', '0', '0', '0', 'camera_right_link', 'ss500/camera_right_link/right_camera'],
     )
 
     imu_frame_bridge = Node(
@@ -287,6 +304,9 @@ def generate_launch_description():
         }],
     )
 
+    # C61-fix2: cmd_vel_relay 제거 — collision_monitor가 passthrough 모드로
+    # cmd_vel_smoothed → cmd_vel 발행하므로 relay 불필요 (이중 발행 방지)
+
     # ================================================================
     # 7b. cmd_vel Relay (C61-fix: collision_monitor 우회)
     # velocity_smoother의 cmd_vel_smoothed를 cmd_vel로 publish
@@ -326,7 +346,10 @@ def generate_launch_description():
         map_to_odom_static,
 
         # 2c. 센서 Frame ID 브릿지 (Gazebo scoped name → URDF name)
-        lidar_frame_bridge,
+        # C64: LiDAR 제거, 카메라 3대 브릿지
+        camera_front_frame_bridge,
+        camera_left_frame_bridge,
+        camera_right_frame_bridge,
         imu_frame_bridge,
         gps_frame_bridge,
 

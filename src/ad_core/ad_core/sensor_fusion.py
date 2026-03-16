@@ -1,10 +1,11 @@
-"""Camera + LiDAR Late Fusion 모듈.
+"""센서 융합 모듈.
 
-LiDAR 장애물 감지 결과와 카메라 객체 탐지 결과를 후기 융합(late fusion)하여
-통합된 인지 결과를 생성한다.
+Camera-Only 모드(C64): 카메라 탐지 결과를 FusedObject로 래핑하여
+통합 인지 인터페이스를 제공한다.
 
-핀홀 카메라 모델을 사용하여 LiDAR 3D 좌표를 카메라 이미지 평면에 투영한 후,
-투영된 위치와 카메라 바운딩 박스 간의 매칭을 수행한다.
+LiDAR+Camera Late Fusion 로직은 라이브러리 차원에서 보존되어 있으나,
+SS500은 LiDAR 미탑재이므로 perception_node에서 사용하지 않는다.
+장애물 감지는 Nav2 costmap이 rgbd_camera PointCloud2로 직접 수행한다.
 """
 
 from __future__ import annotations

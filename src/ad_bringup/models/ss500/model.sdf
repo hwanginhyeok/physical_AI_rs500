@@ -2,8 +2,9 @@
 <!--
   SS500 궤도차량 SDF 모델 (Gazebo Harmonic)
   차체: 2.0m x 1.2m x 0.8m, 1000kg
-  궤도: track_width=1.4m, TrackedVehicle 플러그인
-  센서: GPU LiDAR(360°, 10Hz), IMU(100Hz), Camera(640x480, 15Hz), GPS(10Hz)
+  궤도: tracks_separation=1.4m, TrackedVehicle 플러그인
+  센서 (C64-2): RGBD Camera 3대(front/left/right, 640x480, 15Hz, depth 10m), IMU(100Hz), GPS(10Hz)
+  LiDAR 미탑재
 -->
 <sdf version="1.9">
   <model name="ss500">
@@ -151,67 +152,6 @@
     </joint>
 
     <!-- ================================================================ -->
-    <!-- LiDAR 센서 링크 -->
-    <!-- ================================================================ -->
-    <link name="lidar_link">
-      <pose relative_to="base_link">0 0 0.5 0 0 0</pose>
-      <inertial>
-        <mass>0.5</mass>
-        <inertia>
-          <ixx>0.001</ixx><iyy>0.001</iyy><izz>0.001</izz>
-          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
-        </inertia>
-      </inertial>
-
-      <visual name="lidar_visual">
-        <geometry>
-          <cylinder><radius>0.05</radius><length>0.08</length></cylinder>
-        </geometry>
-        <material>
-          <ambient>0.1 0.1 0.1 1</ambient>
-          <diffuse>0.15 0.15 0.15 1</diffuse>
-        </material>
-      </visual>
-
-      <sensor name="gpu_lidar" type="gpu_lidar">
-        <always_on>true</always_on>
-        <update_rate>10</update_rate>
-        <topic>/sensor/lidar</topic>
-        <visualize>true</visualize>
-        <lidar>
-          <scan>
-            <horizontal>
-              <samples>720</samples>
-              <resolution>1</resolution>
-              <min_angle>-3.14159</min_angle>
-              <max_angle>3.14159</max_angle>
-            </horizontal>
-            <vertical>
-              <samples>1</samples>
-              <resolution>1</resolution>
-              <min_angle>0</min_angle>
-              <max_angle>0</max_angle>
-            </vertical>
-          </scan>
-          <range>
-            <min>0.3</min>
-            <max>80.0</max>
-            <resolution>0.01</resolution>
-          </range>
-          <noise type="gaussian">
-            <mean>0.0</mean>
-            <stddev>0.01</stddev>
-          </noise>
-        </lidar>
-      </sensor>
-    </link>
-
-    <joint name="lidar_joint" type="fixed">
-      <parent>base_link</parent>
-      <child>lidar_link</child>
-    </joint>
-
-    <!-- ================================================================ -->
     <!-- IMU 센서 링크 -->
     <!-- ================================================================ -->
     <link name="imu_link">
@@ -249,9 +189,9 @@
     </joint>
 
     <!-- ================================================================ -->
-    <!-- 카메라 센서 링크 -->
+    <!-- 카메라: 전면 (0°) -->
     <!-- ================================================================ -->
-    <link name="camera_link">
+    <link name="camera_front_link">
       <pose relative_to="base_link">0.9 0 0.3 0 0 0</pose>
       <inertial>
         <mass>0.2</mass>
@@ -261,7 +201,7 @@
         </inertia>
       </inertial>
 
-      <visual name="camera_visual">
+      <visual name="camera_front_visual">
         <geometry>
           <box><size>0.05 0.08 0.05</size></box>
         </geometry>
@@ -271,7 +211,8 @@
         </material>
       </visual>
 
-      <sensor name="front_camera" type="camera">
+      <!-- C64-2: rgbd_camera → RGB + Depth + PointCloud2 동시 발행 -->
+      <sensor name="front_camera" type="rgbd_camera">
         <always_on>true</always_on>
         <update_rate>15</update_rate>
         <topic>/sensor/camera/front</topic>
@@ -287,6 +228,12 @@
             <near>0.1</near>
             <far>100</far>
           </clip>
+          <depth_camera>
+            <clip>
+              <near>0.1</near>
+              <far>10.0</far>
+            </clip>
+          </depth_camera>
           <noise type="gaussian">
             <mean>0.0</mean>
             <stddev>0.007</stddev>
@@ -295,9 +242,127 @@
       </sensor>
     </link>
 
-    <joint name="camera_joint" type="fixed">
+    <joint name="camera_front_joint" type="fixed">
       <parent>base_link</parent>
-      <child>camera_link</child>
+      <child>camera_front_link</child>
+    </joint>
+
+    <!-- ================================================================ -->
+    <!-- 카메라: 좌전방 (~60°, 1.047 rad) -->
+    <!-- ================================================================ -->
+    <link name="camera_left_link">
+      <pose relative_to="base_link">0.7 0.5 0.3 0 0 1.047</pose>
+      <inertial>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.0002</ixx><iyy>0.0002</iyy><izz>0.0002</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <visual name="camera_left_visual">
+        <geometry>
+          <box><size>0.05 0.08 0.05</size></box>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- C64-2: rgbd_camera -->
+      <sensor name="left_camera" type="rgbd_camera">
+        <always_on>true</always_on>
+        <update_rate>15</update_rate>
+        <topic>/sensor/camera/left</topic>
+        <visualize>false</visualize>
+        <camera>
+          <horizontal_fov>1.396</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+          <depth_camera>
+            <clip>
+              <near>0.1</near>
+              <far>10.0</far>
+            </clip>
+          </depth_camera>
+          <noise type="gaussian">
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </link>
+
+    <joint name="camera_left_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>camera_left_link</child>
+    </joint>
+
+    <!-- ================================================================ -->
+    <!-- 카메라: 우전방 (~60°, -1.047 rad) -->
+    <!-- ================================================================ -->
+    <link name="camera_right_link">
+      <pose relative_to="base_link">0.7 -0.5 0.3 0 0 -1.047</pose>
+      <inertial>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.0002</ixx><iyy>0.0002</iyy><izz>0.0002</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+
+      <visual name="camera_right_visual">
+        <geometry>
+          <box><size>0.05 0.08 0.05</size></box>
+        </geometry>
+        <material>
+          <ambient>0.05 0.05 0.05 1</ambient>
+          <diffuse>0.1 0.1 0.1 1</diffuse>
+        </material>
+      </visual>
+
+      <!-- C64-2: rgbd_camera -->
+      <sensor name="right_camera" type="rgbd_camera">
+        <always_on>true</always_on>
+        <update_rate>15</update_rate>
+        <topic>/sensor/camera/right</topic>
+        <visualize>false</visualize>
+        <camera>
+          <horizontal_fov>1.396</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+          <depth_camera>
+            <clip>
+              <near>0.1</near>
+              <far>10.0</far>
+            </clip>
+          </depth_camera>
+          <noise type="gaussian">
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </link>
+
+    <joint name="camera_right_joint" type="fixed">
+      <parent>base_link</parent>
+      <child>camera_right_link</child>
     </joint>
 
     <!-- ================================================================ -->
@@ -339,24 +404,26 @@
     <!-- Gazebo 플러그인 -->
     <!-- ================================================================ -->
 
-    <!-- TrackedVehicle 플러그인: 궤도차량 물리 + /cmd_vel 수신 -->
+    <!-- TrackedVehicle 플러그인: 궤도차량 물리 + Twist cmd_vel 수신 -->
+    <!-- C61-fix2: velocity_topic(per-track Double)을 plugin-level <topic>(Twist)으로 교체 -->
+    <!-- track_width → tracks_separation, tracks_height 추가 -->
     <plugin filename="gz-sim-tracked-vehicle-system"
             name="gz::sim::systems::TrackedVehicle">
       <body_link>base_link</body_link>
+
       <left_track>
         <link>left_track</link>
-        <velocity_topic>/cmd_vel</velocity_topic>
-        <min_velocity>-2.0</min_velocity>
-        <max_velocity>3.0</max_velocity>
       </left_track>
       <right_track>
         <link>right_track</link>
-        <velocity_topic>/cmd_vel</velocity_topic>
-        <min_velocity>-2.0</min_velocity>
-        <max_velocity>3.0</max_velocity>
       </right_track>
-      <track_width>1.4</track_width>
+
+      <tracks_separation>1.4</tracks_separation>   <!-- 궤도 간 거리 (m) -->
+      <tracks_height>0.4</tracks_height>            <!-- 궤도 높이 (m) — collision box z -->
       <steering_efficiency>0.9</steering_efficiency>
+
+      <!-- Twist 메시지 수신 토픽 (기본값: /model/ss500/cmd_vel) -->
+      <topic>/cmd_vel</topic>
     </plugin>
 
     <!-- DiffDrive 플러그인: TrackedVehicle 미지원 시 폴백 -->

@@ -1,20 +1,21 @@
-"""인지 노드 - 센서 데이터 수집 및 처리.
+"""인지 노드 - 멀티카메라 센서 데이터 수집 및 처리.
 
-카메라, LiDAR, GPS, IMU 센서 데이터를 구독하고,
-LidarProcessor와 CameraDetector를 통해 장애물 및 객체 탐지 결과를 생성한다.
-SensorFusion을 통해 LiDAR + Camera Late Fusion 결과를 제공한다.
-SemanticSegmenter를 통해 픽셀 단위 시맨틱 세그멘테이션 결과를 제공한다.
+카메라 3대(전면/좌전방/우전방), GPS, IMU 센서 데이터를 구독하고,
+CameraDetector를 통해 객체 탐지,
+SemanticSegmenter를 통해 시맨틱 세그멘테이션을 수행한다.
+
+C64: LiDAR 미탑재 → Camera-Only 인지 파이프라인.
+     LiDAR 기반 장애물 감지와 Late Fusion 코드 제거.
+     Nav2 costmap은 Gazebo rgbd_camera PointCloud2로 직접 동작.
 """
 
 from __future__ import annotations
 
-import struct
 from typing import List, Optional
 
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import Image, PointCloud2, PointField, NavSatFix, Imu
-from std_msgs.msg import Float32
+from sensor_msgs.msg import Image, NavSatFix, Imu
 
 try:
     import numpy as np
@@ -23,9 +24,7 @@ except ImportError:
     np = None  # type: ignore[assignment]
     _HAS_NUMPY = False
 
-from ad_core.lidar_processor import LidarProcessor, Obstacle
 from ad_core.camera_detector import CameraDetector, Detection
-from ad_core.sensor_fusion import SensorFusion, FusedObject
 from ad_core.semantic_segmenter import (
     SemanticSegmenter,
     SegmentationResult,
@@ -36,51 +35,55 @@ from ad_core.semantic_segmenter import (
 class PerceptionModule:
     """센서 데이터를 구독하고 처리하는 인지 모듈.
 
-    카메라, 라이다, GPS, IMU 등의 센서 데이터를 수집하여
-    장애물 목록, 차선 정보, 차량 위치 등의 인지 결과를 제공한다.
+    카메라 3대(전면/좌전방/우전방), GPS, IMU 센서 데이터를 수집하여
+    객체 탐지, 시맨틱 세그멘테이션, 차량 위치/방향 등의 인지 결과를 제공한다.
 
-    LidarProcessor를 통해 포인트클라우드 기반 장애물 감지를,
-    CameraDetector를 통해 이미지 기반 객체 탐지를 수행하며,
-    SensorFusion을 통해 두 센서의 결과를 후기 융합(late fusion)한다.
-    SemanticSegmenter를 통해 픽셀 단위 시맨틱 세그멘테이션을 수행하여
-    주행 가능 영역과 장애물 영역을 분류한다.
+    C64: Camera-Only 구성 — LiDAR/SensorFusion 제거.
     """
 
     def __init__(self, node: Node):
         self._node = node
 
         # 인지 결과 저장
-        self.obstacles: List[Obstacle] = []       # LiDAR 기반 장애물 목록
-        self.detections: List[Detection] = []     # 카메라 기반 탐지 결과
-        self.fused_objects: List[FusedObject] = []  # 센서 융합 결과
+        self.detections: List[Detection] = []     # 카메라 기반 탐지 결과 (전면 카메라)
         self.segmentation: Optional[SegmentationResult] = None  # 세그멘테이션 결과
         self.lane_info = None                     # 차선 정보
         self.vehicle_position = None              # 차량 현재 위치 (GPS)
         self.vehicle_orientation = None           # 차량 방향 (IMU)
 
+        # 멀티카메라 최신 이미지 캐시
+        self._latest_images: dict[str, Optional[Image]] = {
+            'front': None,
+            'left': None,
+            'right': None,
+        }
+
         # 인지 서브모듈 초기화
-        self._lidar_processor = LidarProcessor()
         self._camera_detector = CameraDetector()
-        self._sensor_fusion = SensorFusion()
         self._semantic_segmenter = SemanticSegmenter()
 
         # 토픽명 파라미터에서 읽기
-        camera_topic = node.get_parameter('topics.camera').value
-        lidar_topic = node.get_parameter('topics.lidar').value
+        camera_front_topic = node.get_parameter('topics.camera_front').value
+        camera_left_topic = node.get_parameter('topics.camera_left').value
+        camera_right_topic = node.get_parameter('topics.camera_right').value
         gps_topic = node.get_parameter('topics.gps').value
         imu_topic = node.get_parameter('topics.imu').value
 
-        # 센서 구독 설정
-        self._camera_sub = node.create_subscription(
-            Image, camera_topic, self._camera_callback, 10)
-        self._lidar_sub = node.create_subscription(
-            PointCloud2, lidar_topic, self._lidar_callback, 10)
+        # 카메라 3대 구독
+        self._camera_front_sub = node.create_subscription(
+            Image, camera_front_topic, self._camera_front_callback, 10)
+        self._camera_left_sub = node.create_subscription(
+            Image, camera_left_topic, self._camera_left_callback, 10)
+        self._camera_right_sub = node.create_subscription(
+            Image, camera_right_topic, self._camera_right_callback, 10)
+
+        # GPS/IMU 구독
         self._gps_sub = node.create_subscription(
             NavSatFix, gps_topic, self._gps_callback, 10)
         self._imu_sub = node.create_subscription(
             Imu, imu_topic, self._imu_callback, 10)
 
-        node.get_logger().info('[인지] 모듈 초기화 완료')
+        node.get_logger().info('[인지] Camera-Only 모듈 초기화 완료')
         if self._camera_detector.is_dummy_mode:
             node.get_logger().warn('[인지] 카메라 탐지기: 더미 모드 (YOLO 모델 미로드)')
         if self._semantic_segmenter.is_fallback_mode:
@@ -92,18 +95,22 @@ class PerceptionModule:
     # 콜백
     # ------------------------------------------------------------------
 
-    def _camera_callback(self, msg: Image) -> None:
-        """카메라 이미지 수신 콜백. 객체 탐지, 세그멘테이션, 센서 융합 수행."""
-        self._node.get_logger().debug('[인지] 카메라 이미지 수신')
+    def _camera_front_callback(self, msg: Image) -> None:
+        """전면 카메라 이미지 수신. 객체 탐지 + 세그멘테이션 수행."""
+        self._node.get_logger().debug('[인지] 전면 카메라 이미지 수신')
+        self._latest_images['front'] = msg
         self.process_camera(msg)
         self._run_segmentation(msg)
-        self._run_fusion()
 
-    def _lidar_callback(self, msg: PointCloud2) -> None:
-        """라이다 포인트클라우드 수신 콜백. 장애물 감지 후 센서 융합 수행."""
-        self._node.get_logger().debug('[인지] 라이다 데이터 수신')
-        self.process_lidar(msg)
-        self._run_fusion()
+    def _camera_left_callback(self, msg: Image) -> None:
+        """좌전방 카메라 이미지 수신."""
+        self._node.get_logger().debug('[인지] 좌전방 카메라 이미지 수신')
+        self._latest_images['left'] = msg
+
+    def _camera_right_callback(self, msg: Image) -> None:
+        """우전방 카메라 이미지 수신."""
+        self._node.get_logger().debug('[인지] 우전방 카메라 이미지 수신')
+        self._latest_images['right'] = msg
 
     def _gps_callback(self, msg: NavSatFix) -> None:
         """GPS 수신 콜백. 차량 위치 업데이트."""
@@ -121,57 +128,6 @@ class PerceptionModule:
             'z': msg.orientation.z,
             'w': msg.orientation.w,
         }
-
-    # ------------------------------------------------------------------
-    # LiDAR 처리
-    # ------------------------------------------------------------------
-
-    def process_lidar(self, msg: PointCloud2) -> List[Obstacle]:
-        """PointCloud2 메시지를 numpy 배열로 변환 후 장애물 감지를 수행한다."""
-        if not _HAS_NUMPY:
-            self._node.get_logger().warn('[인지] numpy 미설치 - LiDAR 처리 건너뜀')
-            return []
-
-        points = self._pointcloud2_to_numpy(msg)
-        if points.shape[0] == 0:
-            self.obstacles = []
-            return []
-
-        self.obstacles = self._lidar_processor.process(points)
-        self._node.get_logger().debug(
-            f'[인지] LiDAR 장애물 {len(self.obstacles)}개 감지')
-        return self.obstacles
-
-    def _pointcloud2_to_numpy(self, msg: PointCloud2) -> "np.ndarray":
-        """PointCloud2 메시지를 (N, 3) numpy 배열로 변환한다."""
-        field_map = {f.name: f for f in msg.fields}
-        if 'x' not in field_map or 'y' not in field_map or 'z' not in field_map:
-            self._node.get_logger().warn('[인지] PointCloud2에 x/y/z 필드 없음')
-            return np.empty((0, 3), dtype=np.float32)
-
-        x_offset = field_map['x'].offset
-        y_offset = field_map['y'].offset
-        z_offset = field_map['z'].offset
-        point_step = msg.point_step
-
-        n_points = msg.width * msg.height
-        if n_points == 0 or len(msg.data) == 0:
-            return np.empty((0, 3), dtype=np.float32)
-
-        data = bytes(msg.data)
-        points = np.zeros((n_points, 3), dtype=np.float32)
-
-        for i in range(n_points):
-            base = i * point_step
-            if base + max(x_offset, y_offset, z_offset) + 4 > len(data):
-                points = points[:i]
-                break
-            points[i, 0] = struct.unpack_from('f', data, base + x_offset)[0]
-            points[i, 1] = struct.unpack_from('f', data, base + y_offset)[0]
-            points[i, 2] = struct.unpack_from('f', data, base + z_offset)[0]
-
-        valid = np.isfinite(points).all(axis=1)
-        return points[valid]
 
     # ------------------------------------------------------------------
     # 카메라 처리
@@ -259,46 +215,21 @@ class PerceptionModule:
         return self._semantic_segmenter.get_obstacle_area(self.segmentation)
 
     # ------------------------------------------------------------------
-    # 센서 융합
-    # ------------------------------------------------------------------
-
-    def _run_fusion(self) -> List[FusedObject]:
-        """현재 LiDAR 장애물과 카메라 탐지 결과를 융합한다."""
-        self.fused_objects = self._sensor_fusion.fuse(
-            self.obstacles, self.detections,
-        )
-        fused_count = sum(1 for o in self.fused_objects if o.source == "fused")
-        lidar_only = sum(1 for o in self.fused_objects if o.source == "lidar")
-        camera_only = sum(1 for o in self.fused_objects if o.source == "camera")
-        self._node.get_logger().debug(
-            f'[인지] 센서 융합 완료: '
-            f'fused={fused_count}, lidar_only={lidar_only}, '
-            f'camera_only={camera_only}, total={len(self.fused_objects)}'
-        )
-        return self.fused_objects
-
-    def get_fused_objects(self) -> List[FusedObject]:
-        """현재 센서 융합 결과를 반환한다."""
-        return self.fused_objects
-
-    # ------------------------------------------------------------------
     # 결과 조회
     # ------------------------------------------------------------------
-
-    def get_obstacles(self) -> List[Obstacle]:
-        """현재 감지된 LiDAR 기반 장애물 목록을 반환한다."""
-        return self.obstacles
 
     def get_detections(self) -> List[Detection]:
         """현재 카메라 탐지 결과를 반환한다."""
         return self.detections
 
+    def get_latest_image(self, camera: str = 'front') -> Optional[Image]:
+        """지정된 카메라의 최신 이미지를 반환한다."""
+        return self._latest_images.get(camera)
+
     def get_perception_result(self) -> dict:
         """현재 인지 결과를 반환한다."""
         return {
-            'obstacles': self.obstacles,
             'detections': self.detections,
-            'fused_objects': self.fused_objects,
             'segmentation': self.segmentation,
             'lane_info': self.lane_info,
             'position': self.vehicle_position,
@@ -312,16 +243,17 @@ class PerceptionNode(Node):
     def __init__(self):
         super().__init__('perception_node')
 
-        # 파라미터 선언
-        self.declare_parameter('topics.camera', '/sensor/camera/front')
-        self.declare_parameter('topics.lidar', '/sensor/lidar')
+        # 파라미터 선언 — C64: 멀티카메라 + GPS + IMU
+        self.declare_parameter('topics.camera_front', '/sensor/camera/front/image')
+        self.declare_parameter('topics.camera_left', '/sensor/camera/left/image')
+        self.declare_parameter('topics.camera_right', '/sensor/camera/right/image')
         self.declare_parameter('topics.gps', '/sensor/gps')
         self.declare_parameter('topics.imu', '/sensor/imu')
 
         # 인지 모듈 초기화
         self.perception = PerceptionModule(self)
 
-        self.get_logger().info('[인지 노드] 시작')
+        self.get_logger().info('[인지 노드] Camera-Only 모드 시작')
 
 
 def main(args=None):

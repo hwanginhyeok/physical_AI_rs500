@@ -2,7 +2,7 @@
 
 - 상태: `채택됨`
 - 결정일: 2026-03-01
-- 관련 TASK: C50, C54, C55
+- 관련 TASK: C50, C54, C55, C64
 
 ## 배경
 
@@ -21,10 +21,16 @@ TF 설계 불명확에서 비롯됐음을 확인.
  └── /odom  ← static_transform_publisher (map_to_odom_static) [C50]
       └── /base_footprint  ← ekf_local (동적, 50Hz) [C54]
            └── /base_link  ← robot_state_publisher (URDF 정의)
-                ├── /lidar_link  ← robot_state_publisher
-                │    └── /ss500/lidar_link/gpu_lidar  ← lidar_frame_bridge [C55]
-                └── /imu_link  ← robot_state_publisher
-                     └── /ss500/imu_link/imu_sensor  ← imu_frame_bridge [C55]
+                ├── /camera_front_link  ← robot_state_publisher [C64]
+                │    └── /ss500/camera_front_link/front_camera  ← camera_front_frame_bridge
+                ├── /camera_left_link  ← robot_state_publisher [C64]
+                │    └── /ss500/camera_left_link/left_camera  ← camera_left_frame_bridge
+                ├── /camera_right_link  ← robot_state_publisher [C64]
+                │    └── /ss500/camera_right_link/right_camera  ← camera_right_frame_bridge
+                ├── /imu_link  ← robot_state_publisher
+                │    └── /ss500/imu_link/imu_sensor  ← imu_frame_bridge [C55]
+                └── /gps_link  ← robot_state_publisher
+                     └── /ss500/gps_link/gps_sensor  ← gps_frame_bridge
 ```
 
 **각 프레임의 발행 책임:**
@@ -35,8 +41,11 @@ TF 설계 불명확에서 비롯됐음을 확인.
 | `odom → base_footprint` | `ekf_local` | `/tf` | IMU + 휠 오도메트리 융합, 50Hz |
 | `base_footprint → base_link` | `robot_state_publisher` | `/tf` | URDF 정의, 고정 변환 |
 | `base_link → sensor frames` | `robot_state_publisher` | `/tf_static` | URDF 정의, 고정 변환 |
-| `lidar_link → ss500/.../gpu_lidar` | `lidar_frame_bridge` | `/tf_static` | Gazebo scoped name 브릿지 |
+| `camera_front_link → ss500/.../front_camera` | `camera_front_frame_bridge` | `/tf_static` | Gazebo scoped name 브릿지 [C64] |
+| `camera_left_link → ss500/.../left_camera` | `camera_left_frame_bridge` | `/tf_static` | Gazebo scoped name 브릿지 [C64] |
+| `camera_right_link → ss500/.../right_camera` | `camera_right_frame_bridge` | `/tf_static` | Gazebo scoped name 브릿지 [C64] |
 | `imu_link → ss500/.../imu_sensor` | `imu_frame_bridge` | `/tf_static` | Gazebo scoped name 브릿지 |
+| `gps_link → ss500/.../gps_sensor` | `gps_frame_bridge` | `/tf_static` | Gazebo scoped name 브릿지 |
 
 ## 근거
 
@@ -71,3 +80,4 @@ TF 설계 불명확에서 비롯됐음을 확인.
 | 날짜 | 변경 내용 |
 |------|-----------|
 | 2026-03-01 | C50~C55 버그 수정 후 최초 확정 |
+| 2026-03-13 | C64: LiDAR 제거 → 카메라 3대 + GPS 프레임 추가. ARCH-005 참조 |

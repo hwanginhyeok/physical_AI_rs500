@@ -4,11 +4,16 @@
 
   TF 트리:
     base_footprint → base_link → imu_link
-                                → lidar_link
-                                → camera_link
+                                → camera_front_link
+                                → camera_left_link  (좌전방 ~60°)
+                                → camera_right_link (우전방 ~60°)
                                 → gps_link
                                 → left_track
                                 → right_track
+
+  센서 구성 (C64 확정, 2026-03-13):
+    카메라 3대 (전면 + 좌전방 60° + 우전방 60°), IMU, GPS
+    LiDAR 미탑재
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ss500">
 
@@ -108,31 +113,6 @@
   </joint>
 
   <!-- ================================================================ -->
-  <!-- LiDAR -->
-  <!-- ================================================================ -->
-  <link name="lidar_link">
-    <visual>
-      <geometry>
-        <cylinder radius="0.05" length="0.08"/>
-      </geometry>
-      <material name="lidar_black">
-        <color rgba="0.15 0.15 0.15 1"/>
-      </material>
-    </visual>
-    <inertial>
-      <mass value="0.5"/>
-      <inertia ixx="0.001" iyy="0.001" izz="0.001"
-               ixy="0" ixz="0" iyz="0"/>
-    </inertial>
-  </link>
-
-  <joint name="lidar_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="lidar_link"/>
-    <origin xyz="0 0 0.5" rpy="0 0 0"/>
-  </joint>
-
-  <!-- ================================================================ -->
   <!-- IMU -->
   <!-- ================================================================ -->
   <link name="imu_link">
@@ -150,9 +130,9 @@
   </joint>
 
   <!-- ================================================================ -->
-  <!-- Camera (전방) -->
+  <!-- Camera: 전면 (0°) -->
   <!-- ================================================================ -->
-  <link name="camera_link">
+  <link name="camera_front_link">
     <visual>
       <geometry>
         <box size="0.05 0.08 0.05"/>
@@ -168,10 +148,62 @@
     </inertial>
   </link>
 
-  <joint name="camera_joint" type="fixed">
+  <joint name="camera_front_joint" type="fixed">
     <parent link="base_link"/>
-    <child link="camera_link"/>
+    <child link="camera_front_link"/>
     <origin xyz="0.9 0 0.3" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- Camera: 좌전방 (~60°) -->
+  <!-- ================================================================ -->
+  <link name="camera_left_link">
+    <visual>
+      <geometry>
+        <box size="0.05 0.08 0.05"/>
+      </geometry>
+      <material name="camera_black">
+        <color rgba="0.1 0.1 0.1 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.0002" iyy="0.0002" izz="0.0002"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="camera_left_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_left_link"/>
+    <!-- 차체 좌전방 모서리, yaw +60° (1.047 rad) -->
+    <origin xyz="0.7 0.5 0.3" rpy="0 0 1.047"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- Camera: 우전방 (~60°) -->
+  <!-- ================================================================ -->
+  <link name="camera_right_link">
+    <visual>
+      <geometry>
+        <box size="0.05 0.08 0.05"/>
+      </geometry>
+      <material name="camera_black">
+        <color rgba="0.1 0.1 0.1 1"/>
+      </material>
+    </visual>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.0002" iyy="0.0002" izz="0.0002"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="camera_right_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_right_link"/>
+    <!-- 차체 우전방 모서리, yaw -60° (-1.047 rad) -->
+    <origin xyz="0.7 -0.5 0.3" rpy="0 0 -1.047"/>
   </joint>
 
   <!-- ================================================================ -->

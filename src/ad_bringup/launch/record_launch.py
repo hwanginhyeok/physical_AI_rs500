@@ -36,8 +36,9 @@ _SENSOR_TOPICS = [
     '/odom',                    # 휠 오도메트리 (raw)
     '/sensor/imu',
     '/sensor/gps',
-    '/sensor/lidar',
-    '/sensor/camera/front',
+    '/sensor/camera/front/image',   # C64-2: rgbd_camera 토픽 구조 변경
+    '/sensor/camera/left/image',
+    '/sensor/camera/right/image',
     '/joint_states',
 ]
 

@@ -11,3 +11,4 @@
 | [ARCH-002](ARCH-002_dual_ekf.md) | Dual-EKF 센서 퓨전 아키텍처 | 채택됨 | 2026-02-21 | C19, C51, C54 |
 | [ARCH-003](ARCH-003_nav2_stack.md) | Nav2 플래너/컨트롤러 스택 구성 | 채택됨 | 2026-02-21 | C20, C21, C52 |
 | [ARCH-004](ARCH-004_hybrid_e2e_agricultural.md) | 농업용 Hybrid E2E 아키텍처 | 채택됨 | 2026-03-04 | C60 |
+| [ARCH-005](ARCH-005_camera_only_perception.md) | Camera-Only 인지 아키텍처 | 채택됨 | 2026-03-13 | C64 |
