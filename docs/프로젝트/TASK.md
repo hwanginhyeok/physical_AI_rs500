@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-16 (C48 완료 — Mock 테스트 25건 추가, 전체 211 통과)
+> 마지막 갱신: 2026-03-16 (C60 Diffusion 연결, C66 Mono Depth 노드 완료)
 >
 > **관리 룰**
 > - 상태: `예정` → `진행` → `완료` (완료 즉시 완료 섹션 최상단으로 이동)
@@ -56,7 +56,6 @@
 | C61 | 시뮬레이션 | 차량 물리 동작 검증 (cmd_vel → Gazebo) | P2 | 사용자 | **사용자 대기** | CycloneDDS 전환 + cmd_vel_relay 수정 완료. 집 PC에서 시뮬레이션 실행 검증 대기 ([상세](task/C61_velocity_chain_debug.md)) |
 | C60 | 아키텍처 | 농업용 Hybrid E2E 아키텍처 구축 | P2 | 그린 | **진행** | ARCH-004 설계, Safety Guardian 완료. C64 Camera-Only 반영 후 Learned Perception/Planning 통합 ([상세](task/C60_hybrid_e2e_architecture.md)) |
 | C57 | 인프라 | 시뮬/실물 네임스페이스 분리 (라이브 동시 비교) | P2 | — | 예정 | `/sim/*` / `/real/*` 분리 |
-| C66 | 인지 | 실물 Mono Depth 노드 (MiDaS/DepthAnything → PointCloud2) | P2 | — | 예정 | 시뮬에서는 Gazebo rgbd_camera로 대체. 실차 배포 전 필수 |
 | C67 | 인지 | Camera-Only Visual SLAM 검토 (ORB-SLAM3 / Stella-SLAM) | P2 | — | 예정 | LiDAR 미탑재로 LIO-SAM 불가. GPS-denied 환경 대응 |
 | | | **── P3 향후 ──** | | | | |
 | C45 | 인지 | 농경지 작물 행 인식 (시맨틱 세그멘테이션 기반) | P3 | — | 예정 | |
@@ -72,6 +71,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C66 | 실물 Mono Depth 노드 | P2 | 그린 | 2026-03-16 | mono_depth_node.py: MiDaS/DepthAnything → PointCloud2. 실차 테스트 대기 |
 | C48 | ad_perception / ad_control Mock 노드 테스트 | P2 | 그린 | 2026-03-16 | 25 tests (hybrid_e2e_logic 11 + perception_logic 14). 전체 211/211 통과 |
 | C65 | C64 반영 — 상위 문서 갱신 + TASK 정합성 정리 | P1 | 그린 | 2026-03-16 | App Definition, SYSTEM_OVERVIEW, TASK.md C64 Camera-Only 반영. 누락 TASK 5건(C66~C69) 등록 |
 | C64 | 센서 스펙 확정 반영 — Camera-Only 전환 | P1 | 그린 | 2026-03-13 | LiDAR 전면 제거, 카메라 3대 rgbd_camera 전환, Nav2 costmap PointCloud2 연결, perception_node 멀티카메라 재구성, ARCH-005 작성. 10개 파일 수정, 테스트 29/29 통과 ([상세](task/C64_sensor_spec_camera_only.md)) |
