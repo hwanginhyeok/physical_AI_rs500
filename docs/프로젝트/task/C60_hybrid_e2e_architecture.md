@@ -136,6 +136,9 @@ Level 3: Emergency Stop
 | 파일 | 변경 내용 |
 |------|-----------|
 | `docs/프로젝트/TASK.md` | C60 작업 추가 |
+| `src/ad_perception/ad_perception/perception_manager.py` | Phase 2 신규 — 두 인지 시스템 통합 관리자 |
+| `src/ad_perception/ad_perception/__init__.py` | PerceptionManager, PerceptionMode export 추가 |
+| `src/ad_control/ad_control/hybrid_e2e_node.py` | PerceptionManager 연결, odom 구독, 런타임 파라미터 전환, 모니터링 개선 |
 
 ## 검증 방법
 
@@ -198,9 +201,13 @@ def test_fallback_hierarchy():
 - [x] Safety Guardian 구현
 - [x] 통합 노드 구조
 
-### Phase 2 (예정): Learned Perception
-- [ ] Foundation Model backbone 구현
-- [ ] Multi-task heads 구현
+### Phase 2 (완료 2026-03-13): 인지 통합
+- [x] PerceptionManager 구현 — 두 인지 시스템 통합 관리 (`perception_manager.py`)
+- [x] HybridE2ENode ↔ PerceptionManager 연결 — TODO placeholder 제거
+- [x] 런타임 모드 전환: `ros2 param set /hybrid_e2e perception_mode "traditional"`
+- [x] Odometry 구독 → 차량 pose/speed 실시간 반영
+- [x] 186개 기존 테스트 통과 확인
+- [ ] Foundation Model backbone 구현 (HydraNet — 향후 YOLOv8 교체용)
 - [ ] Training pipeline 구축
 - [ ] Gazebo 데이터셋 생성
 

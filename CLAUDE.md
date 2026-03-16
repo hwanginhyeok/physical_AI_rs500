@@ -36,3 +36,12 @@
 |-----------|-------------|------|
 | `task-wrap.md` | "task 정리해줘", "브리핑해줘", "마무리해줘", "문서화해줘" | TASK.md 갱신 → 문서화(task 로그/ADR) → 빌드 확인 → 브리핑 |
 | `simulation-report.md` | 모듈 시뮬레이션 결과 정리 시 | 표준 리포트 형식 작성 |
+| `task-sync.md` | "TASK 동기화", "이슈 동기화", "업무 동기화" | PLUVA Robotics 팀 TASK 이슈 관리 DB → 개인 통합 업무 관리 DB 동기화 |
+| `build-smart.md` | "빌드해줘", "빌드", "build" | git diff → 변경 패키지 추출 → 의존성 전파 → 선택 빌드 |
+| `launch-preflight.md` | "런치 검증", "시뮬 체크", "프리플라이트" | YAML 문법·필수키·TF·Launch 참조 사전 검증 |
+| `dds-troubleshoot.md` | "DDS 초기화", "SharedMemory 충돌", "activate 실패" | SharedMemory 정리 → lifecycle 상태 → 토픽 체인 검증 |
+| `test-runner.md` | "테스트 돌려줘", "pytest", "전체 테스트" | colcon test → 결과 수집 → 실패 분석 → TASK.md 기록 |
+| `rosbag-workflow.md` | "로스백 녹화", "rosbag 분석", "비교 분석" | Rosbag 녹화/분석/sim-vs-real 비교 |
+| `sim-batch.md` | "배치 시뮬레이션", "모듈 테스트 전체", "regression 테스트" | 4개 모듈 순차 실행 → 리포트 → regression 비교 |
+| `param-tuning-log.md` | "파라미터 튜닝", "nav2 조정", "costmap 조정" | before/after 스냅샷 → 사유 → 테스트 결과 → ADR 판단 |
+| `tf-check.md` | "TF 확인", "TF 트리 검증", URDF 변경 시 | xacro 정적 분석 → ARCH-001 대조 → 런타임 TF → 문서 동기화 |

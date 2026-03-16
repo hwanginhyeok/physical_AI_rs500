@@ -4,7 +4,7 @@
 **분야:** 시뮬레이션
 **중요도:** P2
 **담당:** 그린
-**상태:** 진행 (DDS 문제로 실행 검증 대기)
+**상태:** 진행 (CycloneDDS 전환 완료 — 사용자 실행 검증 대기)
 **발견:** C52 검증 중 (2026-03-04)
 
 ---
@@ -149,7 +149,7 @@ ros2 topic pub /cmd_vel geometry_msgs/Twist \
 
 ## C61 완료 조건
 
-- [ ] CycloneDDS 전환 또는 SharedMemory 정리
+- [x] CycloneDDS 전환 (ros-jazzy-rmw-cyclonedds-cpp 설치 + ~/.bashrc RMW_IMPLEMENTATION 설정 완료)
 - [ ] velocity_smoother lifecycle active 확인
 - [ ] cmd_vel_nav → cmd_vel_smoothed → cmd_vel 전체 체인 확인
 - [ ] Gazebo에서 차량 실제 이동 확인

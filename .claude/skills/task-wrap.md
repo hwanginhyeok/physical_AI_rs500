@@ -55,11 +55,11 @@ A5 기존 결정 대체  →  기존 ARCH 상태를 '대체됨' 처리 + 새 ARC
 
 ### STEP 5 — 빌드 필요 여부 확인
 
-코드/설정 파일이 변경됐으면:
-```bash
-colcon build --packages-select ad_bringup [기타 변경된 패키지]
-```
-빌드 성공 여부를 TASK.md 또는 task 로그에 기록
+코드 파일(.py, .cpp, .xacro, msg/srv)이 변경됐으면:
+→ **`build-smart` 스킬에 위임**하여 변경 패키지 자동 감지 + 선택 빌드를 수행한다.
+
+설정 파일(.yaml)만 변경된 경우 빌드 불필요 — "설정 변경만 감지됨" 알림.
+빌드 성공 여부는 build-smart 스킬이 TASK.md에 기록한다.
 
 ### STEP 6 — 브리핑 출력
 
