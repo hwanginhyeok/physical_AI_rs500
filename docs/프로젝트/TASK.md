@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-16 (C68 CAN 버그 수정, C66 완료, C60 Diffusion 연결)
+> 마지막 갱신: 2026-03-16 (C67 Visual SLAM 조사 완료, C68 CAN 버그 수정, C66 완료)
 >
 > **관리 룰**
 > - 상태: `예정` → `진행` → `완료` (완료 즉시 완료 섹션 최상단으로 이동)
@@ -56,7 +56,7 @@
 | C61 | 시뮬레이션 | 차량 물리 동작 검증 (cmd_vel → Gazebo) | P2 | 사용자 | **사용자 대기** | CycloneDDS 전환 + cmd_vel_relay 수정 완료. 집 PC에서 시뮬레이션 실행 검증 대기 ([상세](task/C61_velocity_chain_debug.md)) |
 | C60 | 아키텍처 | 농업용 Hybrid E2E 아키텍처 구축 | P2 | 그린 | **진행** | ARCH-004 설계, Safety Guardian 완료. C64 Camera-Only 반영 후 Learned Perception/Planning 통합 ([상세](task/C60_hybrid_e2e_architecture.md)) |
 | C57 | 인프라 | 시뮬/실물 네임스페이스 분리 (라이브 동시 비교) | P2 | — | 예정 | `/sim/*` / `/real/*` 분리 |
-| C67 | 인지 | Camera-Only Visual SLAM 검토 (ORB-SLAM3 / Stella-SLAM) | P2 | — | 예정 | LiDAR 미탑재로 LIO-SAM 불가. GPS-denied 환경 대응 |
+| C67 | 인지 | Camera-Only Visual SLAM 조사 완료 — 구현 예정 | P2 | 그린 | **조사 완료** | RTAB-Map 1순위 권장. 912줄 조사 보고서 작성. 구현은 C41(시뮬 환경) 후 착수 ([상세](../research/visual_slam_camera_only_survey.md)) |
 | | | **── P3 향후 ──** | | | | |
 | C45 | 인지 | 농경지 작물 행 인식 (시맨틱 세그멘테이션 기반) | P3 | — | 예정 | |
 | C46 | 인지 | 지형 traversability 분류 (Wild Visual Navigation 방식) | P3 | — | 예정 | |
