@@ -15,7 +15,10 @@
 
 | # | 작업 | 담당 | 진행 상황 | 다음 할 일 |
 |---|------|------|-----------|-----------|
-| C60 | 농업용 Hybrid E2E 아키텍처 구축 | 그린 | ARCH-004 설계, Safety Guardian 완료. C64 Camera-Only 반영 완료 | Learned Perception/Planning 통합 |
+| C41 | 집 PC Gazebo 시뮬레이션 환경 구축 | 사용자+그린 | Step 1~4 완료 (WSL2+ROS2+Gazebo+Nav2) | **Step 5~8**: git clone → colcon build → Foxglove 포트포워딩 → 시뮬레이션 E2E 테스트 ([상세](task/C44_wsl2_simulation_setup.md)) |
+| C61 | 차량 물리 동작 검증 | 사용자 | 코드 완료, 집 PC Gazebo 실행 대기 | C41 완료 후 → `ros2 launch ad_bringup simulation_launch.py` → cmd_vel → 차량 이동 확인 ([상세](task/C61_velocity_chain_debug.md)) |
+| C67 | Camera-Only Visual SLAM 구현 | 그린 | 조사 완료 (RTAB-Map 1순위) | C41 완료 후 → rtabmap_ros Jazzy 빌드 → Gazebo RGBD 연동 → GPS 전환 아키텍처 ([상세](../research/visual_slam_camera_only_survey.md)) |
+| C60 | 농업용 Hybrid E2E 아키텍처 구축 | 그린 | Phase 1~2 완료 (구조+연결). Diffusion+PurePursuit fallback 연결됨 | Phase 3: Diffusion 모델 훈련 (Gazebo 데이터 수집 → 학습 파이프라인) |
 
 ---
 
