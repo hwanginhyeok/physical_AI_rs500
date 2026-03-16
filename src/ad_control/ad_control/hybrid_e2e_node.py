@@ -13,11 +13,15 @@ import rclpy
 from rclpy.node import Node
 from rclpy.callback_groups import ReentrantCallbackGroup
 
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+
 from ad_core.hybrid_e2e_types import (
     PerceptionFeatures,
     PlannedTrajectory,
     GuardianDecision,
     HybridE2EState,
+    TerrainClass,
 )
 from ad_core.datatypes import Pose2D
 from ad_control.safety_guardian import SafetyGuardian, GuardianConfig
@@ -44,13 +48,24 @@ class HybridE2ENode(Node):
         # 현재 차량 상태
         self._current_pose: Optional[Pose2D] = None
         self._current_speed: float = 0.0
-        
+
         # Fallback 레벨
         self._fallback_level = 0  # 0: normal, 1: fields2cover, 2: pure_pursuit, 3: emergency
-        
+
         # 콜백 그룹 (동시 처리용)
         self._cb_group = ReentrantCallbackGroup()
-        
+
+        # Publisher: cmd_vel
+        self._cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+
+        # Subscriber: odometry (차량 상태 추적)
+        self._odom_sub = self.create_subscription(
+            Odometry,
+            '/odometry/local',
+            self._odom_callback,
+            10
+        )
+
         # 타이머 설정
         self._control_timer = self.create_timer(
             0.05,  # 20Hz
@@ -125,6 +140,22 @@ class HybridE2ENode(Node):
             self.get_logger().error(f'Control loop error: {str(e)}')
             self._enter_fallback(2)  # 심각한 오류 시 강제 fallback
     
+    def _odom_callback(self, msg: Odometry):
+        """오도메트리 수신 → 차량 상태 갱신."""
+        import math
+        pos = msg.pose.pose.position
+        q = msg.pose.pose.orientation
+        # quaternion → yaw
+        siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
+        cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+        yaw = math.atan2(siny_cosp, cosy_cosp)
+
+        self._current_pose = Pose2D(x=pos.x, y=pos.y, theta=yaw)
+        self._current_speed = math.hypot(
+            msg.twist.twist.linear.x,
+            msg.twist.twist.linear.y
+        )
+
     def _run_perception(self) -> PerceptionFeatures:
         """인지 실행 (Learned or Traditional)."""
         use_learned = self.get_parameter('use_learned_perception').value
@@ -213,9 +244,31 @@ class HybridE2ENode(Node):
         return None
     
     def _execute_trajectory(self, trajectory: PlannedTrajectory):
-        """경로 실행."""
-        # TODO: Control 명령 발행
-        self.get_logger().debug(f'Executing {trajectory.generation_method} trajectory')
+        """경로 실행 → cmd_vel 발행."""
+        if not trajectory.waypoints or not self._current_pose:
+            return
+
+        # 다음 웨이포인트를 향해 Pure Pursuit 스타일로 cmd_vel 계산
+        import math
+        target = trajectory.waypoints[min(2, len(trajectory.waypoints) - 1)]
+        dx = target[0] - self._current_pose.x
+        dy = target[1] - self._current_pose.y
+        distance = math.hypot(dx, dy)
+        target_angle = math.atan2(dy, dx)
+        angle_diff = target_angle - self._current_pose.theta
+        # normalize to [-pi, pi]
+        angle_diff = math.atan2(math.sin(angle_diff), math.cos(angle_diff))
+
+        cmd = Twist()
+        max_speed = self.get_parameter('max_speed').value
+        cmd.linear.x = min(max_speed, distance * 0.5)
+        cmd.angular.z = max(-1.0, min(1.0, angle_diff * 2.0))
+
+        self._cmd_vel_pub.publish(cmd)
+        self.get_logger().debug(
+            f'Executing {trajectory.generation_method}: '
+            f'v={cmd.linear.x:.2f} w={cmd.angular.z:.2f}'
+        )
     
     def _handle_guardian_violation(self, decision: GuardianDecision, trajectory: PlannedTrajectory):
         """Guardian 위반 처리."""
@@ -278,16 +331,18 @@ class HybridE2ENode(Node):
         self._enter_fallback(1)
     
     def _emergency_stop(self):
-        """비상 정지."""
+        """비상 정지 — cmd_vel 제로 발행."""
         self.get_logger().error('EMERGENCY STOP triggered!')
         self._state.emergency_stop_count += 1
-        # TODO: 비상 정지 명령 발행
+        self._cmd_vel_pub.publish(Twist())  # 모든 속도 0
     
     def _slow_down(self, speed_limit: Optional[float]):
-        """감속."""
+        """감속 — 현재 방향 유지, 속도만 제한."""
         limit = speed_limit or 0.5
         self.get_logger().info(f'Slowing down to {limit} m/s')
-        # TODO: 감속 명령 발행
+        cmd = Twist()
+        cmd.linear.x = limit
+        self._cmd_vel_pub.publish(cmd)
     
     def _monitoring_loop(self):
         """모니터링 루프 (1Hz)."""

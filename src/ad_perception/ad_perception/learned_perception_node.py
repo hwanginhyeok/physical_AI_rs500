@@ -15,7 +15,7 @@ import numpy as np
 # ROS2 메시지
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Header
-from typing import Tuple
+from typing import Optional, Tuple
 
 # 커스텀 메시지 (ad_core에서)
 import sys
@@ -39,19 +39,25 @@ from .crop_row_extractor import CropRowExtractor
 
 class LearnedPerceptionNode(Node):
     """Learned Perception 통합 노드.
-    
+
+    C64 Camera-Only: 멀티카메라 (front/left/right) 구독.
+    전면 카메라에서 YOLO 탐지 + 세그멘테이션 + 작물 행 추출.
+    좌/우 카메라는 이미지 캐시 (향후 확장).
+
     Subscribers:
-        - /camera/image_raw (sensor_msgs/Image)
-        - /camera/camera_info (sensor_msgs/CameraInfo)
-    
+        - /sensor/camera/front/image (sensor_msgs/Image)
+        - /sensor/camera/left/image (sensor_msgs/Image)
+        - /sensor/camera/right/image (sensor_msgs/Image)
+
     Publishers:
-        - /perception/features (PerceptionFeatures - custom)
-        - /perception/debug_image (sensor_msgs/Image)
+        - /perception/debug/image (sensor_msgs/Image)
     """
-    
+
+    CAMERA_NAMES = ['front', 'left', 'right']
+
     def __init__(self):
         super().__init__('learned_perception_node')
-        
+
         # 파라미터 선언
         self.declare_parameter('model_dir', '')
         self.declare_parameter('device', '')  # auto if empty
@@ -60,6 +66,7 @@ class LearnedPerceptionNode(Node):
         self.declare_parameter('publish_debug_image', True)
         self.declare_parameter('camera_height', 1.2)
         self.declare_parameter('row_spacing', 0.75)
+        self.declare_parameter('camera_topic_prefix', '/sensor/camera')
         
         # 파라미터 읽기
         model_dir = self.get_parameter('model_dir').value
@@ -69,137 +76,131 @@ class LearnedPerceptionNode(Node):
         self.publish_debug_image = self.get_parameter('publish_debug_image').value
         camera_height = self.get_parameter('camera_height').value
         row_spacing = self.get_parameter('row_spacing').value
-        
-        self.get_logger().info(f'LearnedPerception initializing...')
+        camera_prefix = self.get_parameter('camera_topic_prefix').value
+
+        self.get_logger().info('LearnedPerception initializing...')
         self.get_logger().info(f'  Device: {device or "auto"}')
         self.get_logger().info(f'  Inference rate: {self.inference_rate} Hz')
-        
+        self.get_logger().info(f'  Cameras: {self.CAMERA_NAMES}')
+
         # CvBridge
         self.bridge = CvBridge()
-        
+
         # Model Manager
         self.model_manager = ModelManager(
             model_dir=model_dir if model_dir else None,
             device=device if device else None
         )
-        
+
         # Perception 모듈들
         self.terrain_segmenter = TerrainSegmenter(
             self.model_manager,
             model_name="yolov8n-seg",
             conf_threshold=conf_threshold
         )
-        
+
         self.obstacle_detector = ObstacleDetector(
             self.model_manager,
             model_name="yolov8n",
             conf_threshold=conf_threshold,
             camera_height=camera_height
         )
-        
+
         self.crop_row_extractor = CropRowExtractor(
             camera_height=camera_height,
             expected_row_spacing=row_spacing
         )
-        
+
         # QoS 설정
         qos = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
             history=QoSHistoryPolicy.KEEP_LAST,
             depth=1
         )
-        
-        # Subscribers
-        self.image_sub = self.create_subscription(
-            Image,
-            '/camera/image_raw',
-            self._image_callback,
-            qos
-        )
-        
-        self.camera_info_sub = self.create_subscription(
-            CameraInfo,
-            '/camera/camera_info',
-            self._camera_info_callback,
-            qos
-        )
-        
+
+        # 멀티카메라 Subscribers (C64: front/left/right)
+        self.image_subs = {}
+        self.latest_images = {}
+        for cam_name in self.CAMERA_NAMES:
+            topic = f'{camera_prefix}/{cam_name}/image'
+            self.image_subs[cam_name] = self.create_subscription(
+                Image,
+                topic,
+                lambda msg, name=cam_name: self._image_callback(msg, name),
+                qos
+            )
+            self.latest_images[cam_name] = None
+            self.get_logger().info(f'  Subscribed: {topic}')
+
         # Publishers
-        # TODO: custom msg 타입이 필요함. 현재는 std_msgs로 대체
-        self.features_pub = self.create_publisher(
-            Image,  # Placeholder - should be custom msg
-            '/perception/debug/features',
-            10
-        )
-        
         self.debug_image_pub = self.create_publisher(
             Image,
             '/perception/debug/image',
             10
         )
-        
+
         # 타이머 (추론 제한)
         self.last_inference_time = self.get_clock().now()
         self.min_inference_period = 1.0 / self.inference_rate
-        
+
         # 상태
         self.camera_matrix = None
-        self.latest_image = None
         self.processing = False
-        
+
+        # 최신 features (hybrid_e2e_node에서 polling)
+        self.latest_features: Optional[PerceptionFeatures] = None
+
         self.get_logger().info('LearnedPerception initialized successfully')
     
-    def _camera_info_callback(self, msg: CameraInfo):
-        """카 메라 정보 수신."""
-        # 카 메라 행렬 추출
-        self.camera_matrix = np.array(msg.k).reshape(3, 3)
-        
-        # 모듈들에 업데이트
-        self.obstacle_detector.camera_matrix = self.camera_matrix
-        self.crop_row_extractor.camera_matrix = self.camera_matrix
-        
-        # 한 번만 받으면 됨
-        self.camera_info_sub.destroy()
-    
-    def _image_callback(self, msg: Image):
-        """이미지 수신 및 처리."""
+    def _image_callback(self, msg: Image, camera_name: str):
+        """멀티카메라 이미지 수신.
+
+        전면 카메라(front)에서만 추론 실행. 좌/우는 캐시만 갱신.
+        """
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        except Exception as e:
+            self.get_logger().error(f'{camera_name} image conversion error: {e}')
+            return
+
+        self.latest_images[camera_name] = cv_image
+
+        # 전면 카메라에서만 추론 실행
+        if camera_name != 'front':
+            return
+
         # 속도 제한
         now = self.get_clock().now()
         elapsed = (now - self.last_inference_time).nanoseconds / 1e9
-        
+
         if elapsed < self.min_inference_period:
             return
-        
+
         if self.processing:
             return
-        
+
         self.processing = True
         self.last_inference_time = now
-        
+
         try:
-            # 이미지 변환
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            self.latest_image = cv_image
-            
-            # 추론 실행
+            # 추론 실행 (전면 카메라)
             features = self._process_image(cv_image)
-            
+            self.latest_features = features
+
             # 디버그 이미지 퍼블리시
             if self.publish_debug_image:
                 debug_image = self._create_debug_image(cv_image, features)
                 debug_msg = self.bridge.cv2_to_imgmsg(debug_image, encoding='bgr8')
                 debug_msg.header = msg.header
                 self.debug_image_pub.publish(debug_msg)
-            
-            # TODO: features를 ROS 메시지로 변환하여 퍼블리시
-            # 현재는 hybrid_e2e_types 객체 사용
+
             self._publish_features(features, msg.header)
-            
+
         except Exception as e:
             self.get_logger().error(f'Processing error: {e}')
             import traceback
             self.get_logger().debug(traceback.format_exc())
-        
+
         finally:
             self.processing = False
     
