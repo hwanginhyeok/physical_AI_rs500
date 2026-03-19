@@ -1,5 +1,78 @@
 {
+  "_comment": [
+    "자율주행 Foxglove [DEV] 레이아웃 v2.0",
+    "Camera-Only 센서 스택 (C64 반영)",
+    "",
+    "용도: 개발자 일상 작업 — 기능 개발, 테스트, 파라미터 튜닝",
+    "  → 가볍게 쓰려면: foxglove_production_layout.json",
+    "  → 깊은 디버깅:   foxglove_debug_layout.json",
+    "  → sim/real 비교:  foxglove_comparison_layout.json",
+    "",
+    "5탭 구조:",
+    "  Perception  — 카메라 3대 + 깊이 포인트클라우드 + 탐지 결과",
+    "  Navigation  — 3D costmap/plan + 웨이포인트 관리 + Teleop",
+    "  Control     — cmd_vel vs odom 비교 + CTE + 속도 게이지",
+    "  GPS & Map   — GPS 지도 + EKF 위치 + 원시 데이터",
+    "  Diagnostics — TF 트리 + 토픽 그래프 + 로그 + 파라미터",
+    "",
+    "접속: Foxglove → Open connection → ws://localhost:8765"
+  ],
+
   "configById": {
+
+    "3D!perception": {
+      "followTf": "base_link",
+      "scene": {
+        "backgroundColor": "#0a0a1a",
+        "enableStats": false
+      },
+      "cameraState": {
+        "distance": 15,
+        "perspective": true,
+        "phi": 60,
+        "target": [0, 0, 0],
+        "thetaOffset": 0
+      },
+      "topics": {
+        "/sensor/camera/front/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#4fc3f7"
+        },
+        "/sensor/camera/left/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#66bb6a"
+        },
+        "/sensor/camera/right/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#ffa726"
+        },
+        "/perception/markers": {
+          "visible": true
+        }
+      },
+      "layers": {
+        "grid": {
+          "layerId": "foxglove.Grid",
+          "visible": true,
+          "size": 50,
+          "divisions": 50,
+          "color": "#222244"
+        },
+        "urdf": {
+          "layerId": "foxglove.Urdf",
+          "visible": true,
+          "sourceType": "param",
+          "parameter": "/robot_description"
+        }
+      }
+    },
+
     "3D!nav3d": {
       "followTf": "base_link",
       "scene": {
@@ -28,7 +101,7 @@
         "/local_costmap/costmap": { "visible": true, "colorMode": "costmap", "alpha": 0.25 },
         "/plan": { "visible": true, "lineWidth": 3, "gradient": ["#00ff88", "#00ff88"] },
         "/local_plan": { "visible": true, "lineWidth": 2, "gradient": ["#ffaa00", "#ffaa00"] },
-        "/sensor/lidar": { "visible": true, "pointSize": 2, "colorMode": "flat", "flatColor": "#ff4444" },
+        "/sensor/camera/front/points": { "visible": true, "pointSize": 2, "colorMode": "flat", "flatColor": "#4fc3f7", "alpha": 0.5 },
         "/map": { "visible": true, "alpha": 0.6 }
       },
       "layers": {
@@ -47,6 +120,228 @@
         }
       }
     },
+
+    "Image!camFront": {
+      "cameraTopic": "/sensor/camera/front/image",
+      "enabledMarkerTopics": ["/perception/annotations/front"],
+      "calibrationTopic": "/sensor/camera/front/camera_info",
+      "synchronize": false,
+      "smooth": true,
+      "flipHorizontal": false,
+      "flipVertical": false,
+      "rotation": 0
+    },
+    "Image!camLeft": {
+      "cameraTopic": "/sensor/camera/left/image",
+      "enabledMarkerTopics": [],
+      "synchronize": false,
+      "smooth": true,
+      "rotation": 0
+    },
+    "Image!camRight": {
+      "cameraTopic": "/sensor/camera/right/image",
+      "enabledMarkerTopics": [],
+      "synchronize": false,
+      "smooth": true,
+      "rotation": 0
+    },
+
+    "Plot!velocity": {
+      "title": "cmd_vel vs Actual",
+      "paths": [
+        {
+          "value": "/cmd_vel.linear.x",
+          "label": "cmd vx",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.twist.twist.linear.x",
+          "label": "odom vx",
+          "timestampMethod": "receiveTime",
+          "color": "#4fc3f7",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/cmd_vel.angular.z",
+          "label": "cmd wz",
+          "timestampMethod": "receiveTime",
+          "color": "#ff8a65",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/odometry/local.twist.twist.angular.z",
+          "label": "odom wz",
+          "timestampMethod": "receiveTime",
+          "color": "#ce93d8",
+          "lineSize": 1.0
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "isSynced": true,
+      "legendDisplay": "floating",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "minYValue": -3.0,
+      "maxYValue": 4.0,
+      "followingViewWidth": 30
+    },
+
+    "Plot!cmdVx": {
+      "title": "Forward Velocity (m/s)",
+      "paths": [
+        {
+          "value": "/cmd_vel.linear.x",
+          "label": "cmd vx",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/cmd_vel_smoothed.linear.x",
+          "label": "smoothed vx",
+          "timestampMethod": "receiveTime",
+          "color": "#ff8a65",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.twist.twist.linear.x",
+          "label": "actual vx",
+          "timestampMethod": "receiveTime",
+          "color": "#4fc3f7",
+          "lineSize": 2.0
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "isSynced": true,
+      "legendDisplay": "floating",
+      "minYValue": -2.0,
+      "maxYValue": 4.0,
+      "followingViewWidth": 30
+    },
+
+    "Plot!cmdWz": {
+      "title": "Angular Velocity (rad/s)",
+      "paths": [
+        {
+          "value": "/cmd_vel.angular.z",
+          "label": "cmd wz",
+          "timestampMethod": "receiveTime",
+          "color": "#ff8a65",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/cmd_vel_smoothed.angular.z",
+          "label": "smoothed wz",
+          "timestampMethod": "receiveTime",
+          "color": "#ffca28",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.twist.twist.angular.z",
+          "label": "actual wz",
+          "timestampMethod": "receiveTime",
+          "color": "#ce93d8",
+          "lineSize": 2.0
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "isSynced": true,
+      "legendDisplay": "floating",
+      "minYValue": -2.5,
+      "maxYValue": 2.5,
+      "followingViewWidth": 30
+    },
+
+    "Plot!ekfPos": {
+      "title": "EKF Position",
+      "paths": [
+        {
+          "value": "/odometry/local.pose.pose.position.x",
+          "label": "x (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.pose.pose.position.y",
+          "label": "y (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#66bb6a",
+          "lineSize": 1.5
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "followingViewWidth": 60
+    },
+
+    "Plot!cte": {
+      "title": "Cross-Track Error (m)",
+      "paths": [
+        {
+          "value": "/studio_script/cte.cte",
+          "label": "CTE",
+          "timestampMethod": "receiveTime",
+          "color": "#ff7043",
+          "lineSize": 2.0
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "minYValue": 0,
+      "maxYValue": 5.0,
+      "followingViewWidth": 60
+    },
+
+    "Plot!imu": {
+      "title": "IMU Acceleration",
+      "paths": [
+        {
+          "value": "/sensor/imu.linear_acceleration.x",
+          "label": "ax",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.linear_acceleration.y",
+          "label": "ay",
+          "timestampMethod": "receiveTime",
+          "color": "#66bb6a",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.linear_acceleration.z",
+          "label": "az",
+          "timestampMethod": "receiveTime",
+          "color": "#42a5f5",
+          "lineSize": 1.0
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "followingViewWidth": 15
+    },
+
+    "Teleop!teleop": {
+      "topic": "/cmd_vel",
+      "publishRate": 10,
+      "upButton": { "field": "linear-x", "value": 0.5 },
+      "downButton": { "field": "linear-x", "value": -0.3 },
+      "leftButton": { "field": "angular-z", "value": 0.5 },
+      "rightButton": { "field": "angular-z", "value": -0.5 }
+    },
+
     "CallService!svcStart": {
       "serviceName": "/waypoint_manager/start",
       "serviceType": "std_srvs/srv/Trigger",
@@ -84,58 +379,47 @@
         { "title": "Undo", "layout": "CallService!svcUndo" }
       ]
     },
+
     "RawMessages!wpStatus": {
       "topicPath": "/waypoint_manager/status",
       "diffEnabled": false,
       "showFullMessageForDiff": false,
       "fontSize": 13
     },
-    "Plot!velocity": {
-      "title": "Velocity",
-      "paths": [
-        {
-          "value": "/odometry/local.twist.twist.linear.x",
-          "label": "vx (m/s)",
-          "timestampMethod": "receiveTime",
-          "color": "#4fc3f7",
-          "lineSize": 1.5
-        },
-        {
-          "value": "/odometry/local.twist.twist.angular.z",
-          "label": "wz (rad/s)",
-          "timestampMethod": "receiveTime",
-          "color": "#ff8a65",
-          "lineSize": 1.5
-        }
-      ],
-      "xAxisVal": "timestamp",
-      "showLegend": true,
-      "isSynced": true,
-      "legendDisplay": "floating",
-      "showXAxisLabels": true,
-      "showYAxisLabels": true,
-      "minYValue": -3.0,
-      "maxYValue": 4.0,
-      "followingViewWidth": 30
+    "RawMessages!rawOdom": {
+      "topicPath": "/odometry/local",
+      "diffEnabled": false,
+      "showFullMessageForDiff": false,
+      "fontSize": 12
     },
-    "Teleop!teleop": {
-      "topic": "/cmd_vel",
-      "publishRate": 10,
-      "upButton": { "field": "linear-x", "value": 0.5 },
-      "downButton": { "field": "linear-x", "value": -0.3 },
-      "leftButton": { "field": "angular-z", "value": 0.5 },
-      "rightButton": { "field": "angular-z", "value": -0.5 }
+    "RawMessages!rawGps": {
+      "topicPath": "/sensor/gps",
+      "diffEnabled": false,
+      "showFullMessageForDiff": false,
+      "fontSize": 12
     },
-    "Image!camera": {
-      "cameraTopic": "/sensor/camera/front",
-      "enabledMarkerTopics": [],
-      "synchronize": false,
-      "transformMarkers": false,
-      "smooth": true,
-      "flipHorizontal": false,
-      "flipVertical": false,
-      "rotation": 0
+
+    "Map!gpsMap": {
+      "layer": "map",
+      "topicPath": "/sensor/gps",
+      "zoomLevel": 18
     },
+
+    "Indicator!navState": {
+      "path": "/waypoint_manager/status.status",
+      "style": "background",
+      "fallbackColor": "#546e7a",
+      "fallbackLabel": "NO DATA"
+    },
+
+    "Gauge!speed": {
+      "path": "/odometry/local.twist.twist.linear.x",
+      "minValue": -1.0,
+      "maxValue": 3.0,
+      "colorMode": "gradient",
+      "gradient": ["#4caf50", "#ffeb3b", "#f44336"]
+    },
+
     "Log!navLog": {
       "searchTerms": [],
       "minLogLevel": 1,
@@ -144,55 +428,60 @@
         "bt_navigator": true,
         "controller_server": true,
         "planner_server": true,
-        "behavior_server": true
+        "behavior_server": true,
+        "velocity_smoother": true
       }
     },
-    "TopicGraph!tgraph": {},
+    "Log!perceptionLog": {
+      "searchTerms": [],
+      "minLogLevel": 1,
+      "nameFilter": {
+        "perception_node": true,
+        "learned_perception_node": true,
+        "mono_depth_node": true
+      }
+    },
     "Log!diagLog": {
       "searchTerms": [],
       "minLogLevel": 2
     },
+
+    "TopicGraph!tgraph": {},
     "Parameters!params": {},
     "TransformTree!tfTree": {},
-    "RawMessages!rawOdom": {
-      "topicPath": "/odometry/local",
-      "diffEnabled": false,
-      "showFullMessageForDiff": false,
-      "fontSize": 12
-    },
-    "Map!gpsMap": {
-      "layer": "map",
-      "topicPath": "/sensor/gps",
-      "zoomLevel": 18
-    },
-    "Plot!ekfPos": {
-      "title": "EKF Position",
-      "paths": [
-        {
-          "value": "/odometry/local.pose.pose.position.x",
-          "label": "x (m)",
-          "timestampMethod": "receiveTime",
-          "color": "#ef5350",
-          "lineSize": 1.5
-        },
-        {
-          "value": "/odometry/local.pose.pose.position.y",
-          "label": "y (m)",
-          "timestampMethod": "receiveTime",
-          "color": "#66bb6a",
-          "lineSize": 1.5
-        }
-      ],
-      "xAxisVal": "timestamp",
-      "showLegend": true,
-      "legendDisplay": "floating",
-      "showXAxisLabels": true,
-      "showYAxisLabels": true,
-      "followingViewWidth": 60
-    },
+
     "Tab!mainTab": {
       "activeTabIdx": 0,
       "tabs": [
+        {
+          "title": "Perception",
+          "layout": {
+            "direction": "column",
+            "first": {
+              "direction": "row",
+              "first": "Image!camFront",
+              "second": {
+                "direction": "row",
+                "first": "Image!camLeft",
+                "second": "Image!camRight",
+                "splitPercentage": 50
+              },
+              "splitPercentage": 40
+            },
+            "second": {
+              "direction": "row",
+              "first": "3D!perception",
+              "second": {
+                "direction": "column",
+                "first": "Gauge!speed",
+                "second": "Log!perceptionLog",
+                "splitPercentage": 35
+              },
+              "splitPercentage": 75
+            },
+            "splitPercentage": 45
+          }
+        },
         {
           "title": "Navigation",
           "layout": {
@@ -212,19 +501,62 @@
               "direction": "column",
               "first": {
                 "direction": "column",
-                "first": "Tab!svcTab",
-                "second": "RawMessages!wpStatus",
-                "splitPercentage": 60
+                "first": "Indicator!navState",
+                "second": "Tab!svcTab",
+                "splitPercentage": 25
               },
               "second": {
                 "direction": "column",
-                "first": "Image!camera",
+                "first": "RawMessages!wpStatus",
                 "second": "Log!navLog",
-                "splitPercentage": 50
+                "splitPercentage": 45
               },
               "splitPercentage": 45
             },
             "splitPercentage": 70
+          }
+        },
+        {
+          "title": "Control",
+          "layout": {
+            "direction": "column",
+            "first": {
+              "direction": "row",
+              "first": "Plot!cmdVx",
+              "second": "Plot!cmdWz",
+              "splitPercentage": 50
+            },
+            "second": {
+              "direction": "row",
+              "first": "Plot!cte",
+              "second": {
+                "direction": "column",
+                "first": "Plot!ekfPos",
+                "second": "Plot!imu",
+                "splitPercentage": 50
+              },
+              "splitPercentage": 40
+            },
+            "splitPercentage": 50
+          }
+        },
+        {
+          "title": "GPS & Map",
+          "layout": {
+            "direction": "row",
+            "first": "Map!gpsMap",
+            "second": {
+              "direction": "column",
+              "first": "Plot!ekfPos",
+              "second": {
+                "direction": "row",
+                "first": "RawMessages!rawOdom",
+                "second": "RawMessages!rawGps",
+                "splitPercentage": 50
+              },
+              "splitPercentage": 55
+            },
+            "splitPercentage": 60
           }
         },
         {
@@ -245,31 +577,28 @@
             },
             "splitPercentage": 50
           }
-        },
-        {
-          "title": "Debug",
-          "layout": {
-            "direction": "row",
-            "first": {
-              "direction": "column",
-              "first": "RawMessages!wpStatus",
-              "second": "RawMessages!rawOdom",
-              "splitPercentage": 50
-            },
-            "second": {
-              "direction": "column",
-              "first": "Map!gpsMap",
-              "second": "Plot!ekfPos",
-              "splitPercentage": 50
-            },
-            "splitPercentage": 50
-          }
         }
       ]
     }
   },
+
   "globalVariables": {},
-  "userNodes": {},
+
+  "userNodes": {
+    "cte_node": {
+      "name": "CrossTrackError",
+      "sourceCode": "// Cross-Track Error: /odometry/local 위치와 /plan 경로 간 최소 거리\n// Plot 패널에서 /studio_script/cte.cte 로 참조\n\nimport { Input } from \"./types\";\n\nexport const inputs = [\"/odometry/local\", \"/plan\"];\nexport const output = \"/studio_script/cte\";\n\nlet latestPlan: any = null;\n\ntype InputEvent = Input<\"/odometry/local\"> | Input<\"/plan\">;\n\nexport default function script(event: InputEvent): { cte: number } | undefined {\n  if (event.topic === \"/plan\") {\n    latestPlan = (event as any).message;\n    return undefined;\n  }\n\n  if (!latestPlan || !latestPlan.poses || latestPlan.poses.length === 0) {\n    return undefined;\n  }\n\n  const pos = (event as any).message.pose.pose.position;\n  let minDist = Infinity;\n\n  for (const p of latestPlan.poses) {\n    const dx = pos.x - p.pose.position.x;\n    const dy = pos.y - p.pose.position.y;\n    const d = Math.sqrt(dx * dx + dy * dy);\n    if (d < minDist) minDist = d;\n  }\n\n  return { cte: minDist };\n}\n"
+    },
+    "vel_error_node": {
+      "name": "VelocityTrackingError",
+      "sourceCode": "// Velocity Tracking Error: cmd_vel 명령과 실제 odom 속도 차이\n// Plot 패널에서 /studio_script/vel_error.vx_error, .wz_error 로 참조\n\nimport { Input } from \"./types\";\n\nexport const inputs = [\"/cmd_vel\", \"/odometry/local\"];\nexport const output = \"/studio_script/vel_error\";\n\nlet latestCmd: any = null;\n\ntype InputEvent = Input<\"/cmd_vel\"> | Input<\"/odometry/local\">;\n\nexport default function script(event: InputEvent): { vx_error: number; wz_error: number } | undefined {\n  if (event.topic === \"/cmd_vel\") {\n    latestCmd = (event as any).message;\n    return undefined;\n  }\n\n  if (!latestCmd) return undefined;\n\n  const twist = (event as any).message.twist.twist;\n  const vx_error = Math.abs(latestCmd.linear.x - twist.linear.x);\n  const wz_error = Math.abs(latestCmd.angular.z - twist.angular.z);\n\n  return { vx_error, wz_error };\n}\n"
+    },
+    "heading_error_node": {
+      "name": "HeadingFromPlan",
+      "sourceCode": "// Heading Error: 차량 방향과 경로 방향 간 오차 (degrees)\n// Plot 패널에서 /studio_script/heading.error_deg 로 참조\n\nimport { Input } from \"./types\";\n\nexport const inputs = [\"/odometry/local\", \"/plan\"];\nexport const output = \"/studio_script/heading\";\n\nlet latestPlan: any = null;\n\nfunction quaternionToYaw(q: any): number {\n  const siny = 2.0 * (q.w * q.z + q.x * q.y);\n  const cosy = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);\n  return Math.atan2(siny, cosy);\n}\n\ntype InputEvent = Input<\"/odometry/local\"> | Input<\"/plan\">;\n\nexport default function script(event: InputEvent): { error_deg: number; robot_deg: number; path_deg: number } | undefined {\n  if (event.topic === \"/plan\") {\n    latestPlan = (event as any).message;\n    return undefined;\n  }\n\n  if (!latestPlan || !latestPlan.poses || latestPlan.poses.length < 2) return undefined;\n\n  const msg = (event as any).message;\n  const pos = msg.pose.pose.position;\n  const robotYaw = quaternionToYaw(msg.pose.pose.orientation);\n\n  // 가장 가까운 경로점 찾기\n  let minDist = Infinity;\n  let nearIdx = 0;\n  for (let i = 0; i < latestPlan.poses.length; i++) {\n    const p = latestPlan.poses[i].pose.position;\n    const d = Math.sqrt((pos.x - p.x) ** 2 + (pos.y - p.y) ** 2);\n    if (d < minDist) { minDist = d; nearIdx = i; }\n  }\n\n  // 경로 방향 (현재 점 → 다음 점)\n  const nextIdx = Math.min(nearIdx + 1, latestPlan.poses.length - 1);\n  const p0 = latestPlan.poses[nearIdx].pose.position;\n  const p1 = latestPlan.poses[nextIdx].pose.position;\n  const pathYaw = Math.atan2(p1.y - p0.y, p1.x - p0.x);\n\n  // 각도 오차 (-180 ~ +180)\n  let err = (robotYaw - pathYaw) * 180 / Math.PI;\n  while (err > 180) err -= 360;\n  while (err < -180) err += 360;\n\n  return {\n    error_deg: err,\n    robot_deg: robotYaw * 180 / Math.PI,\n    path_deg: pathYaw * 180 / Math.PI,\n  };\n}\n"
+    }
+  },
+
   "playbackConfig": {
     "speed": 1.0
   },

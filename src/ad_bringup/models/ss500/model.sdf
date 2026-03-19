@@ -3,7 +3,8 @@
   SS500 궤도차량 SDF 모델 (Gazebo Harmonic)
   차체: 2.0m x 1.2m x 0.8m, 1000kg
   궤도: tracks_separation=1.4m, TrackedVehicle 플러그인
-  센서 (C64-2): RGBD Camera 3대(front/left/right, 640x480, 15Hz, depth 10m), IMU(100Hz), GPS(10Hz)
+  센서 (C64-2): RGBD Camera 3대(front/left/right, 320x240, 5Hz, depth 10m), IMU(100Hz), GPS(10Hz)
+  [sim-perf] 해상도·Hz 경량화 — RTF 0.01→개선 목표. 실차 스펙(640x480/15Hz)과 다름
   LiDAR 미탑재
 -->
 <sdf version="1.9">
@@ -212,16 +213,17 @@
       </visual>
 
       <!-- C64-2: rgbd_camera → RGB + Depth + PointCloud2 동시 발행 -->
+      <!-- [sim-perf] 320x240 @ 5Hz (원본: 640x480 @ 15Hz) -->
       <sensor name="front_camera" type="rgbd_camera">
         <always_on>true</always_on>
-        <update_rate>15</update_rate>
+        <update_rate>5</update_rate>
         <topic>/sensor/camera/front</topic>
-        <visualize>true</visualize>
+        <visualize>false</visualize>
         <camera>
           <horizontal_fov>1.396</horizontal_fov>
           <image>
-            <width>640</width>
-            <height>480</height>
+            <width>320</width>
+            <height>240</height>
             <format>R8G8B8</format>
           </image>
           <clip>
@@ -271,16 +273,17 @@
       </visual>
 
       <!-- C64-2: rgbd_camera -->
+      <!-- [sim-perf] 320x240 @ 5Hz -->
       <sensor name="left_camera" type="rgbd_camera">
         <always_on>true</always_on>
-        <update_rate>15</update_rate>
+        <update_rate>5</update_rate>
         <topic>/sensor/camera/left</topic>
         <visualize>false</visualize>
         <camera>
           <horizontal_fov>1.396</horizontal_fov>
           <image>
-            <width>640</width>
-            <height>480</height>
+            <width>320</width>
+            <height>240</height>
             <format>R8G8B8</format>
           </image>
           <clip>
@@ -330,16 +333,17 @@
       </visual>
 
       <!-- C64-2: rgbd_camera -->
+      <!-- [sim-perf] 320x240 @ 5Hz -->
       <sensor name="right_camera" type="rgbd_camera">
         <always_on>true</always_on>
-        <update_rate>15</update_rate>
+        <update_rate>5</update_rate>
         <topic>/sensor/camera/right</topic>
         <visualize>false</visualize>
         <camera>
           <horizontal_fov>1.396</horizontal_fov>
           <image>
-            <width>640</width>
-            <height>480</height>
+            <width>320</width>
+            <height>240</height>
             <format>R8G8B8</format>
           </image>
           <clip>

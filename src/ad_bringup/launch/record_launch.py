@@ -39,6 +39,12 @@ _SENSOR_TOPICS = [
     '/sensor/camera/front/image',   # C64-2: rgbd_camera 토픽 구조 변경
     '/sensor/camera/left/image',
     '/sensor/camera/right/image',
+    '/sensor/camera/front/points',  # RGBD depth PointCloud2
+    '/sensor/camera/left/points',
+    '/sensor/camera/right/points',
+    '/sensor/camera/front/camera_info',  # CameraInfo (Foxglove 투영용)
+    '/sensor/camera/left/camera_info',
+    '/sensor/camera/right/camera_info',
     '/joint_states',
 ]
 

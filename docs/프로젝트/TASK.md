@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-16 (C67 Visual SLAM 조사 완료, C68 CAN 버그 수정, C66 완료)
+> 마지막 갱신: 2026-03-17 (C70 Foxglove 레이아웃 v2.0 전면 개선)
 >
 > **관리 룰**
 > - 상태: `예정` → `진행` → `완료` (완료 즉시 완료 섹션 최상단으로 이동)
@@ -28,6 +28,14 @@
 
 | 파일 | 변경 내용 | 확인 포인트 |
 |------|-----------|-------------|
+| `src/ad_bringup/config/foxglove_layout.json` | **C70**: [DEV] 3탭→5탭 전면 재설계, User Script 3개 | Foxglove Import 후 5탭 정상 표시 |
+| `src/ad_bringup/config/foxglove_production_layout.json` | **C70**: [PRODUCTION] 신규. 2탭 경량 모니터링 | Monitor/System 탭 표시 확인 |
+| `src/ad_bringup/config/foxglove_debug_layout.json` | **C70**: [DEBUG] 신규. 5탭 심층 디버깅 | Raw Sensors/Depth&TF/Nav2/Topic/VelocityChain 탭 확인 |
+| `src/ad_bringup/config/foxglove_comparison_layout.json` | **C70**: LiDAR 제거, Camera 비교 탭 추가, depth pointcloud 비교 | sim/real bag 비교 동작 확인 |
+| `src/ad_bringup/config/bridge_config.yaml` | **C70**: CameraInfo ×3 브릿지 추가 | `ros2 topic list`에서 `/sensor/camera/*/camera_info` 확인 |
+| `src/ad_bringup/launch/record_launch.py` | **C70**: depth points ×3, camera_info ×3 토픽 추가 (6개) | 녹화 후 `ros2 bag info`에서 토픽 확인 |
+| `src/ad_perception/ad_perception/perception_node.py` | **C70**: Foxglove ImageAnnotations 발행 추가 (foxglove_msgs 선택적 의존) | foxglove_msgs 설치 시 `/perception/annotations/front` 토픽 발행 확인 |
+| `src/ad_perception/package.xml` | **C70**: foxglove_msgs exec_depend 추가 | — |
 | `src/ad_bringup/models/ss500/model.sdf` | **C64**: LiDAR 제거, 카메라 3대 추가 (front/left/right), `camera` → `rgbd_camera` 전환, `depth_camera` 설정 추가 | Gazebo에서 RGB + PointCloud2 정상 발행 확인 |
 | `src/ad_bringup/config/bridge_config.yaml` | **C64**: LiDAR 브릿지 제거, 카메라 3대 RGB + PointCloud2 브릿지 추가 (6개 토픽) | ros2 topic list에서 /sensor/camera/*/points 확인 |
 | `src/ad_bringup/config/nav2_params.yaml` | **C64**: obstacle_layer에 PointCloud2 ×3 소스 연결 (global+local), collision_monitor에 pointcloud 소스 추가 | costmap에 장애물이 정상 표시되는지 |
@@ -73,6 +81,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C70 | Foxglove 레이아웃 v2.0 전면 개선 | P2 | 그린 | 2026-03-17 | 4레이아웃 체계 (Production 2탭/Dev 5탭/Debug 5탭/Comparison 5탭), CameraInfo 브릿지 추가, User Script 3개, 탐지 어노테이션 발행, 녹화 토픽 보강. 8개 파일 수정 ([상세](task/C70_foxglove_layout_v2.md)) |
 | C68 | CAN 브릿지 Twist→트랙 변환 수정 | P2 | 그린 | 2026-03-16 | angular.z 미반영 버그 수정. SkidSteerModel 연결. 실차 조향 가능하도록 |
 | C66 | 실물 Mono Depth 노드 | P2 | 그린 | 2026-03-16 | mono_depth_node.py: MiDaS/DepthAnything → PointCloud2. 실차 테스트 대기 |
 | C48 | ad_perception / ad_control Mock 노드 테스트 | P2 | 그린 | 2026-03-16 | 25 tests (hybrid_e2e_logic 11 + perception_logic 14). 전체 211/211 통과 |

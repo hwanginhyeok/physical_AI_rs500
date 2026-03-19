@@ -123,13 +123,12 @@ def generate_launch_description():
         output='screen',
     )
 
-    # gazebo_gui: WSL2에서 Mesa 소프트웨어 렌더러 사용으로 CPU 400% 점유 → RTF 0.006x
-    # Foxglove Studio(ws://localhost:8765)로 시각화하므로 GUI 비활성화
-    # 필요 시 별도 터미널에서: gz sim -g
-    # gazebo_gui = ExecuteProcess(
-    #     cmd=['gz', 'sim', '-g'],  # GUI 모드 (-g = GUI only)
-    #     output='screen',
-    # )
+    # gazebo_gui: GPU 렌더링 활용 시 활성화 (WSLg 필요)
+    # [sim-perf] 카메라 경량화(320x240@5Hz) 후 GUI 병행 가능
+    gazebo_gui = ExecuteProcess(
+        cmd=['gz', 'sim', '-g'],  # GUI 모드 (-g = GUI only)
+        output='screen',
+    )
 
     # 로봇 스폰
     spawn_robot = Node(
@@ -337,9 +336,9 @@ def generate_launch_description():
         # 1. TF 발행
         robot_state_publisher,
 
-        # 2. Gazebo 시뮬레이터 (GUI 제거 — RTF 개선)
+        # 2. Gazebo 시뮬레이터 (서버 + GUI)
         gazebo_server,
-        # gazebo_gui,  # WSL2 CPU 병목 — Foxglove로 대체
+        gazebo_gui,  # [sim-perf] GPU 렌더링 활용
         spawn_robot,
 
         # 2b. map→odom 정적 변환 (AMCL 대체 — C50)

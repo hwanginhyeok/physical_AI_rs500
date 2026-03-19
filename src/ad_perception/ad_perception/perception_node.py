@@ -24,6 +24,19 @@ except ImportError:
     np = None  # type: ignore[assignment]
     _HAS_NUMPY = False
 
+# Foxglove 탐지 결과 시각화 (선택적 의존성)
+try:
+    from foxglove_msgs.msg import (
+        ImageAnnotations,
+        PointsAnnotation,
+        TextAnnotation,
+        Point2 as FoxglovePoint2,
+        Color as FoxgloveColor,
+    )
+    _HAS_FOXGLOVE_MSGS = True
+except ImportError:
+    _HAS_FOXGLOVE_MSGS = False
+
 from ad_core.camera_detector import CameraDetector, Detection
 from ad_core.semantic_segmenter import (
     SemanticSegmenter,
@@ -61,6 +74,13 @@ class PerceptionModule:
         # 인지 서브모듈 초기화
         self._camera_detector = CameraDetector()
         self._semantic_segmenter = SemanticSegmenter()
+
+        # Foxglove 탐지 시각화 퍼블리셔 (foxglove_msgs 설치 시에만 활성)
+        self._annotation_pub = None
+        if _HAS_FOXGLOVE_MSGS:
+            self._annotation_pub = node.create_publisher(
+                ImageAnnotations, '/perception/annotations/front', 10)
+            node.get_logger().info('[인지] Foxglove 탐지 어노테이션 발행 활성화')
 
         # 토픽명 파라미터에서 읽기
         camera_front_topic = node.get_parameter('topics.camera_front').value
@@ -101,6 +121,7 @@ class PerceptionModule:
         self._latest_images['front'] = msg
         self.process_camera(msg)
         self._run_segmentation(msg)
+        self._publish_foxglove_annotations(msg.header)
 
     def _camera_left_callback(self, msg: Image) -> None:
         """좌전방 카메라 이미지 수신."""
@@ -213,6 +234,61 @@ class PerceptionModule:
         if self.segmentation is None:
             return None
         return self._semantic_segmenter.get_obstacle_area(self.segmentation)
+
+    # ------------------------------------------------------------------
+    # Foxglove 어노테이션 발행
+    # ------------------------------------------------------------------
+
+    def _publish_foxglove_annotations(self, header) -> None:
+        """탐지 결과를 Foxglove ImageAnnotations으로 발행.
+
+        바운딩 박스(LINE_LOOP)와 클래스 라벨(TextAnnotation)을 발행하여
+        Foxglove Image 패널에서 카메라 위에 오버레이로 표시한다.
+        """
+        if not self._annotation_pub or not self.detections:
+            return
+
+        annotations = ImageAnnotations()
+
+        # 클래스별 색상 매핑
+        color_map = {
+            'person': FoxgloveColor(r=1.0, g=0.0, b=0.0, a=1.0),
+            'car': FoxgloveColor(r=1.0, g=0.6, b=0.0, a=1.0),
+            'truck': FoxgloveColor(r=1.0, g=0.4, b=0.0, a=1.0),
+            'animal': FoxgloveColor(r=1.0, g=1.0, b=0.0, a=1.0),
+        }
+        default_color = FoxgloveColor(r=0.0, g=1.0, b=0.0, a=1.0)
+
+        for det in self.detections:
+            color = color_map.get(det.class_name, default_color)
+
+            # 바운딩 박스 (LINE_LOOP = 4점 사각형)
+            bbox = PointsAnnotation()
+            bbox.timestamp = header.stamp
+            bbox.type = 2  # LINE_LOOP
+            bbox.thickness = 2.0
+            bbox.outline_color = color
+            bbox.points = [
+                FoxglovePoint2(x=det.bbox_x1, y=det.bbox_y1),
+                FoxglovePoint2(x=det.bbox_x2, y=det.bbox_y1),
+                FoxglovePoint2(x=det.bbox_x2, y=det.bbox_y2),
+                FoxglovePoint2(x=det.bbox_x1, y=det.bbox_y2),
+            ]
+            annotations.points.append(bbox)
+
+            # 클래스 라벨 + 신뢰도
+            label = TextAnnotation()
+            label.timestamp = header.stamp
+            label.position = FoxglovePoint2(
+                x=det.bbox_x1, y=max(0.0, det.bbox_y1 - 5.0))
+            label.text = f'{det.class_name} {det.confidence:.0%}'
+            label.font_size = 12.0
+            label.text_color = color
+            label.background_color = FoxgloveColor(
+                r=0.0, g=0.0, b=0.0, a=0.6)
+            annotations.texts.append(label)
+
+        self._annotation_pub.publish(annotations)
 
     # ------------------------------------------------------------------
     # 결과 조회

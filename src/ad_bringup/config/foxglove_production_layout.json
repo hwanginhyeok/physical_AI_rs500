@@ -1,0 +1,183 @@
+{
+  "_comment": [
+    "자율주행 Foxglove [PRODUCTION] 레이아웃 v2.0",
+    "Camera-Only 센서 스택 (C64 반영)",
+    "",
+    "용도: 현장 운용 / 감독자 모니터링",
+    "특징:",
+    "  - 최소 대역폭: PointCloud·costmap 미구독",
+    "  - 읽기 전용: Teleop·CallService 패널 없음 (안전)",
+    "  - 핵심 정보만: 전면 카메라 + GPS + 속도 + 상태 + 경고",
+    "",
+    "2탭 구조:",
+    "  Monitor — 전면 카메라 + GPS 지도 + 속도 게이지 + 상태",
+    "  System  — 속도 추이 + 위치 + 로그",
+    "",
+    "접속: Foxglove → Open connection → ws://localhost:8765"
+  ],
+
+  "configById": {
+
+    "Image!camFront": {
+      "cameraTopic": "/sensor/camera/front/image",
+      "enabledMarkerTopics": ["/perception/annotations/front"],
+      "calibrationTopic": "/sensor/camera/front/camera_info",
+      "synchronize": false,
+      "smooth": true,
+      "rotation": 0
+    },
+
+    "Map!gpsMap": {
+      "layer": "map",
+      "topicPath": "/sensor/gps",
+      "zoomLevel": 18
+    },
+
+    "Indicator!navState": {
+      "path": "/waypoint_manager/status.status",
+      "style": "background",
+      "fallbackColor": "#546e7a",
+      "fallbackLabel": "NO DATA"
+    },
+
+    "Gauge!speed": {
+      "path": "/odometry/local.twist.twist.linear.x",
+      "minValue": -1.0,
+      "maxValue": 3.0,
+      "colorMode": "gradient",
+      "gradient": ["#4caf50", "#ffeb3b", "#f44336"]
+    },
+
+    "RawMessages!wpStatus": {
+      "topicPath": "/waypoint_manager/status",
+      "diffEnabled": false,
+      "showFullMessageForDiff": false,
+      "fontSize": 14
+    },
+
+    "Log!alertLog": {
+      "searchTerms": [],
+      "minLogLevel": 2,
+      "nameFilter": {}
+    },
+
+    "Plot!velocity": {
+      "title": "Vehicle Speed",
+      "paths": [
+        {
+          "value": "/odometry/local.twist.twist.linear.x",
+          "label": "vx (m/s)",
+          "timestampMethod": "receiveTime",
+          "color": "#4fc3f7",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/odometry/local.twist.twist.angular.z",
+          "label": "wz (rad/s)",
+          "timestampMethod": "receiveTime",
+          "color": "#ce93d8",
+          "lineSize": 1.5
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "isSynced": true,
+      "legendDisplay": "floating",
+      "minYValue": -3.0,
+      "maxYValue": 4.0,
+      "followingViewWidth": 60
+    },
+
+    "Plot!ekfPos": {
+      "title": "Position",
+      "paths": [
+        {
+          "value": "/odometry/local.pose.pose.position.x",
+          "label": "x (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.pose.pose.position.y",
+          "label": "y (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#66bb6a",
+          "lineSize": 1.5
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "followingViewWidth": 120
+    },
+
+    "Log!navLog": {
+      "searchTerms": [],
+      "minLogLevel": 1,
+      "nameFilter": {
+        "waypoint_manager": true,
+        "bt_navigator": true,
+        "controller_server": true,
+        "planner_server": true,
+        "behavior_server": true
+      }
+    },
+
+    "Tab!mainTab": {
+      "activeTabIdx": 0,
+      "tabs": [
+        {
+          "title": "Monitor",
+          "layout": {
+            "direction": "row",
+            "first": {
+              "direction": "column",
+              "first": "Image!camFront",
+              "second": "Map!gpsMap",
+              "splitPercentage": 55
+            },
+            "second": {
+              "direction": "column",
+              "first": {
+                "direction": "column",
+                "first": "Indicator!navState",
+                "second": "Gauge!speed",
+                "splitPercentage": 40
+              },
+              "second": {
+                "direction": "column",
+                "first": "RawMessages!wpStatus",
+                "second": "Log!alertLog",
+                "splitPercentage": 45
+              },
+              "splitPercentage": 40
+            },
+            "splitPercentage": 65
+          }
+        },
+        {
+          "title": "System",
+          "layout": {
+            "direction": "row",
+            "first": {
+              "direction": "column",
+              "first": "Plot!velocity",
+              "second": "Plot!ekfPos",
+              "splitPercentage": 50
+            },
+            "second": "Log!navLog",
+            "splitPercentage": 60
+          }
+        }
+      ]
+    }
+  },
+
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1.0
+  },
+  "layout": "Tab!mainTab"
+}

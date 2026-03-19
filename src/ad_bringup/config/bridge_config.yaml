@@ -69,6 +69,27 @@
   gz_type_name: gz.msgs.PointCloudPacked
   direction: GZ_TO_ROS
 
+# --- RGBD 카메라 CameraInfo 3대 (Gazebo → ROS2) ---
+# Foxglove Image 패널에서 3D 마커를 카메라 이미지에 투영할 때 필요
+
+# 전면 카메라 CameraInfo
+- topic_name: /sensor/camera/front/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+
+# 좌전방 카메라 CameraInfo
+- topic_name: /sensor/camera/left/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+
+# 우전방 카메라 CameraInfo
+- topic_name: /sensor/camera/right/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+
 # --- 시뮬레이션 시계 (Gazebo → ROS2) ---
 - topic_name: /clock
   ros_type_name: rosgraph_msgs/msg/Clock
