@@ -1,9 +1,0 @@
-perception_node:
-  ros__parameters:
-    # C64: Camera-Only 멀티카메라 토픽명
-    topics:
-      camera_front: /sensor/camera/front/image
-      camera_left: /sensor/camera/left/image
-      camera_right: /sensor/camera/right/image
-      gps: /sensor/gps
-      imu: /sensor/imu

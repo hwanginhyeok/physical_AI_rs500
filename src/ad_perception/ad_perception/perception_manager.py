@@ -7,7 +7,6 @@
 HybridE2ENode에 임베딩되어 런타임 파라미터로 모드 전환 가능.
 """
 
-import struct
 import time
 from enum import Enum
 from typing import List, Optional, Tuple
@@ -16,7 +15,7 @@ import numpy as np
 
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
-from sensor_msgs.msg import Image, PointCloud2, Imu, NavSatFix
+from sensor_msgs.msg import Image, Imu, NavSatFix
 
 from ad_core.hybrid_e2e_types import (
     PerceptionFeatures,
@@ -26,10 +25,8 @@ from ad_core.hybrid_e2e_types import (
 )
 from ad_core.datatypes import Pose2D
 
-# Traditional perception
-from ad_core.lidar_processor import LidarProcessor, Obstacle
+# Traditional perception (Camera-only since C64: LiDAR removed)
 from ad_core.camera_detector import CameraDetector, Detection
-from ad_core.sensor_fusion import SensorFusion, FusedObject
 from ad_core.semantic_segmenter import SemanticSegmenter, SegmentationClass
 
 # Learned perception
@@ -93,7 +90,6 @@ class PerceptionManager:
 
         # ── 센서 데이터 버퍼 ──
         self._latest_image: Optional[np.ndarray] = None
-        self._latest_pointcloud: Optional[np.ndarray] = None
         self._latest_imu_orientation: Optional[dict] = None
         self._latest_gps: Optional[dict] = None
         self._image_stamp = None
@@ -119,10 +115,8 @@ class PerceptionManager:
             expected_row_spacing=row_spacing,
         )
 
-        # ── Traditional 인지 모듈 ──
-        self._lidar_processor = LidarProcessor()
+        # ── Traditional 인지 모듈 (Camera-only since C64) ──
         self._camera_detector = CameraDetector()
-        self._sensor_fusion = SensorFusion()
         self._semantic_segmenter = SemanticSegmenter()
 
         # ── QoS (센서용 BEST_EFFORT) ──
@@ -135,8 +129,7 @@ class PerceptionManager:
         # ── 센서 구독 ──
         self._camera_sub = node.create_subscription(
             Image, '/camera/image_raw', self._camera_cb, sensor_qos)
-        self._lidar_sub = node.create_subscription(
-            PointCloud2, '/sensor/lidar', self._lidar_cb, sensor_qos)
+        # LiDAR 구독 제거됨 (C64: Camera-Only 전환)
         self._imu_sub = node.create_subscription(
             Imu, '/sensor/imu', self._imu_cb, sensor_qos)
         self._gps_sub = node.create_subscription(
@@ -172,10 +165,6 @@ class PerceptionManager:
         return self._latest_image is not None
 
     @property
-    def has_pointcloud(self) -> bool:
-        return self._latest_pointcloud is not None
-
-    @property
     def avg_latency_ms(self) -> float:
         if self._process_count == 0:
             return 0.0
@@ -204,13 +193,6 @@ class PerceptionManager:
             self._image_stamp = msg.header.stamp
         except Exception as e:
             self._node.get_logger().debug(f'Image conversion error: {e}')
-
-    def _lidar_cb(self, msg: PointCloud2):
-        """LiDAR 포인트클라우드 수신."""
-        try:
-            self._latest_pointcloud = self._pc2_to_numpy(msg)
-        except Exception as e:
-            self._node.get_logger().debug(f'PointCloud conversion error: {e}')
 
     def _imu_cb(self, msg: Imu):
         self._latest_imu_orientation = {
@@ -328,37 +310,28 @@ class PerceptionManager:
     # ================================================================
 
     def _process_traditional(self) -> PerceptionFeatures:
-        """기존 모듈형 인지 파이프라인."""
+        """카메라 기반 모듈형 인지 파이프라인 (C64: LiDAR 제거)."""
         obstacles_3d: List[Object3D] = []
         terrain_type = TerrainClass.CROP_FIELD
         terrain_conf = 0.5
         slope = 0.0
 
-        # 1. LiDAR 장애물 감지
-        lidar_obstacles: List[Obstacle] = []
-        if self._latest_pointcloud is not None and len(self._latest_pointcloud) > 0:
-            lidar_obstacles = self._lidar_processor.process(self._latest_pointcloud)
-
-        # 2. 카메라 탐지
+        # 1. 카메라 탐지
         camera_detections: List[Detection] = []
         if self._latest_image is not None:
             camera_detections = self._camera_detector.detect(self._latest_image)
+            for det in camera_detections:
+                obstacles_3d.append(Object3D(
+                    position=(det.x, det.y, 0.0) if hasattr(det, 'x') else (0.0, 0.0, 0.0),
+                    size=(0.5, 0.5, 0.5),
+                    class_label=det.class_name if hasattr(det, 'class_name') else 'unknown',
+                    confidence=det.confidence if hasattr(det, 'confidence') else 0.5,
+                ))
 
-        # 3. 센서 퓨전
-        fused = self._sensor_fusion.fuse(lidar_obstacles, camera_detections)
-        for obj in fused:
-            obstacles_3d.append(Object3D(
-                position=(obj.x, obj.y, obj.z),
-                size=(obj.width, obj.height, obj.depth),
-                class_label=obj.class_name,
-                confidence=obj.confidence,
-            ))
-
-        # 4. 시맨틱 세그멘테이션
+        # 2. 시맨틱 세그멘테이션
         if self._latest_image is not None:
             seg_result = self._semantic_segmenter.segment(self._latest_image)
             if seg_result is not None:
-                # 지배적 클래스 찾기
                 dominant_cls = self._get_dominant_seg_class(seg_result)
                 terrain_type = _SEG_CLASS_MAP.get(
                     dominant_cls, TerrainClass.CROP_FIELD
@@ -372,7 +345,7 @@ class PerceptionManager:
             terrain_confidence=terrain_conf,
             obstacles=obstacles_3d,
             slope_gradient=slope,
-            overall_confidence=0.7 if (lidar_obstacles or camera_detections) else 0.3,
+            overall_confidence=0.7 if camera_detections else 0.3,
         )
 
     def _get_dominant_seg_class(self, seg_result) -> SegmentationClass:
@@ -422,42 +395,11 @@ class PerceptionManager:
             overall_confidence=0.0,
         )
 
-    @staticmethod
-    def _pc2_to_numpy(msg: PointCloud2) -> np.ndarray:
-        """PointCloud2 → (N, 3) numpy array."""
-        field_map = {f.name: f for f in msg.fields}
-        if not all(k in field_map for k in ('x', 'y', 'z')):
-            return np.empty((0, 3), dtype=np.float32)
-
-        x_off = field_map['x'].offset
-        y_off = field_map['y'].offset
-        z_off = field_map['z'].offset
-        step = msg.point_step
-        n = msg.width * msg.height
-
-        if n == 0 or len(msg.data) == 0:
-            return np.empty((0, 3), dtype=np.float32)
-
-        data = bytes(msg.data)
-        points = np.zeros((n, 3), dtype=np.float32)
-        for i in range(n):
-            base = i * step
-            if base + max(x_off, y_off, z_off) + 4 > len(data):
-                points = points[:i]
-                break
-            points[i, 0] = struct.unpack_from('f', data, base + x_off)[0]
-            points[i, 1] = struct.unpack_from('f', data, base + y_off)[0]
-            points[i, 2] = struct.unpack_from('f', data, base + z_off)[0]
-
-        valid = np.isfinite(points).all(axis=1)
-        return points[valid]
-
     def get_status(self) -> dict:
         """현재 상태 반환 (모니터링용)."""
         return {
             'mode': self._mode.value,
             'has_image': self.has_image,
-            'has_pointcloud': self.has_pointcloud,
             'process_count': self._process_count,
             'avg_latency_ms': round(self.avg_latency_ms, 1),
         }

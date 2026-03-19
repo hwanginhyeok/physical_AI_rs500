@@ -10,7 +10,6 @@
   <depend>rclpy</depend>
   <depend>geometry_msgs</depend>
   <depend>ad_core</depend>
-  <depend>ad_interfaces</depend>
 
   <buildtool_depend>ament_python</buildtool_depend>
 

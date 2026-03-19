@@ -13,6 +13,8 @@
   <depend>nav_msgs</depend>
   <depend>python3-torch</depend>
   <depend>python3-numpy</depend>
+  <depend>ad_core</depend>
+  <depend>ad_control</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -5,6 +5,14 @@ MX550 (2GB VRAM) 환경에 최적화된 설정.
 
 learned_perception_node:
   ros__parameters:
+    # 토픽 설정 (C64: Camera-Only 멀티카메라)
+    topics:
+      camera_front: /sensor/camera/front/image
+      camera_left: /sensor/camera/left/image
+      camera_right: /sensor/camera/right/image
+      gps: /sensor/gps
+      imu: /sensor/imu
+
     # 모델 설정
     model_dir: ""  # 비어있으면 패키지 내 models/ 사용
     device: ""     # 비어있으면 auto (cuda > cpu)
