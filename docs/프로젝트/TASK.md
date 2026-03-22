@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-02-28
+> 마지막 갱신: 2026-03-22
 
 ## 현재 진행 중
 
@@ -12,13 +12,15 @@
 
 | # | 작업 | 중요도 | 담당 | 상태 | 비고 |
 |---|------|--------|------|------|------|
-| C41 | 집 PC Gazebo 시뮬레이션 환경 구축 | P2 | 사용자 | 예정 | RTX 2060급, 아래 체크리스트 참조 |
+| — | — | — | — | — | — |
+
 ---
 
 ## 완료
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C41 | 집 PC Gazebo 시뮬레이션 환경 구축 + Nav2 튜닝 | P2 | 그린 | 2026-03-22 | ROS2 Jazzy + Gazebo Harmonic 8.10.0 + Nav2 파라미터 수정 (3파일), 24노드 기동 확인, 178테스트 통과 |
 | C42 | Foxglove+Gazebo+Nav2 다중 웨이포인트 네비게이션 | P1 | 그린 | 2026-02-28 | 12파일 생성, 2파일 수정 |
 | C40 | 모듈별 시뮬레이션 테스트 리포트 체계 구축 | P2 | 그린 | 2026-02-24 | 4모듈 리포트 생성기 + 스킬 문서 |
 | C39 | 논/밭 시나리오 배치 시뮬레이션 + 지면 피드백 수정 | P2 | 그린 | 2026-02-24 | 지형별 CTE 차이 확인 |
@@ -68,16 +70,17 @@
 - [ ] ROS2 의존 노드 Mock 테스트 작성 (ad_perception, ad_planning, ad_control)
 - [ ] aiohttp 설치하여 research 에이전트 웹 검색 활성화
 - [ ] LIO-SAM 실제 설치 및 실행 테스트 (WSL2 환경)
-- [ ] **C41 집 PC Gazebo 환경 구축 체크리스트:**
-  - [ ] Ubuntu 24.04 설치 (듀얼부팅 또는 단독)
-  - [ ] NVIDIA 드라이버 설치 + `nvidia-smi` 확인
-  - [ ] CUDA Toolkit 설치
-  - [ ] ROS2 Jazzy Desktop 설치
-  - [ ] Gazebo Harmonic 설치
-  - [ ] 프로젝트 Git clone + colcon build 확인
-  - [ ] Gazebo 월드 로딩 및 렌더링 테스트
-  - [ ] RViz2 시각화 동작 확인
-  - [ ] YOLO 추론 테스트 (선택)
+- [x] ~~C41 집 PC Gazebo 환경 구축 체크리스트~~ (2026-03-22 완료)
+  - [x] Ubuntu 24.04 (WSL2)
+  - [x] NVIDIA 드라이버 (566.36) + RTX 2060
+  - [x] CUDA 12.7
+  - [x] ROS2 Jazzy Desktop
+  - [x] Gazebo Harmonic 8.10.0
+  - [x] colcon build 7패키지 성공
+  - [x] Gazebo 월드 로딩 (headless + GUI)
+  - [x] RViz2 시각화 (OpenGL 4.5)
+  - [ ] YOLO 추론 테스트 (선택, 미진행)
+- [ ] SDF model.sdf IMU 센서 noise 속성에 type 누락 수정 필요
 - [ ] 실차 데이터 확보 시 System Identification으로 물리 파라미터 튜닝
 - [ ] YOLO 모델 가중치 파일 확보 및 추론 파이프라인 검증
 - [ ] Drivetrain 정상상태 오차 17.65% FAIL 원인 검토 — 효율이 delta에 반복 적용되어 목표 초과 수렴. 모델 수정 vs 기록만 할지 결정 필요

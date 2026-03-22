@@ -35,6 +35,7 @@ from launch.substitutions import (
     Command,
 )
 from launch_ros.actions import Node, SetParameter
+from launch_ros.descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -105,7 +106,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'use_sim_time': use_sim_time,
-            'robot_description': Command(['xacro ', urdf_xacro]),
+            'robot_description': ParameterValue(Command(['xacro ', urdf_xacro]), value_type=str),
         }],
     )
 
@@ -204,7 +205,7 @@ def generate_launch_description():
             'map': map_yaml,
             'params_file': params_file,
             'autostart': autostart,
-            'use_composition': 'false',
+            'use_composition': 'False',
         }.items(),
     )
 

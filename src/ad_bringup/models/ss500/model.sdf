@@ -231,14 +231,14 @@
         <topic>/sensor/imu</topic>
         <imu>
           <angular_velocity>
-            <x><noise><type>gaussian</type><mean>0</mean><stddev>0.0002</stddev></noise></x>
-            <y><noise><type>gaussian</type><mean>0</mean><stddev>0.0002</stddev></noise></y>
-            <z><noise><type>gaussian</type><mean>0</mean><stddev>0.0002</stddev></noise></z>
+            <x><noise type="gaussian"><mean>0</mean><stddev>0.0002</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>0.0002</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.0002</stddev></noise></z>
           </angular_velocity>
           <linear_acceleration>
-            <x><noise><type>gaussian</type><mean>0</mean><stddev>0.017</stddev></noise></x>
-            <y><noise><type>gaussian</type><mean>0</mean><stddev>0.017</stddev></noise></y>
-            <z><noise><type>gaussian</type><mean>0</mean><stddev>0.017</stddev></noise></z>
+            <x><noise type="gaussian"><mean>0</mean><stddev>0.017</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>0.017</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>0.017</stddev></noise></z>
           </linear_acceleration>
         </imu>
       </sensor>
@@ -322,10 +322,10 @@
         <navsat>
           <position_sensing>
             <horizontal>
-              <noise><type>gaussian</type><mean>0</mean><stddev>0.5</stddev></noise>
+              <noise type="gaussian"><mean>0</mean><stddev>0.5</stddev></noise>
             </horizontal>
             <vertical>
-              <noise><type>gaussian</type><mean>0</mean><stddev>1.0</stddev></noise>
+              <noise type="gaussian"><mean>0</mean><stddev>1.0</stddev></noise>
             </vertical>
           </position_sensing>
         </navsat>
