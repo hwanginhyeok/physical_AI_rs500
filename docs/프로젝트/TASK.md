@@ -20,6 +20,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C46 | 과수원 작물 행 인식 모듈 (Classical CV, Phase 1) | P2 | 그린 | 2026-03-22 | crop_row_detector.py + 40건 테스트, 6종 과수원 프로파일, DL 교체 인터페이스 준비 |
 | C45 | ROS2 노드 Mock 테스트 작성 (ad_control, ad_planning, ad_perception) | P2 | 그린 | 2026-03-22 | 4파일 101건 테스트 추가 (총 303건), ControlModule/PlanningModule/PerceptionModule/LocalizationManager |
 | C41 | 집 PC Gazebo 시뮬레이션 환경 구축 + Nav2 튜닝 | P2 | 그린 | 2026-03-22 | ROS2 Jazzy + Gazebo Harmonic 8.10.0 + Nav2 파라미터 수정 (3파일), 24노드 기동 확인, 178테스트 통과 |
 | C42 | Foxglove+Gazebo+Nav2 다중 웨이포인트 네비게이션 | P1 | 그린 | 2026-02-28 | 12파일 생성, 2파일 수정 |
@@ -69,6 +70,8 @@
 ## TODO
 
 - [x] ~~ROS2 의존 노드 Mock 테스트 작성 (ad_perception, ad_planning, ad_control)~~ (2026-03-22 완료, C45)
+- [ ] 과수원 실제 카메라 데이터 확보 후 crop_row_detector 튜닝 (Phase 1.5)
+- [ ] DL 모델 (DeepLabV3/U-Net) 기반 작물 행 인식 교체 (Phase 2, 데이터 확보 후)
 - [ ] aiohttp 설치하여 research 에이전트 웹 검색 활성화
 - [ ] LIO-SAM 실제 설치 및 실행 테스트 (WSL2 환경)
 - [x] ~~C41 집 PC Gazebo 환경 구축 체크리스트~~ (2026-03-22 완료)
