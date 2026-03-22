@@ -20,6 +20,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C45 | ROS2 노드 Mock 테스트 작성 (ad_control, ad_planning, ad_perception) | P2 | 그린 | 2026-03-22 | 4파일 101건 테스트 추가 (총 303건), ControlModule/PlanningModule/PerceptionModule/LocalizationManager |
 | C41 | 집 PC Gazebo 시뮬레이션 환경 구축 + Nav2 튜닝 | P2 | 그린 | 2026-03-22 | ROS2 Jazzy + Gazebo Harmonic 8.10.0 + Nav2 파라미터 수정 (3파일), 24노드 기동 확인, 178테스트 통과 |
 | C42 | Foxglove+Gazebo+Nav2 다중 웨이포인트 네비게이션 | P1 | 그린 | 2026-02-28 | 12파일 생성, 2파일 수정 |
 | C40 | 모듈별 시뮬레이션 테스트 리포트 체계 구축 | P2 | 그린 | 2026-02-24 | 4모듈 리포트 생성기 + 스킬 문서 |
@@ -67,7 +68,7 @@
 
 ## TODO
 
-- [ ] ROS2 의존 노드 Mock 테스트 작성 (ad_perception, ad_planning, ad_control)
+- [x] ~~ROS2 의존 노드 Mock 테스트 작성 (ad_perception, ad_planning, ad_control)~~ (2026-03-22 완료, C45)
 - [ ] aiohttp 설치하여 research 에이전트 웹 검색 활성화
 - [ ] LIO-SAM 실제 설치 및 실행 테스트 (WSL2 환경)
 - [x] ~~C41 집 PC Gazebo 환경 구축 체크리스트~~ (2026-03-22 완료)
@@ -80,7 +81,7 @@
   - [x] Gazebo 월드 로딩 (headless + GUI)
   - [x] RViz2 시각화 (OpenGL 4.5)
   - [ ] YOLO 추론 테스트 (선택, 미진행)
-- [ ] SDF model.sdf IMU 센서 noise 속성에 type 누락 수정 필요
+- [x] ~~SDF model.sdf IMU 센서 noise 속성에 type 누락 수정~~ (2026-03-22 완료)
 - [ ] 실차 데이터 확보 시 System Identification으로 물리 파라미터 튜닝
 - [ ] YOLO 모델 가중치 파일 확보 및 추론 파이프라인 검증
 - [ ] Drivetrain 정상상태 오차 17.65% FAIL 원인 검토 — 효율이 delta에 반복 적용되어 목표 초과 수렴. 모델 수정 vs 기록만 할지 결정 필요
