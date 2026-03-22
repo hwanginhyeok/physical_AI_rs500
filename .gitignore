@@ -44,3 +44,13 @@ desktop.ini
 
 # colcon
 .colcon/
+
+# ML 모델 가중치
+models/*.pt
+models/*.onnx
+models/*.engine
+
+# rosbag2 녹화 데이터
+rosbag2_data/
+*.mcap
+*.db3

@@ -1,50 +1,38 @@
 {
-  "configById": {},
-  "globalVariables": {},
-  "userNodes": {},
-  "playbackConfig": {
-    "speed": 1.0
-  },
-  "layout": {
-    "direction": "row",
-    "first": {
-      "direction": "column",
-      "first": "3d-panel",
-      "second": {
-        "direction": "row",
-        "first": "service-panel",
-        "second": "status-panel",
-        "splitPercentage": 50
-      },
-      "splitPercentage": 70
-    },
-    "second": {
-      "direction": "column",
-      "first": "camera-panel",
-      "second": "log-panel",
-      "splitPercentage": 50
-    },
-    "splitPercentage": 70
-  },
   "configById": {
     "3d-panel": {
-      "id": "3d-panel",
+      "tabId": "3d-panel",
+      "type": "tab",
+      "title": "3D View",
+      "activeTabIdx": 0,
+      "tabs": [
+        {
+          "title": "3D Navigation",
+          "layout": "3d-main"
+        }
+      ]
+    },
+    "3d-main": {
+      "id": "3d-main",
       "type": "3D",
       "config": {
         "followTf": "base_link",
+        "followMode": "follow-pose",
         "scene": {
-          "backgroundColor": "#1a1a2e",
-          "enableStats": false
+          "backgroundColor": "#0a0a1a",
+          "enableStats": false,
+          "labelScaleFactor": 1
         },
         "cameraState": {
-          "distance": 30,
+          "distance": 25,
           "perspective": true,
-          "phi": 45,
+          "phi": 50,
           "target": [0, 0, 0],
-          "thetaOffset": 0
+          "thetaOffset": 0,
+          "fovy": 45
         },
         "publish": {
-          "type": "pose_estimate",
+          "type": "pose",
           "poseTopic": "/goal_pose",
           "pointTopic": "/clicked_point",
           "poseEstimateTopic": "/initialpose",
@@ -53,33 +41,64 @@
           "poseEstimateThetaDeviation": 0.26
         },
         "topics": {
-          "/waypoint_manager/markers": {
-            "visible": true
+          "/sensor/lidar": {
+            "visible": true,
+            "pointSize": 3,
+            "colorMode": "colormap",
+            "colorMap": "turbo",
+            "colorField": "intensity"
           },
           "/global_costmap/costmap": {
             "visible": true,
             "colorMode": "costmap",
-            "alpha": 0.5
+            "alpha": 0.4
           },
           "/local_costmap/costmap": {
             "visible": true,
             "colorMode": "costmap",
-            "alpha": 0.3
+            "alpha": 0.5
           },
           "/plan": {
             "visible": true,
-            "lineWidth": 3,
-            "gradient": ["#00ff88", "#00ff88"]
+            "lineWidth": 4,
+            "gradient": ["#00ff88", "#00ffcc"]
           },
-          "/sensor/lidar": {
+          "/plan_smoothed": {
             "visible": true,
-            "pointSize": 2,
-            "colorMode": "flat",
-            "flatColor": "#ff4444"
+            "lineWidth": 3,
+            "gradient": ["#ffaa00", "#ffdd00"]
+          },
+          "/transformed_global_plan": {
+            "visible": true,
+            "lineWidth": 2,
+            "gradient": ["#8888ff", "#aaaaff"]
+          },
+          "/optimal_trajectory": {
+            "visible": true,
+            "lineWidth": 2,
+            "gradient": ["#ff44ff", "#ff88ff"]
           },
           "/map": {
             "visible": true,
-            "alpha": 0.6
+            "alpha": 0.5
+          },
+          "/waypoint_manager/markers": {
+            "visible": true
+          },
+          "/trajectories": {
+            "visible": true
+          },
+          "/collision_monitor/collision_points_marker": {
+            "visible": true
+          },
+          "/global_costmap/published_footprint": {
+            "visible": true
+          },
+          "/local_costmap/published_footprint": {
+            "visible": true
+          },
+          "/route_graph": {
+            "visible": false
           }
         },
         "layers": {
@@ -87,31 +106,15 @@
             "layerId": "foxglove.Grid",
             "visible": true,
             "size": 100,
-            "divisions": 100,
-            "color": "#333355"
+            "divisions": 50,
+            "lineWidth": 1,
+            "color": "#222244"
+          },
+          "urdf": {
+            "layerId": "foxglove.Urdf",
+            "visible": true
           }
         }
-      }
-    },
-    "service-panel": {
-      "id": "service-panel",
-      "type": "CallService",
-      "config": {
-        "serviceName": "/waypoint_manager/start",
-        "serviceType": "std_srvs/srv/Trigger",
-        "layout": "vertical",
-        "advancedView": false,
-        "requestPayload": "{}"
-      }
-    },
-    "status-panel": {
-      "id": "status-panel",
-      "type": "RawMessages",
-      "config": {
-        "topicPath": "/waypoint_manager/status",
-        "diffEnabled": false,
-        "showFullMessageForDiff": false,
-        "fontSize": 14
       }
     },
     "camera-panel": {
@@ -130,6 +133,149 @@
         "rotation": 0
       }
     },
+    "velocity-plot": {
+      "id": "velocity-plot",
+      "type": "Plot",
+      "config": {
+        "title": "속도 모니터",
+        "paths": [
+          {
+            "value": "/cmd_vel.linear.x",
+            "label": "cmd 선속도 (m/s)",
+            "enabled": true,
+            "timestampMethod": "receiveTime"
+          },
+          {
+            "value": "/cmd_vel.angular.z",
+            "label": "cmd 각속도 (rad/s)",
+            "enabled": true,
+            "timestampMethod": "receiveTime"
+          },
+          {
+            "value": "/cmd_vel_smoothed.linear.x",
+            "label": "smoothed 선속도",
+            "enabled": true,
+            "timestampMethod": "receiveTime"
+          }
+        ],
+        "showXAxisLabels": true,
+        "showYAxisLabels": true,
+        "showLegend": true,
+        "legendDisplay": "floating",
+        "showPlotValuesInLegend": true,
+        "isSynced": true,
+        "xAxisVal": "timestamp",
+        "sidebarDimension": 240,
+        "followingViewWidth": 30
+      }
+    },
+    "odom-plot": {
+      "id": "odom-plot",
+      "type": "Plot",
+      "config": {
+        "title": "오도메트리 속도",
+        "paths": [
+          {
+            "value": "/odometry/local.twist.twist.linear.x",
+            "label": "odom 선속도 (m/s)",
+            "enabled": true,
+            "timestampMethod": "receiveTime"
+          },
+          {
+            "value": "/odometry/local.twist.twist.angular.z",
+            "label": "odom 각속도 (rad/s)",
+            "enabled": true,
+            "timestampMethod": "receiveTime"
+          }
+        ],
+        "showXAxisLabels": true,
+        "showYAxisLabels": true,
+        "showLegend": true,
+        "legendDisplay": "floating",
+        "showPlotValuesInLegend": true,
+        "isSynced": true,
+        "xAxisVal": "timestamp",
+        "followingViewWidth": 30
+      }
+    },
+    "imu-plot": {
+      "id": "imu-plot",
+      "type": "Plot",
+      "config": {
+        "title": "IMU 가속도",
+        "paths": [
+          {
+            "value": "/sensor/imu.linear_acceleration.x",
+            "label": "accel X (m/s²)",
+            "enabled": true,
+            "timestampMethod": "receiveTime"
+          },
+          {
+            "value": "/sensor/imu.linear_acceleration.y",
+            "label": "accel Y (m/s²)",
+            "enabled": true,
+            "timestampMethod": "receiveTime"
+          },
+          {
+            "value": "/sensor/imu.linear_acceleration.z",
+            "label": "accel Z (m/s²)",
+            "enabled": true,
+            "timestampMethod": "receiveTime"
+          }
+        ],
+        "showXAxisLabels": true,
+        "showYAxisLabels": true,
+        "showLegend": true,
+        "legendDisplay": "floating",
+        "showPlotValuesInLegend": true,
+        "isSynced": true,
+        "xAxisVal": "timestamp",
+        "followingViewWidth": 30
+      }
+    },
+    "gps-panel": {
+      "id": "gps-panel",
+      "type": "map",
+      "config": {
+        "topicPath": "/sensor/gps",
+        "layer": "map",
+        "zoomLevel": 18,
+        "followTopic": "/sensor/gps"
+      }
+    },
+    "waypoint-service": {
+      "id": "waypoint-service",
+      "type": "CallService",
+      "config": {
+        "serviceName": "/waypoint_manager/start",
+        "serviceType": "std_srvs/srv/Trigger",
+        "layout": "vertical",
+        "advancedView": false,
+        "requestPayload": "{}"
+      }
+    },
+    "status-panel": {
+      "id": "status-panel",
+      "type": "RawMessages",
+      "config": {
+        "topicPath": "/waypoint_manager/status",
+        "diffEnabled": false,
+        "showFullMessageForDiff": false,
+        "fontSize": 13
+      }
+    },
+    "teleop-panel": {
+      "id": "teleop-panel",
+      "type": "Teleop",
+      "config": {
+        "topic": "/cmd_vel_teleop",
+        "publishRate": 10,
+        "upButton": {"field": "linear-x", "value": 0.5},
+        "downButton": {"field": "linear-x", "value": -0.5},
+        "leftButton": {"field": "angular-z", "value": 0.5},
+        "rightButton": {"field": "angular-z", "value": -0.5}
+      }
+    },
     "log-panel": {
       "id": "log-panel",
       "type": "Log",
@@ -140,9 +286,79 @@
           "waypoint_manager": true,
           "bt_navigator": true,
           "controller_server": true,
-          "planner_server": true
+          "planner_server": true,
+          "perception_node": true,
+          "ekf_local": true,
+          "ekf_global": true,
+          "velocity_smoother": true,
+          "collision_monitor": true
         }
       }
+    },
+    "diagnostics-panel": {
+      "id": "diagnostics-panel",
+      "type": "DiagnosticSummary",
+      "config": {
+        "topicToRender": "/diagnostics",
+        "sortByLevel": true,
+        "minLevel": 0
+      }
+    },
+    "tf-panel": {
+      "id": "tf-panel",
+      "type": "RawMessages",
+      "config": {
+        "topicPath": "/odometry/local",
+        "diffEnabled": false,
+        "showFullMessageForDiff": false,
+        "fontSize": 12
+      }
     }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1.0
+  },
+  "layout": {
+    "direction": "row",
+    "first": {
+      "direction": "column",
+      "first": "3d-main",
+      "second": {
+        "direction": "row",
+        "first": {
+          "direction": "column",
+          "first": "velocity-plot",
+          "second": "odom-plot",
+          "splitPercentage": 50
+        },
+        "second": "imu-plot",
+        "splitPercentage": 65
+      },
+      "splitPercentage": 65
+    },
+    "second": {
+      "direction": "column",
+      "first": "camera-panel",
+      "second": {
+        "direction": "column",
+        "first": {
+          "direction": "row",
+          "first": "waypoint-service",
+          "second": "teleop-panel",
+          "splitPercentage": 50
+        },
+        "second": {
+          "direction": "column",
+          "first": "status-panel",
+          "second": "log-panel",
+          "splitPercentage": 40
+        },
+        "splitPercentage": 35
+      },
+      "splitPercentage": 35
+    },
+    "splitPercentage": 68
   }
 }

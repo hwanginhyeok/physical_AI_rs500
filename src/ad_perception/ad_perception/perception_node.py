@@ -58,9 +58,30 @@ class PerceptionModule:
         self.vehicle_position = None              # 차량 현재 위치 (GPS)
         self.vehicle_orientation = None           # 차량 방향 (IMU)
 
+        # YOLO 모델 경로 파라미터 읽기
+        yolo_model_path = node.declare_parameter(
+            'yolo.model_path', ''
+        ).value
+        yolo_confidence = node.declare_parameter(
+            'yolo.confidence_threshold', 0.5
+        ).value
+
+        # 모델 경로가 비어있으면 프로젝트 기본 경로에서 탐색
+        if not yolo_model_path:
+            import os
+            candidate = os.path.join(
+                os.path.expanduser('~'),
+                'physical_AI_rs500', 'models', 'yolo11n.pt',
+            )
+            if os.path.exists(candidate):
+                yolo_model_path = candidate
+
         # 인지 서브모듈 초기화
         self._lidar_processor = LidarProcessor()
-        self._camera_detector = CameraDetector()
+        self._camera_detector = CameraDetector(
+            model_path=yolo_model_path if yolo_model_path else None,
+            confidence_threshold=yolo_confidence,
+        )
         self._sensor_fusion = SensorFusion()
         self._semantic_segmenter = SemanticSegmenter()
 

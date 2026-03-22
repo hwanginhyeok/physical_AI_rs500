@@ -6,3 +6,13 @@ perception_node:
       lidar: /sensor/lidar
       gps: /sensor/gps
       imu: /sensor/imu
+
+    # YOLO 객체 탐지 설정
+    yolo:
+      model_path: ""  # 빈 문자열이면 자동 탐색 (models/yolo11n.pt)
+      confidence_threshold: 0.5
+
+    # 시맨틱 세그멘테이션 설정
+    segmentation:
+      model_type: "enet"  # "enet" 또는 "bisenetv2"
+      input_size: 512

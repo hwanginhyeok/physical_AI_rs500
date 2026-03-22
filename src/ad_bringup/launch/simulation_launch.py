@@ -28,6 +28,7 @@ from launch.actions import (
     ExecuteProcess,
     LogInfo,
 )
+from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     LaunchConfiguration,
@@ -86,6 +87,10 @@ def generate_launch_description():
         'use_foxglove', default_value='true',
         description='Foxglove Bridge 실행 여부',
     )
+    declare_recording = DeclareLaunchArgument(
+        'use_recording', default_value='false',
+        description='rosbag2 MCAP 녹화 실행 여부',
+    )
 
     # ── Launch 설정값 참조 ──
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -95,6 +100,7 @@ def generate_launch_description():
     map_yaml = LaunchConfiguration('map')
     autostart = LaunchConfiguration('autostart')
     use_foxglove = LaunchConfiguration('use_foxglove')
+    use_recording = LaunchConfiguration('use_recording')
 
     # ================================================================
     # 1. robot_state_publisher: URDF → TF 정적 변환 발행
@@ -237,6 +243,19 @@ def generate_launch_description():
     )
 
     # ================================================================
+    # 8. rosbag2 MCAP 녹화 (조건부)
+    # ================================================================
+    recording_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(bringup_dir, 'launch', 'recording_launch.py')
+        ),
+        launch_arguments={
+            'use_sim_time': use_sim_time,
+        }.items(),
+        condition=IfCondition(use_recording),
+    )
+
+    # ================================================================
     # Launch Description 조합
     # ================================================================
     return LaunchDescription([
@@ -248,6 +267,7 @@ def generate_launch_description():
         declare_map,
         declare_autostart,
         declare_foxglove,
+        declare_recording,
 
         LogInfo(msg='[Simulation] SS500 Gazebo 시뮬레이션 시작'),
 
@@ -278,4 +298,7 @@ def generate_launch_description():
 
         # 7. Foxglove Bridge
         foxglove_bridge,
+
+        # 8. rosbag2 MCAP 녹화
+        recording_launch,
     ])

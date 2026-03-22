@@ -12,7 +12,10 @@
 
 | # | 작업 | 중요도 | 담당 | 상태 | 비고 |
 |---|------|--------|------|------|------|
-| — | — | — | — | — | — |
+| T01 | LIO-SAM 실제 구동 테스트 | P2 | — | 예정 | Phase 2 |
+| T02 | crop_row_detector DL 교체 (DeepLabV3) | P2 | — | 예정 | Phase 2, 실제 데이터 필요 |
+| T03 | CI/CD 파이프라인 (GitHub Actions) | P2 | — | 예정 | Phase 2 |
+| T04 | 미션 매니저 (과수원 자동 순회) | P2 | — | 예정 | Phase 2 |
 
 ---
 
@@ -20,6 +23,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C47 | Foxglove 갭 분석 + Phase 1 구현 | P1 | 그린 | 2026-03-22 | YOLO11n+PyTorch 설치, MCAP 녹화 launch, Foxglove 레이아웃 강화, perception 파라미터 연동 |
 | C46 | 과수원 작물 행 인식 모듈 (Classical CV, Phase 1) | P2 | 그린 | 2026-03-22 | crop_row_detector.py + 40건 테스트, 6종 과수원 프로파일, DL 교체 인터페이스 준비 |
 | C45 | ROS2 노드 Mock 테스트 작성 (ad_control, ad_planning, ad_perception) | P2 | 그린 | 2026-03-22 | 4파일 101건 테스트 추가 (총 303건), ControlModule/PlanningModule/PerceptionModule/LocalizationManager |
 | C41 | 집 PC Gazebo 시뮬레이션 환경 구축 + Nav2 튜닝 | P2 | 그린 | 2026-03-22 | ROS2 Jazzy + Gazebo Harmonic 8.10.0 + Nav2 파라미터 수정 (3파일), 24노드 기동 확인, 178테스트 통과 |
