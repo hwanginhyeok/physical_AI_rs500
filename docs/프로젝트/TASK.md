@@ -54,7 +54,15 @@
 |---|------|------|--------|------|------|------|
 | | | **── P1 긴급 ──** | | | | |
 | C63 | 인프라 | STP 도면 반영 → model.sdf 물리 파라미터 + 메시 갱신 | P1 | 그린 | **[지연]** 예정 | 실차 하드웨어 출고 완료. STP 파일 ~3/20 수령 예정이었으나 미수령. `scripts/stp_to_sdf.py` 준비 완료 |
-| | | **── P2 중요 ──** | | | | |
+| C72 | 시뮬레이션 | SDF 속도 제한 — 실차 max 0.83m/s + Nav2 동기화 | P1 | 그린 | 예정 | HIH_2 Dm.h: MOTOR_MAX_SPD=30(3.0kph). TrackedVehicle + nav2_params 반영 ([상세](task/C72_sdf_speed_limit.md)) |
+| C73 | 시뮬레이션 | SDF 모터 특성 — DB130-48 PI 제어 + 속도 램핑 | P1 | 그린 | 예정 | HIH_2 PowerTrain_Control.c: Kp=0.05, KiT=0.006. 가감속 제한 ([상세](task/C73_sdf_motor_characteristics.md)) |
+| C74 | 시뮬레이션 | SDF 질량·관성 보정 — 부품 리스트 기반 재계산 | P2 | 그린 | 예정 | 배터리 ~150kg, 모터 x2, 프레임, 약제탱크. C63(STP) 수령 시 메시 갱신 ([상세](task/C74_sdf_mass_inertia.md)) |
+| C75 | 시뮬레이션 | SDF 센서 노이즈 — EBIMU-9DOFV5 + ZED-F9P 실차 스펙 | P2 | 그린 | 예정 | IMU: 0.001g/0.01deg/s, GPS: RTK 0.01m CEP ([상세](task/C75_sdf_sensor_noise.md)) |
+| C76 | 시뮬레이션 | CAN 시뮬레이터 — DBC 파서 + CAN 토픽 발행 노드 | P2 | 그린 | 예정 | HIH_2 DBC 기반. BPA_Calc/VCU2ADT1/SNS2ADT 메시지 ([상세](task/C76_can_simulator.md)) |
+| C77 | 시뮬레이션 | VCU 상태 머신 — 4모드 제어 + Safety 로직 | P2 | 그린 | 예정 | RC/LCD/ADT/TEST 모드. SOC<30% 경고, 과속 제한, E-Stop ([상세](task/C77_vcu_state_machine.md)) |
+| C78 | 시뮬레이션 | 분무 시스템 시뮬 — 펌프/팬/솔레노이드 5ch 제어 | P3 | 그린 | 예정 | ROS 서비스로 제어. 시각적 효과는 향후 ([상세](task/C78_spray_system.md)) |
+| C79 | 시뮬레이션 | 농업 환경 월드 — 과수원 + 논/밭 SDF | P3 | 그린 | 예정 | 행간 3~4m 나무, 경사 15°, 이랑 패턴 ([상세](task/C79_agriculture_worlds.md)) |
+| | | **── P2 중요 (기존) ──** | | | | |
 | C61 | 시뮬레이션 | 차량 물리 동작 검증 (cmd_vel → Gazebo) | P2 | 사용자 | **사용자 대기** | CycloneDDS 전환 + cmd_vel_relay 수정 완료. 시뮬레이션 실행 검증 대기 ([상세](task/C61_velocity_chain_debug.md)) |
 | C60 | 아키텍처 | 농업용 Hybrid E2E 아키텍처 구축 | P2 | 그린 | **진행** | ARCH-004 설계, Safety Guardian 완료. C71에서 상태 발행 추가. Phase 3 대기 ([상세](task/C60_hybrid_e2e_architecture.md)) |
 | C57 | 인프라 | 시뮬/실물 네임스페이스 분리 (라이브 동시 비교) | P2 | — | 예정 | `/sim/*` / `/real/*` 분리. C71에서 Comparison 레이아웃 준비 완료 |
