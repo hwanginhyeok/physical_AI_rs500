@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-17 (C70 Foxglove 레이아웃 v2.0 전면 개선)
+> 마지막 갱신: 2026-03-22
 >
 > **관리 룰**
 > - 상태: `예정` → `진행` → `완료` (완료 즉시 완료 섹션 최상단으로 이동)
@@ -62,14 +62,12 @@
 |---|------|------|--------|------|------|------|
 | | | **── P1 긴급 ──** | | | | |
 | C63 | 인프라 | STP 도면 반영 → model.sdf 물리 파라미터 + 메시 갱신 | P1 | 그린 | 예정 | 실차 하드웨어 출고 완료. STP 파일 ~3/20 수령 예정. `scripts/stp_to_sdf.py` 준비 완료 |
-| C41 | 인프라 | 집 PC Gazebo 시뮬레이션 환경 구축 | P1 | 사용자+그린 | **진행** | Step 1~4 완료 (WSL2+ROS2+Gazebo+Nav2). Step 5~8 남음 (클론+빌드+Foxglove+E2E) |
 | | | **── P2 중요 ──** | | | | |
 | C61 | 시뮬레이션 | 차량 물리 동작 검증 (cmd_vel → Gazebo) | P2 | 사용자 | **사용자 대기** | CycloneDDS 전환 + cmd_vel_relay 수정 완료. 집 PC에서 시뮬레이션 실행 검증 대기 ([상세](task/C61_velocity_chain_debug.md)) |
 | C60 | 아키텍처 | 농업용 Hybrid E2E 아키텍처 구축 | P2 | 그린 | **진행** | ARCH-004 설계, Safety Guardian 완료. C64 Camera-Only 반영 후 Learned Perception/Planning 통합 ([상세](task/C60_hybrid_e2e_architecture.md)) |
 | C57 | 인프라 | 시뮬/실물 네임스페이스 분리 (라이브 동시 비교) | P2 | — | 예정 | `/sim/*` / `/real/*` 분리 |
 | C67 | 인지 | Camera-Only Visual SLAM 조사 완료 — 구현 예정 | P2 | 그린 | **조사 완료** | RTAB-Map 1순위 권장. 912줄 조사 보고서 작성. 구현은 C41(시뮬 환경) 후 착수 ([상세](../research/visual_slam_camera_only_survey.md)) |
 | | | **── P3 향후 ──** | | | | |
-| C45 | 인지 | 농경지 작물 행 인식 (시맨틱 세그멘테이션 기반) | P3 | — | 예정 | |
 | C46 | 인지 | 지형 traversability 분류 (Wild Visual Navigation 방식) | P3 | — | 예정 | |
 | C47 | 인프라 | CI/CD headless 시뮬레이션 파이프라인 | P3 | — | 예정 | |
 | C49 | 인프라 | CLAUDE.md 매뉴얼 트리거 기반 전환 | P3 | 그린 | 예정 | `.claude/rules/` 파일이 5개 이상으로 늘어날 때 착수 |
@@ -81,6 +79,9 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C46 | 과수원 작물 행 인식 모듈 (Classical CV, Phase 1) | P2 | 그린 | 2026-03-22 | crop_row_detector.py + 40건 테스트, 6종 과수원 프로파일, DL 교체 인터페이스 준비 |
+| C45 | ROS2 노드 Mock 테스트 작성 (ad_control, ad_planning, ad_perception) | P2 | 그린 | 2026-03-22 | 4파일 101건 테스트 추가 (총 303건), ControlModule/PlanningModule/PerceptionModule/LocalizationManager |
+| C41 | 집 PC Gazebo 시뮬레이션 환경 구축 + Nav2 튜닝 | P2 | 그린 | 2026-03-22 | ROS2 Jazzy + Gazebo Harmonic 8.10.0 + Nav2 파라미터 수정 (3파일), 24노드 기동 확인, 178테스트 통과 |
 | C70 | Foxglove 레이아웃 v2.0 전면 개선 | P2 | 그린 | 2026-03-17 | 4레이아웃 체계 (Production 2탭/Dev 5탭/Debug 5탭/Comparison 5탭), CameraInfo 브릿지 추가, User Script 3개, 탐지 어노테이션 발행, 녹화 토픽 보강. 8개 파일 수정 ([상세](task/C70_foxglove_layout_v2.md)) |
 | C68 | CAN 브릿지 Twist→트랙 변환 수정 | P2 | 그린 | 2026-03-16 | angular.z 미반영 버그 수정. SkidSteerModel 연결. 실차 조향 가능하도록 |
 | C66 | 실물 Mono Depth 노드 | P2 | 그린 | 2026-03-16 | mono_depth_node.py: MiDaS/DepthAnything → PointCloud2. 실차 테스트 대기 |
@@ -154,8 +155,14 @@
 
 - [ ] GitHub 기본 브랜치 master→main 변경 (Settings → Default branch) + 원격 master 삭제
 - [ ] STP 도면 수령 시 `scripts/stp_to_sdf.py` 실행 → model.sdf 물리 파라미터 + 메시 갱신 (→ C63)
+- [ ] 과수원 실제 카메라 데이터 확보 후 crop_row_detector 튜닝 (Phase 1.5)
+- [ ] DL 모델 (DeepLabV3/U-Net) 기반 작물 행 인식 교체 (Phase 2, 데이터 확보 후)
+- [ ] aiohttp 설치하여 research 에이전트 웹 검색 활성화
 - [ ] 실차 데이터 확보 시 System Identification으로 물리 파라미터 튜닝
 - [ ] YOLO 모델 가중치 파일 확보 및 추론 파이프라인 검증
-- [ ] Drivetrain 정상상태 오차 17.65% FAIL 원인 검토 — 효율이 delta에 반복 적용되어 목표 초과 수렴. 모델 수정 vs 기록만 할지 결정 필요
+- [x] ~~ROS2 의존 노드 Mock 테스트 작성 (ad_perception, ad_planning, ad_control)~~ (2026-03-22 완료, C45)
+- [x] ~~C41 집 PC Gazebo 환경 구축 체크리스트~~ (2026-03-22 완료)
+- [x] ~~SDF model.sdf IMU 센서 noise 속성에 type 누락 수정~~ (2026-03-22 완료)
+- [x] ~~Drivetrain 정상상태 오차 17.65% 검토~~ (2026-03-22 종료, 현재 모델 정상 수렴 확인, 실차 데이터 확보 시 재검토)
 - [x] ~~실물 Mono Depth 노드 개발~~ → C66 TASK로 승격
 - [x] ~~LIO-SAM 실제 설치 및 실행 테스트~~ → C64: LiDAR 미탑재 확정으로 불필요. C67(Camera SLAM)으로 대체
