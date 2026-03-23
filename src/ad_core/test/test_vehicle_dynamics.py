@@ -13,11 +13,12 @@ from ad_core.vehicle_dynamics import (
 
 class TestVehicleDynamicsConfig:
     def test_default_values(self):
+        # HIH-2 SS500 실차 기반 디폴트 (C48, 2026-03-23)
         cfg = VehicleDynamicsConfig()
-        assert cfg.mass == 200.0
-        assert cfg.Izz == 50.0
-        assert cfg.max_accel == 1.0
-        assert cfg.max_decel == 2.0
+        assert cfg.mass == 800.0
+        assert cfg.Izz == 250.0
+        assert cfg.max_accel == 0.5
+        assert cfg.max_decel == 1.5
 
 
 class TestVehicleDynamics:

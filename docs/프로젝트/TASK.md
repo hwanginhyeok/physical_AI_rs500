@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-22
+> 마지막 갱신: 2026-03-23
 
 ## 현재 진행 중
 
@@ -23,6 +23,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C48 | HIH-2 실제 데이터 기반 시뮬레이션 파라미터 교정 | P1 | 그린 | 2026-03-23 | [상세](task/C48_hih2_parameter_update.md) DB130-48 모터+CAN DBC+BLACKTAN 시험→6파일 교정, 218테스트 통과 |
 | C47 | Foxglove 갭 분석 + Phase 1 구현 | P1 | 그린 | 2026-03-22 | YOLO11n+PyTorch 설치, MCAP 녹화 launch, Foxglove 레이아웃 강화, perception 파라미터 연동 |
 | C46 | 과수원 작물 행 인식 모듈 (Classical CV, Phase 1) | P2 | 그린 | 2026-03-22 | crop_row_detector.py + 40건 테스트, 6종 과수원 프로파일, DL 교체 인터페이스 준비 |
 | C45 | ROS2 노드 Mock 테스트 작성 (ad_control, ad_planning, ad_perception) | P2 | 그린 | 2026-03-22 | 4파일 101건 테스트 추가 (총 303건), ControlModule/PlanningModule/PerceptionModule/LocalizationManager |
@@ -89,6 +90,8 @@
   - [x] RViz2 시각화 (OpenGL 4.5)
   - [ ] YOLO 추론 테스트 (선택, 미진행)
 - [x] ~~SDF model.sdf IMU 센서 noise 속성에 type 누락 수정~~ (2026-03-22 완료)
+- [ ] matplotlib/numpy 호환 해결 후 시나리오 시뮬레이션 + 리포트 재실행 (C48 잔여)
+- [ ] HIH-2 xlsx 파일 (제품규격서, R&D) 파싱하여 차량 질량/크기 정확값 반영
 - [ ] 실차 데이터 확보 시 System Identification으로 물리 파라미터 튜닝
 - [ ] YOLO 모델 가중치 파일 확보 및 추론 파이프라인 검증
 - [x] ~~Drivetrain 정상상태 오차 17.65% 검토~~ (2026-03-22 종료, 현재 모델 정상 수렴 확인, 실차 데이터 확보 시 재검토)

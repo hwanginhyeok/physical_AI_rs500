@@ -35,11 +35,14 @@ class GPSNoiseConfig:
         update_rate: GPS 갱신 주기 (Hz).
     """
 
-    position_stddev: float = 2.5
-    multipath_amplitude: float = 0.5
+    # HIH-2 SS500 CAN DBC 기반 교정 (2026-03-23, C48)
+    # SNS2ADT: GPS_Latitude/Longitude 1e-7° 해상도, GPS_Ground_Speed 0.01km/h
+    # GPS_St_CarrSoln 2bit → RTK 지원 (CarrSoln=2: RTK Fixed)
+    position_stddev: float = 0.5   # 기존: 2.5m → RTK 지원 환경 감안 (RTK=0.02, 단독=2.5, 중간값)
+    multipath_amplitude: float = 0.3  # 기존: 0.5m → 과수원 환경 멀티패스 중간
     multipath_period: float = 30.0
-    dropout_probability: float = 0.01
-    update_rate: float = 10.0
+    dropout_probability: float = 0.02  # 기존: 0.01 → 과수원 캐노피 환경 감안 상향
+    update_rate: float = 10.0     # CAN SNS2ADT 기반
 
 
 class GPSNoiseModel:
@@ -119,12 +122,16 @@ class IMUNoiseConfig:
         accel_bias_time_constant: 바이어스 드리프트 시정수 (s).
     """
 
-    gyro_noise_density: float = 0.01      # rad/s/sqrt(Hz)
-    gyro_bias_instability: float = 0.001  # rad/s
-    gyro_bias_time_constant: float = 100.0  # s
-    accel_noise_density: float = 0.02     # m/s^2/sqrt(Hz)
-    accel_bias_instability: float = 0.005  # m/s^2
-    accel_bias_time_constant: float = 200.0  # s
+    # HIH-2 SS500 CAN DBC 기반 교정 (2026-03-23, C48)
+    # SNS2ADT1: IMU_Ac_X/Y/Z 0.001g = 0.00981 m/s² 해상도
+    # SNS2ADT2: IMU_Av_X/Y/Z 0.01 deg/s = 0.000175 rad/s 해상도
+    # SNS2ADT3: IMU_Pitch/Roll/Yaw 0.01 deg 해상도
+    gyro_noise_density: float = 0.005     # 기존: 0.01 → CAN 해상도 0.01°/s 감안 하향
+    gyro_bias_instability: float = 0.0005  # 기존: 0.001 → CAN 해상도 기반 하향
+    gyro_bias_time_constant: float = 100.0
+    accel_noise_density: float = 0.01      # 기존: 0.02 → CAN 해상도 0.001g 감안 하향
+    accel_bias_instability: float = 0.003  # 기존: 0.005 → 하향
+    accel_bias_time_constant: float = 200.0
 
 
 class IMUNoiseModel:

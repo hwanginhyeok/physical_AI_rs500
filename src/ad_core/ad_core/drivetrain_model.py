@@ -24,14 +24,16 @@ class DrivetrainConfig:
         sprocket_radius: 구동 스프로킷 반경 (m). 토크→견인력 변환에 사용.
     """
 
-    time_constant: float = 0.15
-    gear_ratio: float = 30.0
-    gear_efficiency_forward: float = 0.85
+    # 기존 추정값 → HIH-2 SS500 실차 기반 교정 (2026-03-23, C48)
+    # 모터: DB130-48 (3000W DC48V 2000rpm) + SCK75-20 감속기
+    time_constant: float = 0.20   # 기존: 0.15s → BLACKTAN 돌입 전류 시험 기반 추정 (~0.2s)
+    gear_ratio: float = 20.0      # 기존: 30 → DB130-48 SCK75-20 Helical-Hypoid 감속비 20:1
+    gear_efficiency_forward: float = 0.85  # Helical-Hypoid 감속기 일반적 효율 ~85%
     gear_efficiency_reverse: float = 0.75
-    deadzone: float = 0.05
-    max_motor_torque: float = 20.0
-    max_motor_rpm: float = 3000.0
-    sprocket_radius: float = 0.15
+    deadzone: float = 0.05        # BLACKTAN 무부하 Spd1 PWM ~10.4%, 보수적 유지
+    max_motor_torque: float = 14.32  # 기존: 20Nm → 3000W / (2000rpm * 2π/60) = 14.32Nm
+    max_motor_rpm: float = 2000.0    # 기존: 3000 → DB130-48 정격 2000rpm ±10%
+    sprocket_radius: float = 0.106   # 기존: 0.15m → v_max / ω_out = 1.111 / (100rpm*2π/60)
 
 
 class SingleMotorModel:

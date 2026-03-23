@@ -1,9 +1,13 @@
 <?xml version="1.0"?>
 <!--
   SS500 궤도차량 SDF 모델 (Gazebo Harmonic)
-  차체: 2.0m x 1.2m x 0.8m, 1000kg
-  궤도: track_width=1.4m, TrackedVehicle 플러그인
+  HIH-2 실차 데이터 기반 교정 (2026-03-23, C48)
+  모터: DB130-48 (3000W DC48V 2000rpm) x2, SCK75-20 감속기 20:1
+  배터리: 48V 460Ah LiFePO4
+  차체: 2.0m x 1.2m x 0.8m, 800kg (공차 추정, TODO: xlsx 확인)
+  궤도: track_width=1.2m (윤거), TrackedVehicle 플러그인
   센서: GPU LiDAR(360°, 10Hz), IMU(100Hz), Camera(640x480, 15Hz), GPS(10Hz)
+  최대속도: 4km/h (CAN DBC CF_VehSpdAct 범위)
 -->
 <sdf version="1.9">
   <model name="ss500">
@@ -16,12 +20,13 @@
       <pose>0 0 0.4 0 0 0</pose>
 
       <inertial>
-        <mass>1000.0</mass>
+        <!-- HIH-2 C48: 공차 800kg, 본체 600kg + 궤도 100kg x2 -->
+        <mass>600.0</mass>
         <inertia>
-          <!-- I = 1/12 * m * (h^2 + d^2) 등 -->
-          <ixx>106.67</ixx>  <!-- 1/12 * 1000 * (0.8^2 + 1.2^2) -->
-          <iyy>153.33</iyy>  <!-- 1/12 * 1000 * (0.8^2 + 2.0^2) -->
-          <izz>113.33</izz>  <!-- 1/12 * 1000 * (1.2^2 + 2.0^2) -->
+          <!-- I = 1/12 * m * (h^2 + d^2), m=600kg 본체 -->
+          <ixx>83.2</ixx>   <!-- 1/12 * 600 * (0.8^2 + 1.2^2) = 104 → 질량분포 보정 0.8 -->
+          <iyy>185.6</iyy>  <!-- 1/12 * 600 * (0.8^2 + 2.0^2) = 232 → 보정 0.8 -->
+          <izz>217.6</izz>  <!-- 1/12 * 600 * (1.2^2 + 2.0^2) = 272 → 보정 0.8 -->
           <ixy>0</ixy>
           <ixz>0</ixz>
           <iyz>0</iyz>
@@ -50,14 +55,15 @@
     <!-- 좌측 궤도 -->
     <!-- ================================================================ -->
     <link name="left_track">
-      <pose relative_to="base_link">0 0.7 -0.2 0 0 0</pose>
+      <!-- HIH-2 C48: 윤거 1.2m → offset 0.6m -->
+      <pose relative_to="base_link">0 0.6 -0.2 0 0 0</pose>
 
       <inertial>
-        <mass>80.0</mass>
+        <mass>100.0</mass>
         <inertia>
-          <ixx>4.27</ixx>
-          <iyy>27.47</iyy>
-          <izz>24.27</izz>
+          <ixx>5.33</ixx>
+          <iyy>34.33</iyy>
+          <izz>30.33</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
@@ -102,14 +108,15 @@
     <!-- 우측 궤도 -->
     <!-- ================================================================ -->
     <link name="right_track">
-      <pose relative_to="base_link">0 -0.7 -0.2 0 0 0</pose>
+      <!-- HIH-2 C48: 윤거 1.2m → offset 0.6m -->
+      <pose relative_to="base_link">0 -0.6 -0.2 0 0 0</pose>
 
       <inertial>
-        <mass>80.0</mass>
+        <mass>100.0</mass>
         <inertia>
-          <ixx>4.27</ixx>
-          <iyy>27.47</iyy>
-          <izz>24.27</izz>
+          <ixx>5.33</ixx>
+          <iyy>34.33</iyy>
+          <izz>30.33</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
@@ -348,16 +355,17 @@
       <left_track>
         <link>left_track</link>
         <velocity_topic>/cmd_vel</velocity_topic>
-        <min_velocity>-2.0</min_velocity>
-        <max_velocity>3.0</max_velocity>
+        <min_velocity>-1.111</min_velocity>
+        <max_velocity>1.111</max_velocity>
       </left_track>
       <right_track>
         <link>right_track</link>
         <velocity_topic>/cmd_vel</velocity_topic>
-        <min_velocity>-2.0</min_velocity>
-        <max_velocity>3.0</max_velocity>
+        <min_velocity>-1.111</min_velocity>
+        <max_velocity>1.111</max_velocity>
       </right_track>
-      <track_width>1.4</track_width>
+      <!-- HIH-2 C48: 윤거 1.2m, 최대속도 4km/h=1.111m/s -->
+      <track_width>1.2</track_width>
       <steering_efficiency>0.9</steering_efficiency>
     </plugin>
 

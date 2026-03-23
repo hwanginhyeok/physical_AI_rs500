@@ -233,8 +233,9 @@ class TrackTerrainInteraction:
         self,
         terrain: TerrainType = TerrainType.FIELD_HARD,
         config: TerrainConfig | None = None,
-        track_width: float = 0.3,
-        track_length: float = 1.2,
+        # HIH-2 SS500 실차 기반 교정 (2026-03-23, C48)
+        track_width: float = 0.3,   # 단일 궤도 접지 폭 (TODO: xlsx 확인)
+        track_length: float = 1.5,  # 기존: 1.2m → 궤도 접지 길이 추정 (TODO: xlsx 확인)
     ) -> None:
         """초기화.
 

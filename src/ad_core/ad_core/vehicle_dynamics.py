@@ -30,14 +30,15 @@ class VehicleDynamicsConfig:
         rolling_resistance: 구름 저항 계수 (무차원).
     """
 
-    mass: float = 200.0
-    Izz: float = 50.0
-    cog_height: float = 0.4
-    wheelbase: float = 1.5
-    track_width: float = 1.4
-    max_accel: float = 1.0
-    max_decel: float = 2.0
-    max_speed: float = 1.0
+    # 기존 추정값 → HIH-2 SS500 실차 기반 교정 (2026-03-23, C48)
+    mass: float = 800.0           # 기존: 200kg → 실차: 800kg 공차 추정 (TODO: xlsx 확인, 만차 ~1300kg)
+    Izz: float = 250.0            # 기존: 50 → 800kg 차체 기반 추정 (TODO: System Identification)
+    cog_height: float = 0.5       # 기존: 0.4m → 궤도차+배터리 하부 배치 감안 0.5m 추정
+    wheelbase: float = 1.8        # 기존: 1.5m → 궤도 접지 길이 기반 추정 (TODO: xlsx 확인)
+    track_width: float = 1.2      # 기존: 1.4m → 윤거 추정 (TODO: xlsx 확인)
+    max_accel: float = 0.5        # 기존: 1.0 → 800kg 차량에 맞게 하향 (3kW 모터 2기)
+    max_decel: float = 1.5        # 기존: 2.0 → 800kg + 브레이크 16Nm 감안
+    max_speed: float = 1.111      # 기존: 1.0 → CAN CF_VehSpdAct 범위 ±4km/h = 1.111m/s
     drag_coefficient: float = 0.5
     rolling_resistance: float = 0.02
 
