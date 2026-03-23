@@ -41,6 +41,8 @@ setup(
         'console_scripts': [
             'waypoint_manager = ad_bringup.waypoint_manager_node:main',
             'cmd_vel_relay = ad_bringup.cmd_vel_relay:main',
+            'gps_to_foxglove = ad_bringup.gps_to_foxglove_node:main',
+            'system_monitor = ad_bringup.system_monitor_node:main',
         ],
     },
 )

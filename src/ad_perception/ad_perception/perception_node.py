@@ -16,6 +16,7 @@ from typing import List, Optional
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, NavSatFix, Imu
+from visualization_msgs.msg import Marker, MarkerArray
 
 try:
     import numpy as np
@@ -74,6 +75,10 @@ class PerceptionModule:
         # 인지 서브모듈 초기화
         self._camera_detector = CameraDetector()
         self._semantic_segmenter = SemanticSegmenter()
+
+        # Crop row 시각화 퍼블리셔
+        self._crop_row_pub = node.create_publisher(
+            MarkerArray, '/perception/crop_rows', 10)
 
         # Foxglove 탐지 시각화 퍼블리셔 (foxglove_msgs 설치 시에만 활성)
         self._annotation_pub = None
@@ -289,6 +294,52 @@ class PerceptionModule:
             annotations.texts.append(label)
 
         self._annotation_pub.publish(annotations)
+
+    # ------------------------------------------------------------------
+    # Crop Row 시각화
+    # ------------------------------------------------------------------
+
+    def _publish_crop_row_markers(
+        self,
+        crop_rows: list[list[tuple[float, float, float]]],
+        stamp=None,
+    ) -> None:
+        """Crop row 데이터를 MarkerArray(LINE_STRIP)로 발행한다.
+
+        Parameters
+        ----------
+        crop_rows:
+            각 crop row는 3D 점 리스트 [(x, y, z), ...].
+            예: [[(0,0,0),(1,0,0)], [(0,1,0),(1,1,0)]]
+        stamp:
+            메시지 타임스탬프. None이면 현재 시간 사용.
+        """
+        from geometry_msgs.msg import Point
+        from std_msgs.msg import ColorRGBA
+
+        marker_array = MarkerArray()
+
+        if stamp is None:
+            stamp = self._node.get_clock().now().to_msg()
+
+        for idx, row_points in enumerate(crop_rows):
+            marker = Marker()
+            marker.header.frame_id = 'base_link'
+            marker.header.stamp = stamp
+            marker.ns = 'crop_rows'
+            marker.id = idx
+            marker.type = Marker.LINE_STRIP
+            marker.action = Marker.ADD
+            marker.scale.x = 0.05  # line width
+            marker.color = ColorRGBA(r=0.0, g=0.8, b=0.0, a=0.7)
+            marker.pose.orientation.w = 1.0
+
+            for x, y, z in row_points:
+                marker.points.append(Point(x=float(x), y=float(y), z=float(z)))
+
+            marker_array.markers.append(marker)
+
+        self._crop_row_pub.publish(marker_array)
 
     # ------------------------------------------------------------------
     # 결과 조회

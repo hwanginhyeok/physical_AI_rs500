@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-22
+> 마지막 갱신: 2026-03-23 (C71 Foxglove v3.0 전면 개선)
 >
 > **관리 룰**
 > - 상태: `예정` → `진행` → `완료` (완료 즉시 완료 섹션 최상단으로 이동)
@@ -15,10 +15,8 @@
 
 | # | 작업 | 담당 | 진행 상황 | 다음 할 일 |
 |---|------|------|-----------|-----------|
-| C41 | 집 PC Gazebo 시뮬레이션 환경 구축 | 사용자+그린 | Step 1~4 완료 (WSL2+ROS2+Gazebo+Nav2) | **Step 5~8**: git clone → colcon build → Foxglove 포트포워딩 → 시뮬레이션 E2E 테스트 ([상세](task/C44_wsl2_simulation_setup.md)) |
-| C61 | 차량 물리 동작 검증 | 사용자 | 코드 완료, 집 PC Gazebo 실행 대기 | C41 완료 후 → `ros2 launch ad_bringup simulation_launch.py` → cmd_vel → 차량 이동 확인 ([상세](task/C61_velocity_chain_debug.md)) |
-| C67 | Camera-Only Visual SLAM 구현 | 그린 | 조사 완료 (RTAB-Map 1순위) | C41 완료 후 → rtabmap_ros Jazzy 빌드 → Gazebo RGBD 연동 → GPS 전환 아키텍처 ([상세](../research/visual_slam_camera_only_survey.md)) |
-| C60 | 농업용 Hybrid E2E 아키텍처 구축 | 그린 | Phase 1~2 완료 (구조+연결). Diffusion+PurePursuit fallback 연결됨 | Phase 3: Diffusion 모델 훈련 (Gazebo 데이터 수집 → 학습 파이프라인) |
+| C67 | Camera-Only Visual SLAM 구현 | 그린 | 조사 완료 (RTAB-Map 1순위) | rtabmap_ros Jazzy 빌드 → Gazebo RGBD 연동 → GPS 전환 아키텍처 ([상세](../research/visual_slam_camera_only_survey.md)) |
+| C60 | 농업용 Hybrid E2E 아키텍처 구축 | 그린 | Phase 1~2 완료. C71에서 상태 발행 추가 | Phase 3: Diffusion 모델 훈련 (Gazebo 데이터 수집 → 학습 파이프라인) |
 
 ---
 
@@ -28,22 +26,16 @@
 
 | 파일 | 변경 내용 | 확인 포인트 |
 |------|-----------|-------------|
-| `src/ad_bringup/config/foxglove_layout.json` | **C70**: [DEV] 3탭→5탭 전면 재설계, User Script 3개 | Foxglove Import 후 5탭 정상 표시 |
-| `src/ad_bringup/config/foxglove_production_layout.json` | **C70**: [PRODUCTION] 신규. 2탭 경량 모니터링 | Monitor/System 탭 표시 확인 |
-| `src/ad_bringup/config/foxglove_debug_layout.json` | **C70**: [DEBUG] 신규. 5탭 심층 디버깅 | Raw Sensors/Depth&TF/Nav2/Topic/VelocityChain 탭 확인 |
-| `src/ad_bringup/config/foxglove_comparison_layout.json` | **C70**: LiDAR 제거, Camera 비교 탭 추가, depth pointcloud 비교 | sim/real bag 비교 동작 확인 |
-| `src/ad_bringup/config/bridge_config.yaml` | **C70**: CameraInfo ×3 브릿지 추가 | `ros2 topic list`에서 `/sensor/camera/*/camera_info` 확인 |
-| `src/ad_bringup/launch/record_launch.py` | **C70**: depth points ×3, camera_info ×3 토픽 추가 (6개) | 녹화 후 `ros2 bag info`에서 토픽 확인 |
-| `src/ad_perception/ad_perception/perception_node.py` | **C70**: Foxglove ImageAnnotations 발행 추가 (foxglove_msgs 선택적 의존) | foxglove_msgs 설치 시 `/perception/annotations/front` 토픽 발행 확인 |
-| `src/ad_perception/package.xml` | **C70**: foxglove_msgs exec_depend 추가 | — |
-| `src/ad_bringup/models/ss500/model.sdf` | **C64**: LiDAR 제거, 카메라 3대 추가 (front/left/right), `camera` → `rgbd_camera` 전환, `depth_camera` 설정 추가 | Gazebo에서 RGB + PointCloud2 정상 발행 확인 |
-| `src/ad_bringup/config/bridge_config.yaml` | **C64**: LiDAR 브릿지 제거, 카메라 3대 RGB + PointCloud2 브릿지 추가 (6개 토픽) | ros2 topic list에서 /sensor/camera/*/points 확인 |
-| `src/ad_bringup/config/nav2_params.yaml` | **C64**: obstacle_layer에 PointCloud2 ×3 소스 연결 (global+local), collision_monitor에 pointcloud 소스 추가 | costmap에 장애물이 정상 표시되는지 |
-| `src/ad_bringup/urdf/ss500.urdf.xacro` | **C64**: LiDAR 링크/조인트 제거, 카메라 3대 링크/조인트 추가 | TF 트리에 camera_front/left/right_link 확인 |
-| `src/ad_bringup/launch/simulation_launch.py` | **C64**: LiDAR frame bridge 제거, 카메라 3대 frame bridge 추가 | 프레임 ID 브릿지 정상 동작 |
-| `src/ad_bringup/launch/record_launch.py` | **C64**: 토픽명 `/sensor/camera/*/image`로 변경 | — |
-| `src/ad_perception/ad_perception/perception_node.py` | **C64**: LiDAR 구독/처리 전면 제거, 멀티카메라(front/left/right) 구독 전환 | 카메라 3대 이미지 수신 확인 |
-| `src/ad_perception/config/perception_params.yaml` | **C64**: 토픽 파라미터 멀티카메라로 갱신 | — |
+| `foxglove_layout.json` | **C71**: v3.0 — 위성타일, Planning 3D, HeadingError, PerceptionDebug, Coverage/Geofence/E2E User Script 6개, Indicator 2개 | Foxglove Import 후 확인 — **완료** |
+| `foxglove_production_layout.json` | **C71**: 위성타일, cmd_vel 참조선, Geofence+E2E Indicator, User Script 2개 | **완료** |
+| `foxglove_debug_layout.json` | **C71**: Planning 토픽 3D, 멀티카메라 어노테이션, BT log 패널 | 시뮬 실행 시 확인 |
+| `foxglove_comparison_layout.json` | **C71**: 위성타일, Regression User Script + 플롯 | sim/real 비교 시 확인 |
+| `hybrid_e2e_node.py` | **C71**: `/hybrid_e2e/status` JSON 발행 추가 (1Hz) | 토픽 발행 확인 — **완료** |
+| `gps_to_foxglove_node.py` | **C71**: 신규. NavSatFix→LocationFix 변환 | foxglove_msgs 설치 후 확인 |
+| `system_monitor_node.py` | **C71**: 신규. 카메라 FPS/GPS/EKF → `/diagnostics` 발행 | 토픽 발행 확인 — **완료** |
+| `perception_node.py` | **C71**: `/perception/crop_rows` MarkerArray 발행 추가 | 작물 행 감지 데이터 연결 시 확인 |
+| `record_launch.py` | **C71**: 9토픽 추가, 1분 분할, full/light 프로파일 | 녹화 시 확인 |
+| `foxglove-extensions/agriculture-panel/` | **C71**: 커스텀 AgriMissionPanel (.foxe 빌드 성공) | Foxglove에 설치 후 확인 |
 
 ---
 
@@ -61,12 +53,12 @@
 | # | 분야 | 작업 | 중요도 | 담당 | 상태 | 비고 |
 |---|------|------|--------|------|------|------|
 | | | **── P1 긴급 ──** | | | | |
-| C63 | 인프라 | STP 도면 반영 → model.sdf 물리 파라미터 + 메시 갱신 | P1 | 그린 | 예정 | 실차 하드웨어 출고 완료. STP 파일 ~3/20 수령 예정. `scripts/stp_to_sdf.py` 준비 완료 |
+| C63 | 인프라 | STP 도면 반영 → model.sdf 물리 파라미터 + 메시 갱신 | P1 | 그린 | **[지연]** 예정 | 실차 하드웨어 출고 완료. STP 파일 ~3/20 수령 예정이었으나 미수령. `scripts/stp_to_sdf.py` 준비 완료 |
 | | | **── P2 중요 ──** | | | | |
-| C61 | 시뮬레이션 | 차량 물리 동작 검증 (cmd_vel → Gazebo) | P2 | 사용자 | **사용자 대기** | CycloneDDS 전환 + cmd_vel_relay 수정 완료. 집 PC에서 시뮬레이션 실행 검증 대기 ([상세](task/C61_velocity_chain_debug.md)) |
-| C60 | 아키텍처 | 농업용 Hybrid E2E 아키텍처 구축 | P2 | 그린 | **진행** | ARCH-004 설계, Safety Guardian 완료. C64 Camera-Only 반영 후 Learned Perception/Planning 통합 ([상세](task/C60_hybrid_e2e_architecture.md)) |
-| C57 | 인프라 | 시뮬/실물 네임스페이스 분리 (라이브 동시 비교) | P2 | — | 예정 | `/sim/*` / `/real/*` 분리 |
-| C67 | 인지 | Camera-Only Visual SLAM 조사 완료 — 구현 예정 | P2 | 그린 | **조사 완료** | RTAB-Map 1순위 권장. 912줄 조사 보고서 작성. 구현은 C41(시뮬 환경) 후 착수 ([상세](../research/visual_slam_camera_only_survey.md)) |
+| C61 | 시뮬레이션 | 차량 물리 동작 검증 (cmd_vel → Gazebo) | P2 | 사용자 | **사용자 대기** | CycloneDDS 전환 + cmd_vel_relay 수정 완료. 시뮬레이션 실행 검증 대기 ([상세](task/C61_velocity_chain_debug.md)) |
+| C60 | 아키텍처 | 농업용 Hybrid E2E 아키텍처 구축 | P2 | 그린 | **진행** | ARCH-004 설계, Safety Guardian 완료. C71에서 상태 발행 추가. Phase 3 대기 ([상세](task/C60_hybrid_e2e_architecture.md)) |
+| C57 | 인프라 | 시뮬/실물 네임스페이스 분리 (라이브 동시 비교) | P2 | — | 예정 | `/sim/*` / `/real/*` 분리. C71에서 Comparison 레이아웃 준비 완료 |
+| C67 | 인지 | Camera-Only Visual SLAM 조사 완료 — 구현 예정 | P2 | 그린 | **조사 완료** | RTAB-Map 1순위 권장. 구현은 시뮬 환경 후 착수 ([상세](../research/visual_slam_camera_only_survey.md)) |
 | | | **── P3 향후 ──** | | | | |
 | C46 | 인지 | 지형 traversability 분류 (Wild Visual Navigation 방식) | P3 | — | 예정 | |
 | C47 | 인프라 | CI/CD headless 시뮬레이션 파이프라인 | P3 | — | 예정 | |
@@ -79,6 +71,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C71 | Foxglove v3.0 전면 개선 | P2 | 그린 | 2026-03-23 | 5 Phase 구현: 위성타일·Planning시각화·HeadingError(P1), 농업 User Script 6개(P2), ROS 노드 5개 변경(P3), MCAP최적화·BT·커스텀확장(P4), Sim-Real 비교(P5). 10개 파일 수정, 3개 신규. 빌드·노드실행·Foxglove 접속 검증 완료 |
 | C46 | 과수원 작물 행 인식 모듈 (Classical CV, Phase 1) | P2 | 그린 | 2026-03-22 | crop_row_detector.py + 40건 테스트, 6종 과수원 프로파일, DL 교체 인터페이스 준비 |
 | C45 | ROS2 노드 Mock 테스트 작성 (ad_control, ad_planning, ad_perception) | P2 | 그린 | 2026-03-22 | 4파일 101건 테스트 추가 (총 303건), ControlModule/PlanningModule/PerceptionModule/LocalizationManager |
 | C41 | 집 PC Gazebo 시뮬레이션 환경 구축 + Nav2 튜닝 | P2 | 그린 | 2026-03-22 | ROS2 Jazzy + Gazebo Harmonic 8.10.0 + Nav2 파라미터 수정 (3파일), 24노드 기동 확인, 178테스트 통과 |

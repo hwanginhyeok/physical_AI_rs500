@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "자율주행 Foxglove [PRODUCTION] 레이아웃 v2.0",
+    "자율주행 Foxglove [PRODUCTION] 레이아웃 v3.0",
     "Camera-Only 센서 스택 (C64 반영)",
     "",
     "용도: 현장 운용 / 감독자 모니터링",
@@ -15,52 +15,50 @@
     "",
     "접속: Foxglove → Open connection → ws://localhost:8765"
   ],
-
   "configById": {
-
     "Image!camFront": {
       "cameraTopic": "/sensor/camera/front/image",
-      "enabledMarkerTopics": ["/perception/annotations/front"],
+      "enabledMarkerTopics": [
+        "/perception/annotations/front"
+      ],
       "calibrationTopic": "/sensor/camera/front/camera_info",
       "synchronize": false,
       "smooth": true,
       "rotation": 0
     },
-
     "Map!gpsMap": {
-      "layer": "map",
+      "layer": "satellite",
       "topicPath": "/sensor/gps",
       "zoomLevel": 18
     },
-
     "Indicator!navState": {
       "path": "/waypoint_manager/status.status",
       "style": "background",
       "fallbackColor": "#546e7a",
       "fallbackLabel": "NO DATA"
     },
-
     "Gauge!speed": {
       "path": "/odometry/local.twist.twist.linear.x",
       "minValue": -1.0,
       "maxValue": 3.0,
       "colorMode": "gradient",
-      "gradient": ["#4caf50", "#ffeb3b", "#f44336"]
+      "gradient": [
+        "#4caf50",
+        "#ffeb3b",
+        "#f44336"
+      ]
     },
-
     "RawMessages!wpStatus": {
       "topicPath": "/waypoint_manager/status",
       "diffEnabled": false,
       "showFullMessageForDiff": false,
       "fontSize": 14
     },
-
     "Log!alertLog": {
       "searchTerms": [],
       "minLogLevel": 2,
       "nameFilter": {}
     },
-
     "Plot!velocity": {
       "title": "Vehicle Speed",
       "paths": [
@@ -77,6 +75,13 @@
           "timestampMethod": "receiveTime",
           "color": "#ce93d8",
           "lineSize": 1.5
+        },
+        {
+          "value": "/cmd_vel.linear.x",
+          "label": "cmd vx",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.0
         }
       ],
       "xAxisVal": "timestamp",
@@ -87,7 +92,6 @@
       "maxYValue": 4.0,
       "followingViewWidth": 60
     },
-
     "Plot!ekfPos": {
       "title": "Position",
       "paths": [
@@ -111,7 +115,6 @@
       "legendDisplay": "floating",
       "followingViewWidth": 120
     },
-
     "Log!navLog": {
       "searchTerms": [],
       "minLogLevel": 1,
@@ -123,7 +126,6 @@
         "behavior_server": true
       }
     },
-
     "Tab!mainTab": {
       "activeTabIdx": 0,
       "tabs": [
@@ -141,9 +143,19 @@
               "direction": "column",
               "first": {
                 "direction": "column",
-                "first": "Indicator!navState",
-                "second": "Gauge!speed",
-                "splitPercentage": 40
+                "first": {
+                  "direction": "row",
+                  "first": "Indicator!navState",
+                  "second": "Indicator!geofence",
+                  "splitPercentage": 50
+                },
+                "second": {
+                  "direction": "row",
+                  "first": "Gauge!speed",
+                  "second": "Indicator!e2eMode",
+                  "splitPercentage": 65
+                },
+                "splitPercentage": 45
               },
               "second": {
                 "direction": "column",
@@ -171,11 +183,45 @@
           }
         }
       ]
+    },
+    "Indicator!geofence": {
+      "path": "/studio_script/geofence.inside",
+      "style": "background",
+      "fallbackColor": "#546e7a",
+      "fallbackLabel": "GEOFENCE N/A",
+      "rules": [
+        {
+          "operator": "=",
+          "rawValue": "true",
+          "color": "#4caf50",
+          "label": "INSIDE"
+        },
+        {
+          "operator": "=",
+          "rawValue": "false",
+          "color": "#f44336",
+          "label": "OUTSIDE"
+        }
+      ]
+    },
+    "Indicator!e2eMode": {
+      "path": "/studio_script/perception_mode.label",
+      "style": "background",
+      "fallbackColor": "#546e7a",
+      "fallbackLabel": "E2E N/A"
     }
   },
-
   "globalVariables": {},
-  "userNodes": {},
+  "userNodes": {
+    "geofence_node": {
+      "name": "GeofenceChecker",
+      "sourceCode": "// Geofence Checker: GPS 위치가 설정된 폴리곤 내부인지 확인\n// globalVariables에 geofence_lat, geofence_lon 배열 설정 필요\n// Indicator: /studio_script/geofence.inside (boolean)\n\nimport { Input } from \"./types\";\n\nexport const inputs = [\"/sensor/gps\"];\nexport const output = \"/studio_script/geofence\";\n\n// 기본 사각형 지오펜스 (globalVariables 미설정 시 사용)\n// 영월 기준 대략적인 테스트 영역\nconst DEFAULT_FENCE = [\n  { lat: 37.180, lon: 128.460 },\n  { lat: 37.185, lon: 128.460 },\n  { lat: 37.185, lon: 128.465 },\n  { lat: 37.180, lon: 128.465 },\n];\n\nfunction pointInPolygon(lat: number, lon: number, polygon: Array<{lat: number, lon: number}>): boolean {\n  let inside = false;\n  const n = polygon.length;\n  for (let i = 0, j = n - 1; i < n; j = i++) {\n    const yi = polygon[i].lat, xi = polygon[i].lon;\n    const yj = polygon[j].lat, xj = polygon[j].lon;\n    if (((yi > lat) !== (yj > lat)) && (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {\n      inside = !inside;\n    }\n  }\n  return inside;\n}\n\ntype InputEvent = Input<\"/sensor/gps\">;\n\nexport default function script(event: InputEvent): {\n  inside: boolean;\n  latitude: number;\n  longitude: number;\n} | undefined {\n  const msg = (event as any).message;\n  const lat = msg.latitude;\n  const lon = msg.longitude;\n\n  if (lat === 0 && lon === 0) return undefined; // GPS 미수신\n\n  const fence = DEFAULT_FENCE;\n  const inside = pointInPolygon(lat, lon, fence);\n\n  return { inside, latitude: lat, longitude: lon };\n}\n"
+    },
+    "perception_mode_node": {
+      "name": "PerceptionModeDisplay",
+      "sourceCode": "// Perception Mode Display: Hybrid E2E 상태 토픽에서 현재 모드 추출\n// Indicator: /studio_script/perception_mode.mode\n// Phase 3.1에서 /hybrid_e2e/status 토픽 발행 후 동작\n\nimport { Input } from \"./types\";\n\nexport const inputs = [\"/hybrid_e2e/status\"];\nexport const output = \"/studio_script/perception_mode\";\n\ntype InputEvent = Input<\"/hybrid_e2e/status\">;\n\nexport default function script(event: InputEvent): {\n  mode: string;\n  safety: string;\n  label: string;\n} | undefined {\n  const msg = (event as any).message;\n\n  try {\n    const status = JSON.parse(msg.data);\n    const mode = status.mode || \"unknown\";\n    const safety = status.safety_state || \"unknown\";\n\n    const modeLabels: Record<string, string> = {\n      learned: \"AI\",\n      traditional: \"Classic\",\n      fallback: \"FALLBACK\",\n      auto: \"Auto\",\n    };\n\n    return {\n      mode,\n      safety,\n      label: modeLabels[mode] || mode.toUpperCase(),\n    };\n  } catch {\n    return undefined;\n  }\n}\n"
+    }
+  },
   "playbackConfig": {
     "speed": 1.0
   },

@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "자율주행 Foxglove [DEBUG] 레이아웃 v2.0",
+    "자율주행 Foxglove [DEBUG] 레이아웃 v3.0",
     "Camera-Only 센서 스택 (C64 반영)",
     "",
     "용도: 문제 발생 시 심층 디버깅",
@@ -20,12 +20,12 @@
     "",
     "접속: Foxglove → Open connection → ws://localhost:8765"
   ],
-
   "configById": {
-
     "Image!camFront": {
       "cameraTopic": "/sensor/camera/front/image",
-      "enabledMarkerTopics": ["/perception/annotations/front"],
+      "enabledMarkerTopics": [
+        "/perception/annotations/front"
+      ],
       "calibrationTopic": "/sensor/camera/front/camera_info",
       "synchronize": false,
       "smooth": true,
@@ -33,19 +33,24 @@
     },
     "Image!camLeft": {
       "cameraTopic": "/sensor/camera/left/image",
-      "enabledMarkerTopics": [],
+      "enabledMarkerTopics": [
+        "/perception/annotations/left"
+      ],
       "synchronize": false,
       "smooth": true,
-      "rotation": 0
+      "rotation": 0,
+      "calibrationTopic": "/sensor/camera/left/camera_info"
     },
     "Image!camRight": {
       "cameraTopic": "/sensor/camera/right/image",
-      "enabledMarkerTopics": [],
+      "enabledMarkerTopics": [
+        "/perception/annotations/right"
+      ],
       "synchronize": false,
       "smooth": true,
-      "rotation": 0
+      "rotation": 0,
+      "calibrationTopic": "/sensor/camera/right/camera_info"
     },
-
     "RawMessages!rawImu": {
       "topicPath": "/sensor/imu",
       "diffEnabled": false,
@@ -94,13 +99,30 @@
       "showFullMessageForDiff": false,
       "fontSize": 11
     },
-
     "Plot!imuAccel": {
       "title": "IMU Linear Acceleration (m/s²)",
       "paths": [
-        { "value": "/sensor/imu.linear_acceleration.x", "label": "ax", "timestampMethod": "receiveTime", "color": "#ef5350", "lineSize": 1.0 },
-        { "value": "/sensor/imu.linear_acceleration.y", "label": "ay", "timestampMethod": "receiveTime", "color": "#66bb6a", "lineSize": 1.0 },
-        { "value": "/sensor/imu.linear_acceleration.z", "label": "az", "timestampMethod": "receiveTime", "color": "#42a5f5", "lineSize": 1.0 }
+        {
+          "value": "/sensor/imu.linear_acceleration.x",
+          "label": "ax",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.linear_acceleration.y",
+          "label": "ay",
+          "timestampMethod": "receiveTime",
+          "color": "#66bb6a",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.linear_acceleration.z",
+          "label": "az",
+          "timestampMethod": "receiveTime",
+          "color": "#42a5f5",
+          "lineSize": 1.0
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -110,9 +132,27 @@
     "Plot!imuGyro": {
       "title": "IMU Angular Velocity (rad/s)",
       "paths": [
-        { "value": "/sensor/imu.angular_velocity.x", "label": "gx (roll)", "timestampMethod": "receiveTime", "color": "#ef5350", "lineSize": 1.0 },
-        { "value": "/sensor/imu.angular_velocity.y", "label": "gy (pitch)", "timestampMethod": "receiveTime", "color": "#66bb6a", "lineSize": 1.0 },
-        { "value": "/sensor/imu.angular_velocity.z", "label": "gz (yaw)", "timestampMethod": "receiveTime", "color": "#42a5f5", "lineSize": 1.0 }
+        {
+          "value": "/sensor/imu.angular_velocity.x",
+          "label": "gx (roll)",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.angular_velocity.y",
+          "label": "gy (pitch)",
+          "timestampMethod": "receiveTime",
+          "color": "#66bb6a",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.angular_velocity.z",
+          "label": "gz (yaw)",
+          "timestampMethod": "receiveTime",
+          "color": "#42a5f5",
+          "lineSize": 1.0
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -122,48 +162,117 @@
     "Plot!imuOrientation": {
       "title": "IMU Orientation (quaternion)",
       "paths": [
-        { "value": "/sensor/imu.orientation.x", "label": "qx", "timestampMethod": "receiveTime", "color": "#ef5350", "lineSize": 1.0 },
-        { "value": "/sensor/imu.orientation.y", "label": "qy", "timestampMethod": "receiveTime", "color": "#66bb6a", "lineSize": 1.0 },
-        { "value": "/sensor/imu.orientation.z", "label": "qz", "timestampMethod": "receiveTime", "color": "#42a5f5", "lineSize": 1.0 },
-        { "value": "/sensor/imu.orientation.w", "label": "qw", "timestampMethod": "receiveTime", "color": "#ffa726", "lineSize": 1.0 }
+        {
+          "value": "/sensor/imu.orientation.x",
+          "label": "qx",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.orientation.y",
+          "label": "qy",
+          "timestampMethod": "receiveTime",
+          "color": "#66bb6a",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.orientation.z",
+          "label": "qz",
+          "timestampMethod": "receiveTime",
+          "color": "#42a5f5",
+          "lineSize": 1.0
+        },
+        {
+          "value": "/sensor/imu.orientation.w",
+          "label": "qw",
+          "timestampMethod": "receiveTime",
+          "color": "#ffa726",
+          "lineSize": 1.0
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
       "legendDisplay": "floating",
       "followingViewWidth": 10
     },
-
     "Plot!gpsCoords": {
       "title": "GPS Coordinates",
       "paths": [
-        { "value": "/sensor/gps.latitude", "label": "lat", "timestampMethod": "receiveTime", "color": "#ef5350", "lineSize": 1.5 },
-        { "value": "/sensor/gps.longitude", "label": "lon", "timestampMethod": "receiveTime", "color": "#66bb6a", "lineSize": 1.5 }
+        {
+          "value": "/sensor/gps.latitude",
+          "label": "lat",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/sensor/gps.longitude",
+          "label": "lon",
+          "timestampMethod": "receiveTime",
+          "color": "#66bb6a",
+          "lineSize": 1.5
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
       "legendDisplay": "floating",
       "followingViewWidth": 60
     },
-
     "Plot!ekfLocalVsGlobal": {
       "title": "EKF Local vs Global X",
       "paths": [
-        { "value": "/odometry/local.pose.pose.position.x", "label": "local x", "timestampMethod": "receiveTime", "color": "#4fc3f7", "lineSize": 1.5 },
-        { "value": "/odometry/global.pose.pose.position.x", "label": "global x", "timestampMethod": "receiveTime", "color": "#ff8a65", "lineSize": 1.5 }
+        {
+          "value": "/odometry/local.pose.pose.position.x",
+          "label": "local x",
+          "timestampMethod": "receiveTime",
+          "color": "#4fc3f7",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/global.pose.pose.position.x",
+          "label": "global x",
+          "timestampMethod": "receiveTime",
+          "color": "#ff8a65",
+          "lineSize": 1.5
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
       "legendDisplay": "floating",
       "followingViewWidth": 60
     },
-
     "Plot!cmdVelChain": {
       "title": "Velocity Chain: cmd → smoothed → actual",
       "paths": [
-        { "value": "/cmd_vel.linear.x", "label": "cmd_vel", "timestampMethod": "receiveTime", "color": "#ef5350", "lineSize": 2.0 },
-        { "value": "/cmd_vel_smoothed.linear.x", "label": "smoothed", "timestampMethod": "receiveTime", "color": "#ffca28", "lineSize": 1.5 },
-        { "value": "/odometry/local.twist.twist.linear.x", "label": "actual", "timestampMethod": "receiveTime", "color": "#4fc3f7", "lineSize": 2.0 },
-        { "value": "/odom.twist.twist.linear.x", "label": "raw odom", "timestampMethod": "receiveTime", "color": "#78909c", "lineSize": 1.0 }
+        {
+          "value": "/cmd_vel.linear.x",
+          "label": "cmd_vel",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/cmd_vel_smoothed.linear.x",
+          "label": "smoothed",
+          "timestampMethod": "receiveTime",
+          "color": "#ffca28",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.twist.twist.linear.x",
+          "label": "actual",
+          "timestampMethod": "receiveTime",
+          "color": "#4fc3f7",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/odom.twist.twist.linear.x",
+          "label": "raw odom",
+          "timestampMethod": "receiveTime",
+          "color": "#78909c",
+          "lineSize": 1.0
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -172,14 +281,37 @@
       "maxYValue": 4.0,
       "followingViewWidth": 15
     },
-
     "Plot!cmdWzChain": {
       "title": "Angular Chain: cmd → smoothed → actual",
       "paths": [
-        { "value": "/cmd_vel.angular.z", "label": "cmd_vel", "timestampMethod": "receiveTime", "color": "#ef5350", "lineSize": 2.0 },
-        { "value": "/cmd_vel_smoothed.angular.z", "label": "smoothed", "timestampMethod": "receiveTime", "color": "#ffca28", "lineSize": 1.5 },
-        { "value": "/odometry/local.twist.twist.angular.z", "label": "actual", "timestampMethod": "receiveTime", "color": "#ce93d8", "lineSize": 2.0 },
-        { "value": "/odom.twist.twist.angular.z", "label": "raw odom", "timestampMethod": "receiveTime", "color": "#78909c", "lineSize": 1.0 }
+        {
+          "value": "/cmd_vel.angular.z",
+          "label": "cmd_vel",
+          "timestampMethod": "receiveTime",
+          "color": "#ef5350",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/cmd_vel_smoothed.angular.z",
+          "label": "smoothed",
+          "timestampMethod": "receiveTime",
+          "color": "#ffca28",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.twist.twist.angular.z",
+          "label": "actual",
+          "timestampMethod": "receiveTime",
+          "color": "#ce93d8",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/odom.twist.twist.angular.z",
+          "label": "raw odom",
+          "timestampMethod": "receiveTime",
+          "color": "#78909c",
+          "lineSize": 1.0
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -188,7 +320,6 @@
       "maxYValue": 2.5,
       "followingViewWidth": 15
     },
-
     "3D!depthAll": {
       "followTf": "base_link",
       "scene": {
@@ -199,21 +330,52 @@
         "distance": 10,
         "perspective": true,
         "phi": 45,
-        "target": [2, 0, 0],
+        "target": [
+          2,
+          0,
+          0
+        ],
         "thetaOffset": 0
       },
       "topics": {
-        "/sensor/camera/front/points": { "visible": true, "pointSize": 4, "colorMode": "flat", "flatColor": "#4fc3f7" },
-        "/sensor/camera/left/points": { "visible": true, "pointSize": 4, "colorMode": "flat", "flatColor": "#66bb6a" },
-        "/sensor/camera/right/points": { "visible": true, "pointSize": 4, "colorMode": "flat", "flatColor": "#ffa726" },
-        "/perception/markers": { "visible": true }
+        "/sensor/camera/front/points": {
+          "visible": true,
+          "pointSize": 4,
+          "colorMode": "flat",
+          "flatColor": "#4fc3f7"
+        },
+        "/sensor/camera/left/points": {
+          "visible": true,
+          "pointSize": 4,
+          "colorMode": "flat",
+          "flatColor": "#66bb6a"
+        },
+        "/sensor/camera/right/points": {
+          "visible": true,
+          "pointSize": 4,
+          "colorMode": "flat",
+          "flatColor": "#ffa726"
+        },
+        "/perception/markers": {
+          "visible": true
+        }
       },
       "layers": {
-        "grid": { "layerId": "foxglove.Grid", "visible": true, "size": 30, "divisions": 60, "color": "#222244" },
-        "urdf": { "layerId": "foxglove.Urdf", "visible": true, "sourceType": "param", "parameter": "/robot_description" }
+        "grid": {
+          "layerId": "foxglove.Grid",
+          "visible": true,
+          "size": 30,
+          "divisions": 60,
+          "color": "#222244"
+        },
+        "urdf": {
+          "layerId": "foxglove.Urdf",
+          "visible": true,
+          "sourceType": "param",
+          "parameter": "/robot_description"
+        }
       }
     },
-
     "3D!nav2Deep": {
       "followTf": "base_link",
       "scene": {
@@ -224,7 +386,11 @@
         "distance": 20,
         "perspective": true,
         "phi": 55,
-        "target": [0, 0, 0],
+        "target": [
+          0,
+          0,
+          0
+        ],
         "thetaOffset": 0
       },
       "publish": {
@@ -232,24 +398,82 @@
         "poseTopic": "/goal_pose"
       },
       "topics": {
-        "/waypoint_manager/markers": { "visible": true },
-        "/global_costmap/costmap": { "visible": true, "colorMode": "costmap", "alpha": 0.5 },
-        "/local_costmap/costmap": { "visible": true, "colorMode": "costmap", "alpha": 0.35 },
-        "/plan": { "visible": true, "lineWidth": 3, "gradient": ["#00ff88", "#00ff88"] },
-        "/local_plan": { "visible": true, "lineWidth": 2, "gradient": ["#ffaa00", "#ffaa00"] },
-        "/sensor/camera/front/points": { "visible": true, "pointSize": 2, "colorMode": "flat", "flatColor": "#4fc3f7", "alpha": 0.5 },
-        "/map": { "visible": true, "alpha": 0.7 }
+        "/waypoint_manager/markers": {
+          "visible": true
+        },
+        "/global_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap",
+          "alpha": 0.5
+        },
+        "/local_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap",
+          "alpha": 0.35
+        },
+        "/plan": {
+          "visible": true,
+          "lineWidth": 3,
+          "gradient": [
+            "#00ff88",
+            "#00ff88"
+          ]
+        },
+        "/local_plan": {
+          "visible": true,
+          "lineWidth": 2,
+          "gradient": [
+            "#ffaa00",
+            "#ffaa00"
+          ]
+        },
+        "/sensor/camera/front/points": {
+          "visible": true,
+          "pointSize": 2,
+          "colorMode": "flat",
+          "flatColor": "#4fc3f7",
+          "alpha": 0.5
+        },
+        "/map": {
+          "visible": true,
+          "alpha": 0.7
+        },
+        "/planning/trajectory": {
+          "visible": true,
+          "lineWidth": 2,
+          "gradient": [
+            "#e040fb",
+            "#e040fb"
+          ]
+        },
+        "/planning/debug/candidates": {
+          "visible": true,
+          "lineWidth": 1,
+          "gradient": [
+            "#78909c",
+            "#78909c"
+          ]
+        }
       },
       "layers": {
-        "grid": { "layerId": "foxglove.Grid", "visible": true, "size": 100, "divisions": 100, "color": "#333355" },
-        "urdf": { "layerId": "foxglove.Urdf", "visible": true, "sourceType": "param", "parameter": "/robot_description" }
+        "grid": {
+          "layerId": "foxglove.Grid",
+          "visible": true,
+          "size": 100,
+          "divisions": 100,
+          "color": "#333355"
+        },
+        "urdf": {
+          "layerId": "foxglove.Urdf",
+          "visible": true,
+          "sourceType": "param",
+          "parameter": "/robot_description"
+        }
       }
     },
-
     "TransformTree!tfTree": {},
     "TopicGraph!tgraph": {},
     "Parameters!params": {},
-
     "Log!allLog": {
       "searchTerms": [],
       "minLogLevel": 0
@@ -267,7 +491,6 @@
         "collision_monitor": true
       }
     },
-
     "Tab!mainTab": {
       "activeTabIdx": 0,
       "tabs": [
@@ -351,7 +574,12 @@
             },
             "second": {
               "direction": "column",
-              "first": "RawMessages!rawWpStatus",
+              "first": {
+                "direction": "row",
+                "first": "RawMessages!rawWpStatus",
+                "second": "RawMessages!btLog",
+                "splitPercentage": 50
+              },
               "second": {
                 "direction": "column",
                 "first": "RawMessages!rawCmdVel",
@@ -402,9 +630,14 @@
           }
         }
       ]
+    },
+    "RawMessages!btLog": {
+      "topicPath": "/behavior_tree_log",
+      "diffEnabled": false,
+      "showFullMessageForDiff": false,
+      "fontSize": 11
     }
   },
-
   "globalVariables": {},
   "userNodes": {},
   "playbackConfig": {

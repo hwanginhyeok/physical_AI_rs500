@@ -1,10 +1,11 @@
 {
   "_comment": [
-    "시뮬레이션 vs 실물 비교 레이아웃 v2.0",
+    "시뮬레이션 vs 실물 비교 레이아웃 v3.0",
     "Camera-Only 센서 스택 (C64 반영)",
     "",
     "사용법:",
     "  1. Foxglove → Data Sources → [+] 으로 bag 2개 동시 열기",
+    "  [C57 대비] 네임스페이스 분리 후: /sim/*, /real/* 토픽으로 소스 전환",
     "     - Source 1: sim_YYYYMMDD_HHMMSS (시뮬레이션 bag)",
     "     - Source 2: real_YYYYMMDD_HHMMSS (실물 bag)",
     "  2. Layouts → Import → 이 파일 선택",
@@ -18,9 +19,7 @@
     "  GPS 경로       — GPS 지도 + 네비게이션 로그",
     "  Diagnostics    — TF 트리 + 토픽 그래프 + 로그"
   ],
-
   "configById": {
-
     "3D!sim": {
       "followTf": "base_link",
       "scene": {
@@ -32,7 +31,11 @@
         "distance": 25,
         "perspective": true,
         "phi": 55,
-        "target": [0, 0, 0],
+        "target": [
+          0,
+          0,
+          0
+        ],
         "thetaOffset": 0
       },
       "publish": {
@@ -40,13 +43,53 @@
         "poseTopic": "/goal_pose"
       },
       "topics": {
-        "/waypoint_manager/markers": { "visible": true },
-        "/global_costmap/costmap": { "visible": true, "colorMode": "costmap", "alpha": 0.35 },
-        "/local_costmap/costmap": { "visible": true, "colorMode": "costmap", "alpha": 0.2 },
-        "/plan": { "visible": true, "lineWidth": 3, "gradient": ["#00e676", "#00e676"] },
-        "/local_plan": { "visible": true, "lineWidth": 2, "gradient": ["#ffab40", "#ffab40"] },
-        "/sensor/camera/front/points": { "visible": true, "pointSize": 2, "colorMode": "flat", "flatColor": "#4fc3f7" },
-        "/map": { "visible": true, "alpha": 0.5 }
+        "/waypoint_manager/markers": {
+          "visible": true
+        },
+        "/global_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap",
+          "alpha": 0.35
+        },
+        "/local_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap",
+          "alpha": 0.2
+        },
+        "/plan": {
+          "visible": true,
+          "lineWidth": 3,
+          "gradient": [
+            "#00e676",
+            "#00e676"
+          ]
+        },
+        "/local_plan": {
+          "visible": true,
+          "lineWidth": 2,
+          "gradient": [
+            "#ffab40",
+            "#ffab40"
+          ]
+        },
+        "/sensor/camera/front/points": {
+          "visible": true,
+          "pointSize": 2,
+          "colorMode": "flat",
+          "flatColor": "#4fc3f7"
+        },
+        "/map": {
+          "visible": true,
+          "alpha": 0.5
+        },
+        "/planning/trajectory": {
+          "visible": true,
+          "lineWidth": 2,
+          "gradient": [
+            "#e040fb",
+            "#e040fb"
+          ]
+        }
       },
       "layers": {
         "grid": {
@@ -64,7 +107,6 @@
         }
       }
     },
-
     "3D!real": {
       "followTf": "base_link",
       "scene": {
@@ -75,7 +117,11 @@
         "distance": 25,
         "perspective": true,
         "phi": 55,
-        "target": [0, 0, 0],
+        "target": [
+          0,
+          0,
+          0
+        ],
         "thetaOffset": 0
       },
       "publish": {
@@ -83,13 +129,53 @@
         "poseTopic": "/goal_pose"
       },
       "topics": {
-        "/waypoint_manager/markers": { "visible": true },
-        "/global_costmap/costmap": { "visible": true, "colorMode": "costmap", "alpha": 0.35 },
-        "/local_costmap/costmap": { "visible": true, "colorMode": "costmap", "alpha": 0.2 },
-        "/plan": { "visible": true, "lineWidth": 3, "gradient": ["#40c4ff", "#40c4ff"] },
-        "/local_plan": { "visible": true, "lineWidth": 2, "gradient": ["#ffca28", "#ffca28"] },
-        "/sensor/camera/front/points": { "visible": true, "pointSize": 2, "colorMode": "flat", "flatColor": "#ff6f00" },
-        "/map": { "visible": true, "alpha": 0.5 }
+        "/waypoint_manager/markers": {
+          "visible": true
+        },
+        "/global_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap",
+          "alpha": 0.35
+        },
+        "/local_costmap/costmap": {
+          "visible": true,
+          "colorMode": "costmap",
+          "alpha": 0.2
+        },
+        "/plan": {
+          "visible": true,
+          "lineWidth": 3,
+          "gradient": [
+            "#40c4ff",
+            "#40c4ff"
+          ]
+        },
+        "/local_plan": {
+          "visible": true,
+          "lineWidth": 2,
+          "gradient": [
+            "#ffca28",
+            "#ffca28"
+          ]
+        },
+        "/sensor/camera/front/points": {
+          "visible": true,
+          "pointSize": 2,
+          "colorMode": "flat",
+          "flatColor": "#ff6f00"
+        },
+        "/map": {
+          "visible": true,
+          "alpha": 0.5
+        },
+        "/planning/trajectory": {
+          "visible": true,
+          "lineWidth": 2,
+          "gradient": [
+            "#e040fb",
+            "#e040fb"
+          ]
+        }
       },
       "layers": {
         "grid": {
@@ -107,10 +193,11 @@
         }
       }
     },
-
     "Image!simFront": {
       "cameraTopic": "/sensor/camera/front/image",
-      "enabledMarkerTopics": ["/perception/annotations/front"],
+      "enabledMarkerTopics": [
+        "/perception/annotations/front"
+      ],
       "calibrationTopic": "/sensor/camera/front/camera_info",
       "synchronize": false,
       "smooth": true,
@@ -118,47 +205,137 @@
     },
     "Image!realFront": {
       "cameraTopic": "/sensor/camera/front/image",
-      "enabledMarkerTopics": ["/perception/annotations/front"],
+      "enabledMarkerTopics": [
+        "/perception/annotations/front"
+      ],
       "calibrationTopic": "/sensor/camera/front/camera_info",
       "synchronize": false,
       "smooth": true,
       "rotation": 0
     },
-
     "3D!simDepth": {
       "followTf": "base_link",
-      "scene": { "backgroundColor": "#0d1b2a", "enableStats": false },
-      "cameraState": { "distance": 15, "perspective": true, "phi": 60, "target": [0, 0, 0], "thetaOffset": 0 },
+      "scene": {
+        "backgroundColor": "#0d1b2a",
+        "enableStats": false
+      },
+      "cameraState": {
+        "distance": 15,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "thetaOffset": 0
+      },
       "topics": {
-        "/sensor/camera/front/points": { "visible": true, "pointSize": 3, "colorMode": "flat", "flatColor": "#4fc3f7" },
-        "/sensor/camera/left/points": { "visible": true, "pointSize": 3, "colorMode": "flat", "flatColor": "#66bb6a" },
-        "/sensor/camera/right/points": { "visible": true, "pointSize": 3, "colorMode": "flat", "flatColor": "#ffa726" }
+        "/sensor/camera/front/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#4fc3f7"
+        },
+        "/sensor/camera/left/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#66bb6a"
+        },
+        "/sensor/camera/right/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#ffa726"
+        }
       },
       "layers": {
-        "grid": { "layerId": "foxglove.Grid", "visible": true, "size": 30, "divisions": 30, "color": "#1a237e44" },
-        "urdf": { "layerId": "foxglove.Urdf", "visible": true, "sourceType": "param", "parameter": "/robot_description" }
+        "grid": {
+          "layerId": "foxglove.Grid",
+          "visible": true,
+          "size": 30,
+          "divisions": 30,
+          "color": "#1a237e44"
+        },
+        "urdf": {
+          "layerId": "foxglove.Urdf",
+          "visible": true,
+          "sourceType": "param",
+          "parameter": "/robot_description"
+        }
       }
     },
     "3D!realDepth": {
       "followTf": "base_link",
-      "scene": { "backgroundColor": "#1a0a00", "enableStats": false },
-      "cameraState": { "distance": 15, "perspective": true, "phi": 60, "target": [0, 0, 0], "thetaOffset": 0 },
+      "scene": {
+        "backgroundColor": "#1a0a00",
+        "enableStats": false
+      },
+      "cameraState": {
+        "distance": 15,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "thetaOffset": 0
+      },
       "topics": {
-        "/sensor/camera/front/points": { "visible": true, "pointSize": 3, "colorMode": "flat", "flatColor": "#ff6f00" },
-        "/sensor/camera/left/points": { "visible": true, "pointSize": 3, "colorMode": "flat", "flatColor": "#ffb74d" },
-        "/sensor/camera/right/points": { "visible": true, "pointSize": 3, "colorMode": "flat", "flatColor": "#ffcc80" }
+        "/sensor/camera/front/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#ff6f00"
+        },
+        "/sensor/camera/left/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#ffb74d"
+        },
+        "/sensor/camera/right/points": {
+          "visible": true,
+          "pointSize": 3,
+          "colorMode": "flat",
+          "flatColor": "#ffcc80"
+        }
       },
       "layers": {
-        "grid": { "layerId": "foxglove.Grid", "visible": true, "size": 30, "divisions": 30, "color": "#4e342e44" },
-        "urdf": { "layerId": "foxglove.Urdf", "visible": true, "sourceType": "param", "parameter": "/robot_description" }
+        "grid": {
+          "layerId": "foxglove.Grid",
+          "visible": true,
+          "size": 30,
+          "divisions": 30,
+          "color": "#4e342e44"
+        },
+        "urdf": {
+          "layerId": "foxglove.Urdf",
+          "visible": true,
+          "sourceType": "param",
+          "parameter": "/robot_description"
+        }
       }
     },
-
     "Plot!posX": {
       "title": "Position X (sim=green / real=orange)",
       "paths": [
-        { "value": "/odometry/local.pose.pose.position.x", "label": "sim x (m)", "timestampMethod": "receiveTime", "color": "#00e676", "lineSize": 2.0 },
-        { "value": "/odometry/local.pose.pose.position.x", "label": "real x (m)", "timestampMethod": "receiveTime", "color": "#ff6f00", "lineSize": 2.0 }
+        {
+          "value": "/odometry/local.pose.pose.position.x",
+          "label": "sim x (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#00e676",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/odometry/local.pose.pose.position.x",
+          "label": "real x (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#ff6f00",
+          "lineSize": 2.0
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -169,8 +346,20 @@
     "Plot!posY": {
       "title": "Position Y",
       "paths": [
-        { "value": "/odometry/local.pose.pose.position.y", "label": "sim y (m)", "timestampMethod": "receiveTime", "color": "#00e676", "lineSize": 2.0 },
-        { "value": "/odometry/local.pose.pose.position.y", "label": "real y (m)", "timestampMethod": "receiveTime", "color": "#ff6f00", "lineSize": 2.0 }
+        {
+          "value": "/odometry/local.pose.pose.position.y",
+          "label": "sim y (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#00e676",
+          "lineSize": 2.0
+        },
+        {
+          "value": "/odometry/local.pose.pose.position.y",
+          "label": "real y (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#ff6f00",
+          "lineSize": 2.0
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -178,12 +367,23 @@
       "isSynced": true,
       "followingViewWidth": 60
     },
-
     "Plot!velX": {
       "title": "Forward Velocity vx (m/s)",
       "paths": [
-        { "value": "/odometry/local.twist.twist.linear.x", "label": "sim vx", "timestampMethod": "receiveTime", "color": "#4fc3f7", "lineSize": 1.5 },
-        { "value": "/odometry/local.twist.twist.linear.x", "label": "real vx", "timestampMethod": "receiveTime", "color": "#ffb74d", "lineSize": 1.5 }
+        {
+          "value": "/odometry/local.twist.twist.linear.x",
+          "label": "sim vx",
+          "timestampMethod": "receiveTime",
+          "color": "#4fc3f7",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.twist.twist.linear.x",
+          "label": "real vx",
+          "timestampMethod": "receiveTime",
+          "color": "#ffb74d",
+          "lineSize": 1.5
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -196,8 +396,20 @@
     "Plot!velZ": {
       "title": "Angular Velocity wz (rad/s)",
       "paths": [
-        { "value": "/odometry/local.twist.twist.angular.z", "label": "sim wz", "timestampMethod": "receiveTime", "color": "#ce93d8", "lineSize": 1.5 },
-        { "value": "/odometry/local.twist.twist.angular.z", "label": "real wz", "timestampMethod": "receiveTime", "color": "#ef9a9a", "lineSize": 1.5 }
+        {
+          "value": "/odometry/local.twist.twist.angular.z",
+          "label": "sim wz",
+          "timestampMethod": "receiveTime",
+          "color": "#ce93d8",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/odometry/local.twist.twist.angular.z",
+          "label": "real wz",
+          "timestampMethod": "receiveTime",
+          "color": "#ef9a9a",
+          "lineSize": 1.5
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -210,8 +422,20 @@
     "Plot!cmdVel": {
       "title": "cmd_vel Command",
       "paths": [
-        { "value": "/cmd_vel.linear.x", "label": "sim cmd vx", "timestampMethod": "receiveTime", "color": "#00bcd4", "lineSize": 1.5 },
-        { "value": "/cmd_vel.linear.x", "label": "real cmd vx", "timestampMethod": "receiveTime", "color": "#ff9800", "lineSize": 1.5 }
+        {
+          "value": "/cmd_vel.linear.x",
+          "label": "sim cmd vx",
+          "timestampMethod": "receiveTime",
+          "color": "#00bcd4",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/cmd_vel.linear.x",
+          "label": "real cmd vx",
+          "timestampMethod": "receiveTime",
+          "color": "#ff9800",
+          "lineSize": 1.5
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -222,8 +446,20 @@
     "Plot!cmdWzComp": {
       "title": "cmd_vel Angular",
       "paths": [
-        { "value": "/cmd_vel.angular.z", "label": "sim cmd wz", "timestampMethod": "receiveTime", "color": "#00bcd4", "lineSize": 1.5 },
-        { "value": "/cmd_vel.angular.z", "label": "real cmd wz", "timestampMethod": "receiveTime", "color": "#ff9800", "lineSize": 1.5 }
+        {
+          "value": "/cmd_vel.angular.z",
+          "label": "sim cmd wz",
+          "timestampMethod": "receiveTime",
+          "color": "#00bcd4",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/cmd_vel.angular.z",
+          "label": "real cmd wz",
+          "timestampMethod": "receiveTime",
+          "color": "#ff9800",
+          "lineSize": 1.5
+        }
       ],
       "xAxisVal": "timestamp",
       "showLegend": true,
@@ -231,13 +467,11 @@
       "isSynced": true,
       "followingViewWidth": 30
     },
-
     "Map!gpsCompare": {
-      "layer": "map",
+      "layer": "satellite",
       "topicPath": "/sensor/gps",
       "zoomLevel": 18
     },
-
     "RawMessages!wpStatusSim": {
       "topicPath": "/waypoint_manager/status",
       "diffEnabled": false,
@@ -248,10 +482,8 @@
       "diffEnabled": false,
       "fontSize": 12
     },
-
     "TransformTree!tfTree": {},
     "TopicGraph!tgraph": {},
-
     "Log!navLog": {
       "searchTerms": [],
       "minLogLevel": 1,
@@ -262,7 +494,6 @@
         "planner_server": true
       }
     },
-
     "Tab!mainTab": {
       "activeTabIdx": 0,
       "tabs": [
@@ -346,7 +577,12 @@
           "title": "Diagnostics",
           "layout": {
             "direction": "row",
-            "first": "TransformTree!tfTree",
+            "first": {
+              "direction": "column",
+              "first": "TransformTree!tfTree",
+              "second": "Plot!regression",
+              "splitPercentage": 50
+            },
             "second": {
               "direction": "column",
               "first": "TopicGraph!tgraph",
@@ -357,11 +593,45 @@
           }
         }
       ]
+    },
+    "Plot!regression": {
+      "title": "Regression Metrics (smoothness)",
+      "paths": [
+        {
+          "value": "/studio_script/regression.pos_diff",
+          "label": "pos step (m)",
+          "timestampMethod": "receiveTime",
+          "color": "#00e676",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/studio_script/regression.vel_diff",
+          "label": "vel change (m/s)",
+          "timestampMethod": "receiveTime",
+          "color": "#40c4ff",
+          "lineSize": 1.5
+        },
+        {
+          "value": "/studio_script/regression.heading_diff",
+          "label": "heading change (deg)",
+          "timestampMethod": "receiveTime",
+          "color": "#ff9800",
+          "lineSize": 1.5
+        }
+      ],
+      "xAxisVal": "timestamp",
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "followingViewWidth": 60
     }
   },
-
   "globalVariables": {},
-  "userNodes": {},
+  "userNodes": {
+    "regression_node": {
+      "name": "RegressionCompare",
+      "sourceCode": "// Regression Compare: 두 데이터 소스의 위치/속도 비교 메트릭\n// Foxglove에서 sim/real bag 동시 열기 시 사용\n// Plot: /studio_script/regression.pos_diff, .vel_diff, .heading_diff\n\nimport { Input } from \"./types\";\n\nexport const inputs = [\"/odometry/local\"];\nexport const output = \"/studio_script/regression\";\n\nlet history: Array<{ x: number; y: number; vx: number; yaw: number; t: number }> = [];\nconst WINDOW = 100; // 최근 100개 메시지 기반\n\nfunction quaternionToYaw(q: any): number {\n  const siny = 2.0 * (q.w * q.z + q.x * q.y);\n  const cosy = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);\n  return Math.atan2(siny, cosy);\n}\n\ntype InputEvent = Input<\"/odometry/local\">;\n\nexport default function script(event: InputEvent): {\n  pos_diff: number;\n  vel_diff: number;\n  heading_diff: number;\n  sample_count: number;\n} | undefined {\n  const msg = (event as any).message;\n  const x = msg.pose.pose.position.x;\n  const y = msg.pose.pose.position.y;\n  const vx = msg.twist.twist.linear.x;\n  const yaw = quaternionToYaw(msg.pose.pose.orientation);\n  const t = event.receiveTime.sec + event.receiveTime.nsec * 1e-9;\n\n  history.push({ x, y, vx, yaw, t });\n  if (history.length > WINDOW) history.shift();\n\n  if (history.length < 2) return undefined;\n\n  // 통계: 최근 윈도우 내 변동성 (자기 상관 기반 — 단일 소스에서도 유용)\n  const n = history.length;\n  let posDiffSum = 0;\n  let velDiffSum = 0;\n  let headingDiffSum = 0;\n\n  for (let i = 1; i < n; i++) {\n    const dx = history[i].x - history[i - 1].x;\n    const dy = history[i].y - history[i - 1].y;\n    posDiffSum += Math.sqrt(dx * dx + dy * dy);\n    velDiffSum += Math.abs(history[i].vx - history[i - 1].vx);\n\n    let hdiff = (history[i].yaw - history[i - 1].yaw) * 180 / Math.PI;\n    while (hdiff > 180) hdiff -= 360;\n    while (hdiff < -180) hdiff += 360;\n    headingDiffSum += Math.abs(hdiff);\n  }\n\n  const count = n - 1;\n  return {\n    pos_diff: Math.round((posDiffSum / count) * 1000) / 1000,\n    vel_diff: Math.round((velDiffSum / count) * 1000) / 1000,\n    heading_diff: Math.round((headingDiffSum / count) * 100) / 100,\n    sample_count: n,\n  };\n}\n"
+    }
+  },
   "playbackConfig": {
     "speed": 1.0
   },

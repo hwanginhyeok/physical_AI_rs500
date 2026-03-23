@@ -7,6 +7,7 @@
     ros2 launch ad_bringup record_launch.py robot:=sim
     ros2 launch ad_bringup record_launch.py robot:=real
     ros2 launch ad_bringup record_launch.py robot:=real output_dir:=/data/bags
+    ros2 launch ad_bringup record_launch.py profile:=light   # 경량 (센서 이미지 제외)
 
 비교 워크플로우:
     1. 시뮬 실행 + 이 런치 → ~/rosbags/sim_20260301_143000/ 녹화
@@ -72,22 +73,59 @@ _COSTMAP_TOPICS = [
     '/map',
 ]
 
-RECORD_TOPICS = (
+_PLANNING_TOPICS = [
+    '/planning/trajectory',
+    '/planning/debug/candidates',
+]
+
+_PERCEPTION_VIZ_TOPICS = [
+    '/perception/annotations/front',
+    '/perception/debug/image',
+    '/perception/crop_rows',
+]
+
+_E2E_TOPICS = [
+    '/hybrid_e2e/status',
+    '/foxglove/location',
+    '/diagnostics',
+]
+
+# ── 프로파일 ─────────────────────────────────────────────────────────────────
+# full: 모든 토픽 (기본값, 디버깅·비교 분석용)
+# light: 이미지·PointCloud 제외 (저장 공간 절약, 장시간 녹화)
+_LIGHT_EXCLUDE = {
+    '/sensor/camera/front/image',
+    '/sensor/camera/left/image',
+    '/sensor/camera/right/image',
+    '/sensor/camera/front/points',
+    '/sensor/camera/left/points',
+    '/sensor/camera/right/points',
+    '/perception/debug/image',
+}
+
+RECORD_TOPICS_FULL = (
     _TF_TOPICS + _SENSOR_TOPICS + _LOCALIZATION_TOPICS
     + _NAV_TOPICS + _COSTMAP_TOPICS
+    + _PLANNING_TOPICS + _PERCEPTION_VIZ_TOPICS + _E2E_TOPICS
 )
+
+RECORD_TOPICS_LIGHT = [t for t in RECORD_TOPICS_FULL if t not in _LIGHT_EXCLUDE]
 
 
 def _launch_record(context, *args, **kwargs):
     """OpaqueFunction: launch 인자 값을 평가한 뒤 ExecuteProcess를 생성."""
     robot = LaunchConfiguration('robot').perform(context)      # 'sim' 또는 'real'
     output_dir = LaunchConfiguration('output_dir').perform(context)
+    profile = LaunchConfiguration('profile').perform(context)  # 'full' 또는 'light'
 
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
     bag_path = os.path.join(output_dir, f'{robot}_{timestamp}')
 
+    topics = RECORD_TOPICS_FULL if profile == 'full' else RECORD_TOPICS_LIGHT
+
     return [
-        LogInfo(msg=f'[Record] robot={robot}  →  {bag_path}'),
+        LogInfo(msg=f'[Record] robot={robot}  profile={profile}  →  {bag_path}'),
+        LogInfo(msg=f'[Record] {len(topics)} topics, 1분 분할, zstd 압축'),
         LogInfo(msg='[Record] 녹화 종료: Ctrl+C  (bag 디렉토리가 자동 저장됨)'),
         ExecuteProcess(
             cmd=[
@@ -95,7 +133,9 @@ def _launch_record(context, *args, **kwargs):
                 '--output', bag_path,
                 '--compression-mode', 'file',
                 '--compression-format', 'zstd',
-            ] + RECORD_TOPICS,
+                '--max-bag-duration', '60',
+                '--max-bag-size', '100',
+            ] + topics,
             output='screen',
         ),
     ]
@@ -112,6 +152,11 @@ def generate_launch_description():
             'output_dir',
             default_value=os.path.expanduser('~/rosbags'),
             description='bag 저장 루트 디렉토리',
+        ),
+        DeclareLaunchArgument(
+            'profile',
+            default_value='full',
+            description='"full" (전체) 또는 "light" (이미지 제외 경량)',
         ),
         OpaqueFunction(function=_launch_record),
     ])

@@ -6,6 +6,7 @@ Learned Perception → Learned Planning → Safety Guardian → Traditional Cont
 의 파이프라인을 조율한다.
 """
 
+import json
 import time
 from typing import Optional
 
@@ -15,6 +16,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from std_msgs.msg import String
 
 from ad_core.hybrid_e2e_types import (
     PerceptionFeatures,
@@ -68,6 +70,9 @@ class HybridE2ENode(Node):
 
         # Publisher: cmd_vel
         self._cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+
+        # Publisher: status (Foxglove 시각화용)
+        self._status_pub = self.create_publisher(String, '/hybrid_e2e/status', 10)
 
         # Subscriber: odometry (차량 상태 추적)
         self._odom_sub = self.create_subscription(
@@ -423,6 +428,39 @@ class HybridE2ENode(Node):
             f'latency={self._state.total_latency_ms:.1f}ms'
         )
         
+        # Status JSON 발행 (Foxglove 시각화)
+        use_learned = self.get_parameter('use_learned_planning').value
+        if self._fallback_level == 0:
+            mode = "learned" if use_learned else "traditional"
+            safety_state = "nominal"
+        elif self._fallback_level <= 2:
+            mode = "fallback"
+            safety_state = "slow_down"
+        else:
+            mode = "emergency"
+            safety_state = "emergency_stop"
+
+        confidence = 0.0
+        if self._state.latest_perception is not None:
+            confidence = self._state.latest_perception.overall_confidence
+
+        generation_method = "none"
+        if self._state.latest_trajectory is not None:
+            generation_method = self._state.latest_trajectory.generation_method or "none"
+
+        status_msg = String()
+        status_msg.data = json.dumps({
+            "mode": mode,
+            "safety_state": safety_state,
+            "fallback_level": self._fallback_level,
+            "fallback_count": self._state.fallback_count,
+            "emergency_stop_count": self._state.emergency_stop_count,
+            "confidence": confidence,
+            "latency_ms": round(self._state.total_latency_ms, 1),
+            "generation_method": generation_method,
+        })
+        self._status_pub.publish(status_msg)
+
         # 연속 위반 체크 후 복구 시도
         if self._fallback_level > 0 and stats["consecutive_violations"] == 0:
             # 안정 상태가 지속되면 정상 모드로 복귀 시도
