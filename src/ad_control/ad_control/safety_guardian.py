@@ -33,7 +33,7 @@ class GuardianConfig:
     min_crop_distance_strict: float = 0.1  # m (엄격 모드)
     
     # 속도 제한
-    max_speed: float = 1.5  # m/s (5.4 km/h)
+    max_speed: float = 0.83  # m/s (3.0 km/h) — HIH_2 MOTOR_MAX_SPD=30
     max_speed_slope_factor: float = 0.5  # 경사 있을 때 속도 감소율
     
     # 곡률 제한

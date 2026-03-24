@@ -48,7 +48,7 @@ class FakeHybridE2E:
     def __init__(self):
         self._state = HybridE2EState()
         self._guardian = SafetyGuardian(GuardianConfig(
-            max_speed=1.5,
+            max_speed=0.83,
             max_slope=0.3,
             min_crop_distance=0.3,
         ))
@@ -98,7 +98,7 @@ class FakeHybridE2E:
         if decision.recommended_action == "stop":
             self._last_cmd = (0.0, 0.0)
             self._enter_fallback(3)
-        elif decision.recommended_action == "replan":
+        elif decision.recommended_action in ("replan", "slow_down"):
             self._enter_fallback(min(self._fallback_level + 1, 2))
 
     def _enter_fallback(self, level):

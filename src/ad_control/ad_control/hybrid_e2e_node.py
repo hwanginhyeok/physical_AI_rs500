@@ -101,7 +101,7 @@ class HybridE2ENode(Node):
     
     def _declare_parameters(self):
         """파라미터 선언."""
-        self.declare_parameter('max_speed', 1.5)
+        self.declare_parameter('max_speed', 0.83)
         self.declare_parameter('max_slope', 0.3)
         self.declare_parameter('min_crop_distance', 0.3)
         self.declare_parameter('use_learned_perception', True)

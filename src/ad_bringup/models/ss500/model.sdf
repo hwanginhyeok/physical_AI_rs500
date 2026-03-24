@@ -428,6 +428,20 @@
 
       <!-- Twist 메시지 수신 토픽 (기본값: /model/ss500/cmd_vel) -->
       <topic>/cmd_vel</topic>
+
+      <!-- C72: 실차 속도 제한 (HIH_2 Dm.h: MOTOR_MAX_SPD=30 → 0.833m/s) -->
+      <linear_velocity>
+        <min_velocity>-0.833</min_velocity>
+        <max_velocity>0.833</max_velocity>
+        <!-- C73: DB130-48 모터 가감속 특성 (PI Kp=0.05, KiT=0.006 → accel/jerk 근사) -->
+        <max_acceleration>0.5</max_acceleration>
+        <max_jerk>1.0</max_jerk>
+      </linear_velocity>
+      <angular_velocity>
+        <min_velocity>-1.0</min_velocity>
+        <max_velocity>1.0</max_velocity>
+        <max_acceleration>1.0</max_acceleration>
+      </angular_velocity>
     </plugin>
 
     <!-- DiffDrive 플러그인: TrackedVehicle 미지원 시 폴백 -->

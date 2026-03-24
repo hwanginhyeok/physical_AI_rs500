@@ -16,14 +16,14 @@ class TestVehicleDynamicsConfig:
         cfg = VehicleDynamicsConfig()
         assert cfg.mass == 200.0
         assert cfg.Izz == 50.0
-        assert cfg.max_accel == 1.0
-        assert cfg.max_decel == 2.0
+        assert cfg.max_accel == 0.5
+        assert cfg.max_decel == 1.0
 
 
 class TestVehicleDynamics:
     @pytest.fixture
     def dynamics(self):
-        cfg = VehicleDynamicsConfig(mass=200.0, max_speed=1.0)
+        cfg = VehicleDynamicsConfig(mass=200.0, max_speed=0.83)
         return VehicleDynamics(cfg)
 
     def test_stationary_stays_still(self, dynamics):

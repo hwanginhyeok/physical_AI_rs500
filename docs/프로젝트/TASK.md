@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-23 (C71 Foxglove v3.0 전면 개선)
+> 마지막 갱신: 2026-03-24 (C72+C73 SDF 속도 제한 + 모터 특성)
 >
 > **관리 룰**
 > - 상태: `예정` → `진행` → `완료` (완료 즉시 완료 섹션 최상단으로 이동)
@@ -15,6 +15,7 @@
 
 | # | 작업 | 담당 | 진행 상황 | 다음 할 일 |
 |---|------|------|-----------|-----------|
+| C75 | SDF 센서 노이즈 — 카메라 스펙 조사 | 그린 | HIH_2 조사 완료. Notion 카메라 선정 페이지 확인 필요 (MCP 끊김으로 중단) | ① Notion "카메라 선정" + "PC+카메라(자율주행용)" 페이지 fetch ② HIH_2 카메라 PDF 읽기 (`HIH_2/HIH_Claude/참고자료/부품/GTSS-HOA00_Hood/GTSS-HOB000_카메라/Specification/Automotive_grade_Gint_USB_Camera.pdf`) ③ 카메라 노이즈 모델 model.sdf 반영 |
 | C67 | Camera-Only Visual SLAM 구현 | 그린 | 조사 완료 (RTAB-Map 1순위) | rtabmap_ros Jazzy 빌드 → Gazebo RGBD 연동 → GPS 전환 아키텍처 ([상세](../research/visual_slam_camera_only_survey.md)) |
 | C60 | 농업용 Hybrid E2E 아키텍처 구축 | 그린 | Phase 1~2 완료. C71에서 상태 발행 추가 | Phase 3: Diffusion 모델 훈련 (Gazebo 데이터 수집 → 학습 파이프라인) |
 
@@ -54,8 +55,8 @@
 |---|------|------|--------|------|------|------|
 | | | **── P1 긴급 ──** | | | | |
 | C63 | 인프라 | STP 도면 반영 → model.sdf 물리 파라미터 + 메시 갱신 | P1 | 그린 | **[지연]** 예정 | 실차 하드웨어 출고 완료. STP 파일 ~3/20 수령 예정이었으나 미수령. `scripts/stp_to_sdf.py` 준비 완료 |
-| C72 | 시뮬레이션 | SDF 속도 제한 — 실차 max 0.83m/s + Nav2 동기화 | P1 | 그린 | 예정 | HIH_2 Dm.h: MOTOR_MAX_SPD=30(3.0kph). TrackedVehicle + nav2_params 반영 ([상세](task/C72_sdf_speed_limit.md)) |
-| C73 | 시뮬레이션 | SDF 모터 특성 — DB130-48 PI 제어 + 속도 램핑 | P1 | 그린 | 예정 | HIH_2 PowerTrain_Control.c: Kp=0.05, KiT=0.006. 가감속 제한 ([상세](task/C73_sdf_motor_characteristics.md)) |
+| ~~C72~~ | ~~시뮬레이션~~ | ~~SDF 속도 제한~~ | ~~P1~~ | ~~그린~~ | ~~완료~~ | 2026-03-24 완료 → 완료 섹션 |
+| ~~C73~~ | ~~시뮬레이션~~ | ~~SDF 모터 특성~~ | ~~P1~~ | ~~그린~~ | ~~완료~~ | 2026-03-24 완료 → 완료 섹션 |
 | C74 | 시뮬레이션 | SDF 질량·관성 보정 — 부품 리스트 기반 재계산 | P2 | 그린 | 예정 | 배터리 ~150kg, 모터 x2, 프레임, 약제탱크. C63(STP) 수령 시 메시 갱신 ([상세](task/C74_sdf_mass_inertia.md)) |
 | C75 | 시뮬레이션 | SDF 센서 노이즈 — EBIMU-9DOFV5 + ZED-F9P 실차 스펙 | P2 | 그린 | 예정 | IMU: 0.001g/0.01deg/s, GPS: RTK 0.01m CEP ([상세](task/C75_sdf_sensor_noise.md)) |
 | C76 | 시뮬레이션 | CAN 시뮬레이터 — DBC 파서 + CAN 토픽 발행 노드 | P2 | 그린 | 예정 | HIH_2 DBC 기반. BPA_Calc/VCU2ADT1/SNS2ADT 메시지 ([상세](task/C76_can_simulator.md)) |
@@ -79,6 +80,8 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| C73 | SDF 모터 특성 — DB130-48 가감속 제한 | P1 | 그린 | 2026-03-24 | TrackedVehicle linear_velocity max_acceleration=0.5, max_jerk=1.0 추가. PI 제어(Kp=0.05, KiT=0.006)를 accel/jerk로 근사 ([상세](task/C73_sdf_motor_characteristics.md)) |
+| C72 | SDF 속도 제한 — 실차 max 0.83m/s + Nav2 동기화 | P1 | 그린 | 2026-03-24 | TrackedVehicle max_velocity=0.833, Nav2 MPPI vx_max=0.83, velocity_smoother 동기화. ROS 노드 7개 속도 상한 통일(0.83m/s). 297테스트 통과 ([상세](task/C72_sdf_speed_limit.md)) |
 | C71 | Foxglove v3.0 전면 개선 | P2 | 그린 | 2026-03-23 | 5 Phase 구현: 위성타일·Planning시각화·HeadingError(P1), 농업 User Script 6개(P2), ROS 노드 5개 변경(P3), MCAP최적화·BT·커스텀확장(P4), Sim-Real 비교(P5). 10개 파일 수정, 3개 신규. 빌드·노드실행·Foxglove 접속 검증 완료 |
 | C46 | 과수원 작물 행 인식 모듈 (Classical CV, Phase 1) | P2 | 그린 | 2026-03-22 | crop_row_detector.py + 40건 테스트, 6종 과수원 프로파일, DL 교체 인터페이스 준비 |
 | C45 | ROS2 노드 Mock 테스트 작성 (ad_control, ad_planning, ad_perception) | P2 | 그린 | 2026-03-22 | 4파일 101건 테스트 추가 (총 303건), ControlModule/PlanningModule/PerceptionModule/LocalizationManager |

@@ -35,9 +35,9 @@ class VehicleDynamicsConfig:
     cog_height: float = 0.4
     wheelbase: float = 1.5
     track_width: float = 1.4
-    max_accel: float = 1.0
-    max_decel: float = 2.0
-    max_speed: float = 1.0
+    max_accel: float = 0.5
+    max_decel: float = 1.0
+    max_speed: float = 0.83
     drag_coefficient: float = 0.5
     rolling_resistance: float = 0.02
 

@@ -75,7 +75,7 @@ class ControlModule:
                 min_lookahead=1.0,
                 max_lookahead=5.0,
                 goal_tolerance=0.5,
-                max_linear_speed=1.0,
+                max_linear_speed=0.83,
                 track_width=1.4,
                 slip_lookahead_gain=2.0,
                 max_slip_lookahead_ratio=2.0,
@@ -96,7 +96,7 @@ class ControlModule:
                 min_lookahead=1.0,
                 max_lookahead=5.0,
                 goal_tolerance=0.5,
-                max_linear_speed=1.0,
+                max_linear_speed=0.83,
                 track_width=1.4,
             )
             self.tracker = PurePursuitTracker(config=pp_config)
@@ -111,7 +111,7 @@ class ControlModule:
 
         self.skid_model: CalibratedSkidSteerModel = CalibratedSkidSteerModel(
             track_width=1.4,
-            max_speed=1.0,
+            max_speed=0.83,
             steering_efficiency=0.8,
             ema_alpha=ema_alpha,
             calibration_file=calibration_file,

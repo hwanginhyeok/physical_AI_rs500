@@ -90,7 +90,7 @@ class CANBridgeNode(Node):
         self._decoder = SS500Decoder()
 
         # 스키드 스티어 모델 (Twist → 좌/우 트랙 속도 변환)
-        self._skid_steer = SkidSteerModel(track_width=1.4, max_speed=1.5)
+        self._skid_steer = SkidSteerModel(track_width=1.4, max_speed=0.83)
 
         # Alive Counter (0~15 순환)
         self._alive_counter = 0

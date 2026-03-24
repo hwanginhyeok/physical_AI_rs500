@@ -22,7 +22,7 @@ def test_basic():
     print("\n--- Safety Guardian 기본 테스트 ---")
     
     # Guardian 생성
-    config = GuardianConfig(max_speed=1.0, min_crop_distance=0.3)
+    config = GuardianConfig(max_speed=0.83, min_crop_distance=0.3)
     guardian = SafetyGuardian(config)
     print(f"✅ Guardian 생성: max_speed={config.max_speed} m/s")
     
@@ -71,7 +71,7 @@ def test_constraint_types():
     """제약 조건 타입별 테스트."""
     print("\n--- 제약 조건 테스트 ---")
     
-    guardian = SafetyGuardian(GuardianConfig(max_speed=1.0))
+    guardian = SafetyGuardian(GuardianConfig(max_speed=0.83))
     
     # 속도 제약
     from ad_core.hybrid_e2e_types import TrajectoryPoint

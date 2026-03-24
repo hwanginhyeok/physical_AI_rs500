@@ -76,7 +76,7 @@ class PlanningNode(Node):
         # Safety Guardian 초기화
         if safety_enabled:
             guardian_config = GuardianConfig(
-                max_speed=1.5,
+                max_speed=0.83,
                 max_slope=0.3,
                 min_crop_distance=0.3
             )

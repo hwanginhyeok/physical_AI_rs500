@@ -131,10 +131,10 @@ controller_server:
       constraint_penalty: 4.0                        # 제약 위반 페널티
 
       # 속도 제한
-      vx_max: 3.0                                    # 최대 전진 속도 (m/s)
-      vx_min: -1.5                                   # 최대 후진 속도 (m/s)
+      vx_max: 0.83                                   # 최대 전진 속도 (m/s) — HIH_2 MOTOR_MAX_SPD=30 → 0.833m/s
+      vx_min: -0.83                                  # 최대 후진 속도 (m/s)
       vy_max: 0.0                                    # 횡방향 속도 없음 (differential)
-      wz_max: 2.0                                    # 최대 회전 속도 (rad/s)
+      wz_max: 1.0                                    # 최대 회전 속도 (rad/s)
 
       # 비평가 함수(Critics) 설정
       critics:
@@ -266,10 +266,10 @@ velocity_smoother:
     smoothing_frequency: 20.0                        # 평활화 주파수 (Hz)
     scale_velocities: false
     feedback: "OPEN_LOOP"                            # 피드백 모드
-    max_velocity: [3.0, 0.0, 2.0]                    # [vx, vy, wz] 최대 속도
-    min_velocity: [-1.5, 0.0, -2.0]                  # [vx, vy, wz] 최소 속도
-    max_accel: [2.5, 0.0, 3.2]                       # [ax, ay, az] 최대 가속도
-    max_decel: [-2.5, 0.0, -3.2]                     # 최대 감속도
+    max_velocity: [0.83, 0.0, 1.0]                   # [vx, vy, wz] 최대 속도 — 실차 0.833m/s
+    min_velocity: [-0.83, 0.0, -1.0]                 # [vx, vy, wz] 최소 속도
+    max_accel: [0.5, 0.0, 1.0]                       # [ax, ay, az] 최대 가속도 — DB130-48 모터 램핑
+    max_decel: [-1.0, 0.0, -2.0]                     # 최대 감속도
     odom_topic: /odometry/local
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]               # 데드밴드 속도
