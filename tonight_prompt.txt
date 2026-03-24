@@ -1,175 +1,148 @@
-# 야간 작업 프롬프트 — C48: HIH-2 실제 데이터 기반 시뮬레이션 파라미터 업데이트 + 검증
+# 야간 작업 프롬프트 — C49: RS500 시뮬레이션 vs SS500 실차 데이터 교차 검증 리포트
 
-> 작업 시작 전: `.claude/rules/*.md` 로딩 → `docs/프로젝트/TASK.md` 갱신 (C48 진행 등록)
-> 완료 후: TASK.md 갱신 (C48 완료 이동) + 커밋
+> 작업 시작 전: `.claude/rules/*.md` 로딩 → `docs/프로젝트/TASK.md` 갱신 (C49 진행 등록)
+> 완료 후: TASK.md 갱신 (C49 완료 이동) + 커밋
 
 ---
 
 ## 배경
 
-HIH-2 프로젝트(`~/HIH_2/`)에 PLUVA FRIEND SS500 (농업용 전동 자율주행 Speed Sprayer)의 실제 제품 데이터가 있다.
-현재 RS500 시뮬레이션은 추정값(200kg, 모터 시정수 0.15s 등)으로 돌리고 있는데,
-HIH-2의 실제 CAN 스펙, 모터 데이터시트, 배터리 스펙, 시험 데이터를 반영하여 시뮬레이션 파라미터를 실차 기준으로 교정한다.
+C48에서 HIH-2의 DB130-48 데이터시트, CAN DBC를 분석하여
+RS500 시뮬레이션 파라미터를 실차 기준으로 교정했다.
+
+회사(GINT) 업무에서도 SS500 관련 유사 분석을 진행 중이다 (ISSUE_050 등).
+이 두 작업의 데이터를 교차 비교하여 겹치는 부분과 갭을 정리한다.
+
+**범위 제한:**
+- BLACKTAN 시험 데이터는 SS500 차량이 아님 → 제외
+- SOC/배터리 정합성 분석은 별도 업무 → 제외
+- SS500 제품 자체에 관한 데이터만 사용 (CAN DBC, 모터 데이터시트, 제품설계, 부품 스펙)
 
 ---
 
-## Phase 1: 데이터 수집 및 분석 (읽기 전용)
+## 작업 순서
 
-### 1-1. CAN DBC 파싱 — 실제 신호 범위/해상도 추출
+### Step 1: 데이터 수집 (읽기 전용)
 
-**소스 파일:**
-- `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/SSVCU_CANdb_250317_01.dbc` (메인 VCU CAN DB, 대용량)
-- `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/TRACTION_MOTOR/3)DMKE_CANdb.dbc` (트랙션 모터)
-- `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/FAN_MOTOR/4)X6_PLUS_CANdb.dbc` (팬 모터)
+**RS500 시뮬레이션 (C48 결과):**
+- `src/ad_core/ad_core/vehicle_dynamics.py` — VehicleDynamicsConfig
+- `src/ad_core/ad_core/drivetrain_model.py` — DrivetrainConfig
+- `src/ad_core/ad_core/track_terrain_interaction.py` — TrackTerrainInteraction
+- `src/ad_core/ad_core/sensor_noise_model.py` — SensorNoiseConfig
+- `src/ad_bringup/models/ss500/model.sdf` — Gazebo SDF
+- `docs/프로젝트/task/C48_hih2_parameter_update.md` — C48 상세 보고서
 
-**추출할 정보:**
-- Traction Motor: RPM 범위, Armature Current 범위, PWM 해상도, CAN_Throttle 해상도
-- Vehicle Speed: `CF_LeftVehSpdAct`, `CF_RightVehSpdAct` (0.1 km/h, -4~4 km/h 범위)
-- Battery (BPA): 공칭전압, 용량, SOC, 충/방전 전류, 전력 제한(kW)
-- Sensor (SNS2ADT): GPS(lat/lon/heading/speed), IMU(accel/gyro/RPY)
+**HIH-2 SS500 실차 데이터 (SS500 제품 관련만):**
+- CAN DBC: `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/SSVCU_CANdb_250317_01.dbc`
+- CAN 스펙: `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/250310_01_SS_Proto can_spec.xlsx`
+- CAN 스펙 (최신): `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/250915_01_SS_Proto can_spec.xlsx`
+- CAN Fault: `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/250325_01_SS_Proto can_fault.xlsx`
+- 제품규격서: `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/250719제품규격서R3.xlsx`
+- 모터 데이터시트: `~/HIH_2/.../8)구동모터/모터3/0)Datasheet/확정_DB130-48(3000-20SM&SCKB75-20).pdf`
+- 모터 검수: `~/HIH_2/.../8)구동모터/20251030_모터_검수_결과.xlsx`
+- 모터 드라이버: `~/HIH_2/.../TRACTION_MOTOR/2)1226BL_manual_en.pdf`
+- 트랙션 CAN DB: `~/HIH_2/.../TRACTION_MOTOR/3)DMKE_CANdb.dbc`
+- 팬모터 CAN DB: `~/HIH_2/.../FAN_MOTOR/4)X6_PLUS_CANdb.dbc`
+- 제품설계 R&D: `~/HIH_2/.../1)제품설계/0)2025_PLUVA_FRIEND_Speed_Sprayer_R&D_1.xlsx`
+- 제품설계 샘플: `~/HIH_2/.../1)제품설계/250424_PF_SS500_SAMPLE_2nd.xlsx`
+- 배선도: `~/HIH_2/.../1)제품설계/SS기 배선도_250616_3.drawio.pdf`
+- 전원계통도: `~/HIH_2/.../1)제품설계/0)20250120_SS기_전원계통도_및_PIN_ASSIGN_참조_V1.pdf`
+- 상태머신: `~/HIH_2/.../1)제품설계/20251229_statemachine.xlsx`
+- 종합검정 참고: `~/HIH_2/.../1)제품설계/(참고자료) 1-2 종합검정성적서_대동_DDABOT10-TA.pdf`
+- 이슈관리: `~/HIH_2/.../91)문서/이슈관리/ISSUE_050_SS500기성모델성능비교.md`
+- TC 시험: `~/HIH_2/.../SS500_2_TC/250713_SS기 TC.xlsx`
+- 구동 내구: `~/HIH_2/.../3)구동시스템/2)내구성/20251209_내구시험검토.xlsx`
+- 검정 규격: `~/HIH_2/.../5)시험검정/91)SS기_검정/SS기 종합검정 신청/250716_규격및성능설명서_GT-SS500.hwp`
+- 모터컨트롤러: `~/HIH_2/.../2)부품/3)MotorController/` (Curtis, Keya, CAN)
+- MDAS (자율주행): `~/HIH_2/.../2)부품/1)MDAS/` (MDROBOT 드라이버)
 
-### 1-2. 모터 데이터시트 분석
+### Step 2: 교차 비교 분석
 
-**소스 파일:**
-- `~/HIH_2/1)프로젝트/5)농업/2)부품/8)구동모터/모터3/0)Datasheet/` — DB130-48 시리즈 PDF들
-  - `확정_DB130-48(3000-20SM&SCKB75-20).pdf` ← 확정 모터 사양
-- `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/TRACTION_MOTOR/2)1226BL_manual_en.pdf` — DMKE 모터 드라이버 매뉴얼
+**SS500 제품 데이터에서 직접 추출 가능한 것만 비교한다.**
 
-**추출할 정보:**
-- 정격 전압(V), 정격 출력(W), 정격/최대 RPM, 정격/최대 토크(Nm)
-- 감속비, 효율, 무부하 전류
-- 모터 시정수 (응답 특성)
+#### 2-1. 구동계 (Drivetrain)
 
-### 1-3. 배터리 스펙 분석
+| 비교 항목 | RS500 시뮬 (C48) | SS500 실차 | 소스 |
+|----------|-----------------|-----------|------|
+| 모터 정격 전압 | 미반영 | 48V | DB130-48 |
+| 모터 정격 출력 | 미반영 | 3000W | DB130-48 |
+| 모터 정격 전류 | 미반영 | 78A | DB130-48 |
+| 모터 정격 RPM | 2000 | 2000 ±10% | DB130-48 |
+| 감속비 | 20:1 | 20:1 | SCK75-20 |
+| 출력 토크 | 14.32Nm (모터축) | 240Nm (감속기 출력) | DB130-48 |
+| 브레이크 토크 | 미반영 | 16Nm | DB130-48 |
+| 모터 컨트롤러 | 미반영 | DMKE 1226BL / Curtis? | 부품 디렉토리 확인 |
+| 스프로킷 반경 | 0.106m | 역산값 (확인 필요) | 계산 |
 
-**소스 파일:**
-- `~/HIH_2/1)프로젝트/5)농업/2)부품/9)배터리/1)배터리/251020제품규격서R11_updated_GINT_V0.xlsx` (최신)
-- `~/HIH_2/1)프로젝트/5)농업/2)부품/9)배터리/1)배터리/250719제품규격서R3.xlsx`
+#### 2-2. 차량 제원 (xlsx에서 추출 시도)
 
-**추출할 정보:**
-- 공칭전압(48V), 용량(460Ah), 직렬/병렬 구성 (S/P)
-- 연속/피크 방전 전류, 충전 전류
-- 동작 온도 범위
+| 비교 항목 | RS500 시뮬 (C48) | SS500 실차 | 소스 |
+|----------|-----------------|-----------|------|
+| 차량 질량 (공차) | 800 kg | ? | R&D xlsx / 규격서 |
+| 차체 크기 (L×W×H) | 2.0×1.2×0.8 m | ? | R&D xlsx / 규격서 |
+| 윤거 | 1.2 m | ? | R&D xlsx |
+| 궤도 접지 길이 | 1.5 m | ? | R&D xlsx |
+| 최대 속도 | 1.111 m/s (4km/h) | CAN ±4km/h | CAN DBC |
+| 탱크 용량 | 미모델링 | 500L | ISSUE_050 |
 
-### 1-4. 제품 설계 스펙
+#### 2-3. 센서 (CAN DBC 기반)
 
-**소스 파일:**
-- `~/HIH_2/1)프로젝트/5)농업/1)제품설계/0)2025_PLUVA_FRIEND_Speed_Sprayer_R&D_1.xlsx`
-- `~/HIH_2/1)프로젝트/5)농업/4)CAN통신/250719제품규격서R3.xlsx`
+| 비교 항목 | RS500 시뮬 (C48) | SS500 실차 | 소스 |
+|----------|-----------------|-----------|------|
+| GPS 위치 해상도 | σ=0.5m | 1e-7° | CAN SNS2ADT5/6 |
+| GPS 속도 해상도 | — | 0.01 km/h | CAN SNS2ADT4 |
+| GPS RTK | σ 0.5m (중간값) | CarrSoln 2bit | CAN SNS2ADT4 |
+| IMU 가속도 | σ=0.01 | 0.001g | CAN SNS2ADT1 |
+| IMU 자이로 | σ=0.005 | 0.01°/s | CAN SNS2ADT2 |
+| IMU RPY | — | 0.01° | CAN SNS2ADT3 |
 
-**추출할 정보:**
-- 차량 총 중량 (공차/만차), 차체 크기 (L x W x H)
-- 최대 속도, 최대 등판 각도
-- 궤도 폭, 궤도 접지 길이, 윤거
+#### 2-4. 제어 로직 (CAN 신호 기반, 시뮬 미반영 항목)
 
-### 1-5. 시험 데이터 분석
+| 항목 | CAN 신호 | 현재 시뮬 반영 | 비고 |
+|------|---------|-------------|------|
+| 좌/우 속도 제어 | CF_ADTLeft/RightVehSpdCtrl | O | |
+| 좌/우 속도 피드백 | CF_Left/RightVehSpdAct | O (간접) | |
+| 비상 정지 | CF_ManEmgyStopSwt / CF_ADTEmgyStopSwt | X | |
+| 자율주행 모드 | CF_ADTAutoCtrlEnblSt / CF_ADTValid | X | |
+| 기어 (PRND) | VT_DET_LVR_POS | X | |
+| 시스템 폴트 | CF_stSysFault / CF_ADTSysFault | X | |
+| 분사 (솔레노이드) | CF_StSolnLD/RD | X | |
+| 펌프/팬/교반 | CF_StPmp/StFan/StMixer | X | |
+| 범프센서 | CF_BumpSnsDet | X | |
+| 탱크 수위 | CF_TankLvl (0~100%) | X | |
+| 헤드라이트 | CF_StHdLamp | X | |
+| 누적 거리 | CF_AccumDist (km) | X | |
 
-**소스 파일:**
-- `~/HIH_2/1)프로젝트/5)농업/5)시험검정/90)SS기_시험/240807_BLACKTAN/` — 모터 부하/무부하 시험
-  - `BLACKTAN-LOAD/Inrush/` — 돌입 전류 파형 (png)
-  - `BLACKTAN-LOAD/Rated_Current/` — 속도별 정격 전류 (Spd1~10)
-  - `BLACKTAN-LOAD/OverLoad_Test/` — 과부하 시험
-  - `BLACKTAN-LOAD/Turn/` — 선회 시험
-  - `BLACKTAN-NO-LOAD/` — 무부하 속도/전류, PWM
-- `~/HIH_2/1)프로젝트/5)농업/5)시험검정/90)SS기_시험/SS500_2_TC/250713_SS기 TC.xlsx` — TC 시험 결과
-- `~/HIH_2/1)프로젝트/5)농업/2)부품/8)구동모터/20251030_모터_검수_결과.xlsx` — 모터 검수
+### Step 3: 갭 분석 및 우선순위
 
-**추출할 정보:**
-- 속도별 정격 전류 프로파일
-- 돌입 전류 크기 및 지속 시간 → 모터 시정수 추정
-- 선회 시 좌/우 모터 전류 비대칭
-- 무부하 RPM vs PWM 관계 → 데드존 추정
+**미반영 항목 우선순위:**
+- **P1 (즉시 반영 가능)**: 데이터 확보 완료, 코드 변경 간단
+- **P2 (xlsx 파싱 후 가능)**: 데이터는 있지만 바이너리 포맷
+- **P3 (실차 데이터 필요)**: 실차 계측 또는 추가 시험 필요
+- **신규 모듈 필요**: 기존 시뮬에 없는 기능 (분사 시스템, 배터리 SOC 모델 등)
 
----
+### Step 4: 리포트 작성
 
-## Phase 2: 시뮬레이션 파라미터 업데이트
+**출력 파일**: `docs/프로젝트/task/C49_simulation_vs_actual_comparison.md`
 
-### 2-1. 업데이트 대상 파일
-
-| 파일 | 업데이트 내용 |
-|------|--------------|
-| `src/ad_core/ad_core/vehicle_dynamics.py` | VehicleDynamicsConfig: mass, max_accel, max_decel, 차체 크기, 관성 모멘트 |
-| `src/ad_core/ad_core/drivetrain_model.py` | DrivetrainConfig: motor_time_constant, dead_zone, gear_ratio, efficiency |
-| `src/ad_core/ad_core/track_terrain_interaction.py` | TerrainConfig: 궤도 폭, 접지 길이, 차량 중량 관련 파라미터 |
-| `src/ad_core/ad_core/sensor_noise_model.py` | GPS/IMU 실제 해상도 반영 (CAN 신호 해상도 기준) |
-| `src/ad_bringup/models/ss500/model.sdf` | Gazebo 모델: 질량, 관성, 크기, 센서 파라미터 |
-
-### 2-2. 파라미터 변환 규칙
-
-- 모든 값은 SI 단위로 변환 (kg, m, s, rad)
-- 기존 추정값과 실제값의 차이를 주석으로 기록 (예: `# 기존: 200kg → 실차: ???kg (HIH-2 R&D 스펙)`)
-- 데이터시트에서 직접 추출 불가능한 값은 기존값 유지 + TODO 주석
-
----
-
-## Phase 3: 시뮬레이션 실행 및 검증
-
-### 3-1. 단위 테스트 실행
-```bash
-cd /home/window11/physical_AI_rs500
-python -m pytest src/ad_core/test/ -v
-```
-- 기존 343건 테스트가 파라미터 변경 후에도 통과하는지 확인
-- 실패 시 테스트 기대값을 실차 기준으로 업데이트 (판단 근거 주석 필수)
-
-### 3-2. 시나리오 시뮬레이션
-```bash
-python tools/scenario_runner.py --scenario straight
-python tools/scenario_runner.py --scenario paddy
-```
-- L1 vs L2 비교, 실차 파라미터 반영 결과 확인
-
-### 3-3. 모듈별 리포트 생성
-```bash
-python tools/module_test_report.py --module drivetrain --sweep-steps 15
-python tools/module_test_report.py --module vehicle_dynamics --sweep-steps 15
-python tools/module_test_report.py --module terrain --sweep-steps 15
-```
-- 리포트: `results/reports/260323_*_report.md`
-
----
-
-## Phase 4: 분석 기준 (시뮬레이션 데이터 평가 척도)
-
-### 정량적 평가 기준
-
-| 항목 | 기준 | 측정 방법 |
-|------|------|----------|
-| **속도 정확도** | 실차 최대속도 대비 시뮬레이션 오차 < 5% | VehicleDynamics 정상상태 출력 vs CAN CF_VehSpdAct 범위 |
-| **모터 응답** | 스텝 응답 시정수 실차 대비 오차 < 20% | DrivetrainModel 스텝 응답 vs BLACKTAN 돌입 전류 데이터 |
-| **전류 프로파일** | 속도별 정격 전류 프로파일 상관계수 > 0.9 | 시뮬레이션 vs BLACKTAN Rated_Current 데이터 |
-| **선회 특성** | 좌/우 모터 비대칭 비율 실차 대비 오차 < 15% | DrivetrainModel vs BLACKTAN Turn 데이터 |
-| **배터리 SOC** | 에너지 소비율 정상범위 내 | BPA 전력 제한 범위 내 동작 확인 |
-| **센서 해상도** | CAN 신호 해상도와 시뮬레이션 노이즈 모델 정합 | SensorNoiseModel 출력 양자화 vs DBC 해상도 |
-
-### 정성적 평가 기준
-
-- 물리적 타당성: 에너지 보존, 음수 속도 없음, 무한대 발산 없음
-- 안정성: 장시간(300초) 시뮬레이션에서 수렴 유지
-- 재현성: 동일 입력에 동일 출력 (결정적 시뮬레이션)
-
----
-
-## 산출물
-
-1. **파라미터 변경 보고서**: `docs/프로젝트/task/C48_hih2_parameter_update.md`
-   - 기존값 vs 실차값 비교 테이블
-   - 데이터 소스 트레이서빌리티
-   - 추출 불가 항목 및 향후 과제
-
-2. **시뮬레이션 리포트**: `results/reports/260323_*_report.md` (module_test_report.py 생성)
-
-3. **업데이트된 코드**: vehicle_dynamics.py, drivetrain_model.py, track_terrain_interaction.py, sensor_noise_model.py, model.sdf
-
-4. **테스트 결과**: 전체 테스트 통과 확인
+리포트 구조:
+1. 요약 (한 페이지)
+2. 구동계 비교
+3. 차량 제원 비교
+4. 센서 비교
+5. 제어 로직 갭 분석
+6. 우선순위별 후속 작업 테이블
+7. 회사 업무 연관 (ISSUE_050 접점)
+8. 권장 로드맵
 
 ---
 
 ## 주의사항
 
-- **VCU FW 소스코드(`~/HIH_2/1)프로젝트/5)농업/ssvcu_branch_*/`)는 절대 수정하지 않는다** — 읽기만 가능
-- **HIH_2 프로젝트 원본 파일도 수정하지 않는다** — 읽기만
-- xlsx/pdf 파일은 직접 파싱이 어려울 수 있음 → 읽을 수 있는 것만 추출하고, 못 읽는 건 TODO로 남긴다
-- DBC 파일은 텍스트이므로 파싱 가능
-- png 시험 데이터는 이미지로 읽어서 시각적 분석 가능
-- 기존 테스트가 깨지면 실차 기준으로 기대값을 재조정하되, 변경 근거를 명시한다
+- **HIH_2 원본 파일 수정 절대 금지** — 읽기만
+- **RS500 코드 수정 없음** — 리포트만 작성
+- **BLACKTAN 시험 데이터 제외** — SS500 차량 시험이 아님
+- **SOC/배터리 정합성 분석 제외** — 별도 업무
+- xlsx/pdf 못 읽으면 "TODO: xlsx 파싱 필요" 표기
+- C48 보고서의 기존 분석 재활용 (중복 금지)
+- 회사 기밀은 리포트에 직접 미포함, 소스 경로만 참조
