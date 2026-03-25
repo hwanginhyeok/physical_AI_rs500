@@ -19,7 +19,7 @@ C48에서 HIH-2 데이터 기반으로 RS500 시뮬레이션 파라미터를 교
 |------|------|----------|
 | 시뮬레이션 | RS500 (C48 교정 후) | Python config, Gazebo SDF |
 | 모터 | DB130-48 데이터시트 (확정) | PDF (읽기 완료) |
-| 모터 컨트롤러 | Curtis 1226BL 매뉴얼 | PDF (읽기 완료) |
+| 모터 컨트롤러 | MDROBOT MD2K 매뉴얼 | PDF (읽기 완료) |
 | CAN 통신 | SSVCU_CANdb_250317_01.dbc | DBC (파싱 완료, 61 메시지 285 신호) |
 | CAN 통신 | DMKE_CANdb.dbc (트랙션) | DBC (파싱 완료) |
 | CAN 통신 | D3PC CAN DB (모터컨트롤러) | DBC (파싱 완료) |
@@ -58,26 +58,33 @@ C48에서 HIH-2 데이터 기반으로 RS500 시뮬레이션 파라미터를 교
 | 보호등급 | — | IP65 | — | DB130-48 |
 | 동작 온도 | — | 0~40°C | — | DB130-48 |
 
-### 2-2. 모터 컨트롤러 (Curtis 1226BL)
+### 2-2. 모터 컨트롤러 (MDROBOT MD2K)
 
-| 항목 | RS500 시뮬 | SS500 실차 | 판정 |
-|------|-----------|-----------|------|
-| 컨트롤러 종류 | 1차 지연 모델 (단순) | Curtis 1226BL (BLDC PM Controller) | **아키텍처 차이** |
-| CAN 통신 | 미모델링 | CANopen/CAN 2.0B, Fault 30+종 | **미반영** |
-| 속도 제어 모드 | 속도 명령→지연→출력 | Speed Mode 1/2, Fine Tuning, Accel/Decel Rate | **단순화됨** |
-| 전류 제한 | 토크 한계 간접 반영 | Current Limits Menu (프로그래머블) | **미반영** |
-| 온도 보호 | — | Motor Temperature Control Menu | **미반영** |
-| 전자 브레이크 | — | Electromagnetic Brake (E-Brake) | **미반영** |
-| 비상 정지 | — | Emergency Stop Switch 입력 | **미반영** |
-| Interlock | — | Interlock + Redundant Interlock 이중화 | **미반영** |
-| Creep Mode | — | 저속 주행 모드 | **미반영** |
+> **C50 정정 (2026-03-25)**: 실차 모터 컨트롤러는 Curtis 1226BL이 아닌 **MDROBOT MD2K** (듀얼채널 DC 모터 드라이버)임을 확인.
+> MD2K가 BLDC 모터(DB130-48)를 구동하는 구조.
+
+| 항목 | RS500 시뮬 | SS500 실차 (MD2K) | 판정 |
+|------|-----------|-------------------|------|
+| 컨트롤러 종류 | 1차 지연 + SS/SD 램프 | MDROBOT MD2K (듀얼채널 DC 드라이버, BLDC 구동) | **C50 반영** |
+| 전압 범위 | 48V 고정 | DC 24~72V (±10%) | **C50 반영** |
+| 채널당 최대 전류 | 100A | 100A (듀얼 채널) | **C50 반영** |
+| CAN 통신 | 코덱 구현 (md2k_codec) | 50 kbps, Tx=0x001, Rx=0x701 | **C50 반영** |
+| 속도 제어 모드 | SS/SD 램프 + 1차 지연 | 0-5V / 7-step / CAN RPM 명령 | **C50 반영** |
+| 가감속 프로파일 | SS/SD 가변 (0.05~15s) | SS/SD 가변저항 (0.05~15s) | **C50 반영** |
+| 전류 제한 | Soft fuse 모델링 | Soft fuse (정격 초과 2초→차단) | **C50 반영** |
+| 온도 보호 | 단순 열 모델 (65°C) | 과온도 65°C 차단 | **C50 반영** |
+| STALL 감지 | 15% 속도 오차 비율 | STALL 알람 (15%) | **C50 반영** |
+| 전자 브레이크 | 16 Nm 모델링 | DC48V 전자브레이크 16 Nm | **C50 반영** |
+| 비상 정지 | VehicleDynamics e-stop | Emergency Stop Switch 입력 | **C50 반영** |
+| PID 조정 | — | CAN Extended 메시지로 실시간 조정 | **미반영** |
+| 엔코더 | — | 16,384 PPR (65,536 4채배) | **미반영** |
 
 ### 2-3. 시정수/데드존
 
 | 항목 | RS500 시뮬 (C48) | SS500 실차 | 판정 | 비고 |
 |------|-----------------|-----------|------|------|
 | 시정수 | 0.20 s | 미확인 (SS500 시험 없음) | **근사** | C48에서 BLACKTAN 기반 추정, SS500 자체 시험 필요 |
-| 데드존 | 0.05 m/s | 미확인 | **근사** | Curtis 1226BL의 Throttle Dead Zone 파라미터로 확인 가능 |
+| 데드존 | 0.05 m/s | 미확인 | **근사** | MD2K의 Throttle Dead Zone 파라미터로 확인 가능 |
 | 스프로킷 반경 | 0.106 m | 미확인 | **근사** | v_max/ω_output 역산, 실측 필요 |
 
 ---
@@ -100,7 +107,7 @@ SS500 정확한 제원은 xlsx 파일 (제품규격서, R&D 스펙)에 있으나
 | 최저지상고 | — | 140 mm | ~150-200 mm | **미모델링** |
 | 최대 속도 | 1.111 m/s (4 km/h) | 2.1 km/h | 4 km/h (CAN DBC 확인) | **일치** |
 | 최소선회반경 | — | 525 mm | 미확인 | **미모델링** |
-| 구동 방식 | 좌/우 독립 궤도 | 좌/우 차륜 전류제어 | 좌/우 독립 궤도 (Curtis L/R) | **일치** |
+| 구동 방식 | 좌/우 독립 궤도 | 좌/우 차륜 전류제어 | 좌/우 독립 궤도 (MD2K CH1/CH2) | **일치** |
 
 ### SS500 vs DDABOT10-TA 핵심 차이
 
@@ -129,7 +136,7 @@ SS500 정확한 제원은 xlsx 파일 (제품규격서, R&D 스펙)에 있으나
 | 트랙션 MCB | — | 48V 100A (Trac_MCB_2P) | **미반영** |
 | 펌프/팬 MCB | — | 48V 50A (PF_MCB_2P) | **미반영** |
 | 충전기 | — | 200~300V → 48V 변환 | — |
-| 트랙션 드라이버 | 1차 지연 모델 | Curtis 1226BL × 2 (L/R), CAN_D 버스 | **아키텍처 차이** |
+| 트랙션 드라이버 | 1차 지연 + SS/SD 램프 | MDROBOT MD2K (듀얼채널, CH1/CH2), CAN_D 버스 | **C50 반영** |
 | 팬 모터 드라이버 | — | Hobbywing X6 Plus, CAN_D 버스 | **미반영** |
 | 펌프 드라이버 | — | 인버터 0~60A, Analog 제어 | **미반영** |
 
@@ -231,7 +238,7 @@ SS500 정확한 제원은 xlsx 파일 (제품규격서, R&D 스펙)에 있으나
 | # | 항목 | 필요 작업 | 블로커 |
 |---|------|---------|--------|
 | 11 | 분사 시스템 모델 | 솔레노이드+펌프+팬 통합 모델 신규 개발 | 분사 역학 연구 필요 |
-| 12 | Curtis 1226BL 정밀 모델 | 속도 프로파일, 전류 제한, 온도 보호 | Curtis 파라미터 덤프 필요 |
+| 12 | MD2K PID 실시간 조정 | CAN Extended로 PID 파라미터 튜닝 | 실차 CAN 캡처 필요 |
 | 13 | 실차 System Identification | Izz, 시정수, 효율 정밀 튜닝 | 실차 주행 데이터 필요 |
 | 14 | 스프로킷 반경 실측 | 현재 역산값 0.106m 검증 | 실측 필요 |
 | 15 | 최소선회반경 | 시뮬 vs 실차 비교 | 실차 시험 필요 |
@@ -277,7 +284,7 @@ Phase 2.3 (설계 결정 후, ~2d)
 
 Phase 3 (실차 데이터 확보 후)
 ├── P3-11: 분사 시스템 모델
-├── P3-12: Curtis 1226BL 정밀 모델
+├── P3-12: MD2K PID 실시간 조정
 ├── P3-13: System Identification
 ├── P3-14: 스프로킷 반경 실측
 └── P3-15: 최소선회반경 검증
@@ -299,8 +306,8 @@ Phase 3 (실차 데이터 확보 후)
 ## 부록 B: 48V 전원 계통 아키텍처
 
 ```
-48V_Main_Battery ──┬── Main_Relay(150A) ──┬── Trac_MCB(100A) ──┬── Curtis L → L_T_Motor
-                   │                      │                    └── Curtis R → R_T_Motor
+48V_Main_Battery ──┬── Main_Relay(150A) ──┬── Trac_MCB(100A) ──┬── MD2K CH1 → L_T_Motor
+                   │                      │                    └── MD2K CH2 → R_T_Motor
                    │                      │
                    │                      └── PF_MCB(50A) ───┬── Fan_Motor(X6_Plus)
                    │                                         └── Pump_Driver(0~60A) → P_Motor
@@ -308,7 +315,7 @@ Phase 3 (실차 데이터 확보 후)
 AS_Battery ────────┘ (상보작동)
 
 Emergency → Main_Relay 차단 → VCU GET 상태
-CAN_D 버스: VCU ↔ Curtis L/R ↔ Fan_Motor
+CAN_D 버스: VCU ↔ MD2K (CH1/CH2) ↔ Fan_Motor
 ```
 
 ## 부록 C: 데이터 미확보 목록 (xlsx 파싱 필요)

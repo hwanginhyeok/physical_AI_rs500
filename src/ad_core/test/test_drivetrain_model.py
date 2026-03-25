@@ -71,6 +71,133 @@ class TestSingleMotorModel:
         assert torque < 1.0  # 거의 0
 
 
+class TestSingleMotorModelSSSD:
+    """MD2K SS/SD 가감속 프로파일 테스트."""
+
+    @pytest.fixture
+    def motor_ss(self):
+        """SS=2s, SD=1s 설정."""
+        return SingleMotorModel(DrivetrainConfig(
+            slow_start_time=2.0,
+            slow_down_time=1.0,
+            time_constant=0.15,
+            deadzone=0.05,
+        ))
+
+    def test_ss_ramp_acceleration(self, motor_ss):
+        """SS 설정 시 선형 램프 가속."""
+        # 2초간 가속
+        for _ in range(200):
+            motor_ss.update(1.0, 0.01)
+        v_at_2s = motor_ss.actual_velocity
+        # 2초 동안 max_speed/2s 램프 → max_speed에 가까워야 함
+        assert v_at_2s > 0.3
+
+    def test_sd_ramp_deceleration(self, motor_ss):
+        """SD 설정 시 선형 램프 감속."""
+        # 먼저 속도를 올린다
+        for _ in range(300):
+            motor_ss.update(0.8, 0.01)
+        speed_before = motor_ss.actual_velocity
+        assert speed_before > 0.3
+
+        # 정지 명령 → SD 램프 감속
+        for _ in range(150):
+            motor_ss.update(0.0, 0.01)
+        # 1s SD → 1.5s 이내 거의 정지
+        assert motor_ss.actual_velocity < speed_before * 0.5
+
+    def test_ss_zero_uses_first_order(self):
+        """SS=0이면 기존 1차 지연 사용 (디폴트 동작 유지)."""
+        motor_default = SingleMotorModel(DrivetrainConfig(
+            slow_start_time=0.0, slow_down_time=0.0,
+        ))
+        motor_lag = SingleMotorModel(DrivetrainConfig(
+            time_constant=0.20,
+        ))
+        # 동일 명령으로 10스텝
+        for _ in range(10):
+            motor_default.update(0.5, 0.01)
+            motor_lag.update(0.5, 0.01)
+        # 거의 동일해야 함
+        assert abs(motor_default.actual_velocity - motor_lag.actual_velocity) < 0.01
+
+    def test_ss_time_proportional(self):
+        """SS 시간이 길수록 도달 시간이 길다."""
+        motor_fast = SingleMotorModel(DrivetrainConfig(slow_start_time=1.0, slow_down_time=1.0))
+        motor_slow = SingleMotorModel(DrivetrainConfig(slow_start_time=5.0, slow_down_time=5.0))
+
+        for _ in range(100):
+            motor_fast.update(1.0, 0.01)
+            motor_slow.update(1.0, 0.01)
+
+        # 1초 후 fast가 더 빠름
+        assert motor_fast.actual_velocity > motor_slow.actual_velocity
+
+    def test_sd_stops_completely(self, motor_ss):
+        """SD 감속 후 완전히 정지."""
+        for _ in range(500):
+            motor_ss.update(0.8, 0.01)
+        for _ in range(500):
+            motor_ss.update(0.0, 0.01)
+        assert abs(motor_ss.actual_velocity) < 0.01
+
+
+class TestSingleMotorModelBrake:
+    """전자브레이크 테스트."""
+
+    @pytest.fixture
+    def motor(self):
+        return SingleMotorModel(DrivetrainConfig(
+            time_constant=0.15, deadzone=0.05, brake_torque=16.0,
+        ))
+
+    def test_brake_slows_down(self, motor):
+        """브레이크 체결 시 감속."""
+        for _ in range(200):
+            motor.update(0.5, 0.01)
+        speed_before = motor.actual_velocity
+        assert speed_before > 0.1
+
+        motor.set_brake(True)
+        for _ in range(100):
+            motor.update(0.5, 0.01)  # 명령 무시, 브레이크 적용
+        assert motor.actual_velocity < speed_before
+
+    def test_brake_stops_completely(self, motor):
+        """브레이크 장시간 체결 시 완전 정지."""
+        for _ in range(200):
+            motor.update(0.5, 0.01)
+        motor.set_brake(True)
+        for _ in range(1000):
+            motor.update(0.5, 0.01)
+        assert motor.actual_velocity == 0.0
+
+    def test_brake_release_resumes(self, motor):
+        """브레이크 해제 후 재가속."""
+        for _ in range(200):
+            motor.update(0.5, 0.01)
+        motor.set_brake(True)
+        for _ in range(500):
+            motor.update(0.5, 0.01)
+        assert motor.actual_velocity == 0.0
+
+        motor.set_brake(False)
+        for _ in range(200):
+            motor.update(0.5, 0.01)
+        assert motor.actual_velocity > 0.1
+
+    def test_brake_initial_state(self, motor):
+        """초기 상태에서 브레이크 해제."""
+        assert not motor.brake_engaged
+
+    def test_reset_clears_brake(self, motor):
+        """리셋 시 브레이크 해제."""
+        motor.set_brake(True)
+        motor.reset()
+        assert not motor.brake_engaged
+
+
 class TestDrivetrainModel:
     @pytest.fixture
     def drivetrain(self):

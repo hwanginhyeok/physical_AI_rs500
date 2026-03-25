@@ -52,7 +52,13 @@ class VehicleDynamics:
     SkidSteerModel의 운동학적 예측을 기반으로, 질량/관성에 의한
     가속도 제한, 하중 전이, 경사면 효과를 추가한다.
 
+    안전 상태 (C50 P1):
+    - 비상정지(e-stop): 즉시 출력 0, 브레이크 체결
+    - 자율주행 모드: False면 명령 무시 (속도 0으로 수렴)
+    - 시스템 폴트: 모터 출력 차단
+
     시뮬 스텝:
+        0. 안전 상태 체크 (e-stop > fault > autonomous_mode)
         1. 명령 트랙 속도 → 운동학 모델로 목표 선속도/각속도 계산
         2. F=ma로 종방향 가속도 제한 적용
         3. tau=I*alpha로 요 각가속도 제한 적용
@@ -89,6 +95,11 @@ class VehicleDynamics:
         self.last_sinkage: float = 0.0
         self.last_slip_ratio: float = 0.0
 
+        # === 안전 상태 (C50 P1) ===
+        self._emergency_stop: bool = False
+        self._autonomous_mode: bool = True   # 디폴트 True → 기존 동작 유지
+        self._system_fault: bool = False
+
     # ------------------------------------------------------------------ #
     #  공개 API
     # ------------------------------------------------------------------ #
@@ -113,6 +124,44 @@ class VehicleDynamics:
         """후방 수직력 (N)."""
         return self._rear_normal_force
 
+    # --- 안전 상태 API (C50 P1) ---
+
+    @property
+    def emergency_stop(self) -> bool:
+        """비상정지 상태."""
+        return self._emergency_stop
+
+    def set_emergency_stop(self, active: bool) -> None:
+        """비상정지를 설정/해제한다. 활성화 시 즉시 출력 차단."""
+        self._emergency_stop = active
+
+    @property
+    def autonomous_mode(self) -> bool:
+        """자율주행 모드 상태."""
+        return self._autonomous_mode
+
+    def set_autonomous_mode(self, enabled: bool) -> None:
+        """자율주행 모드를 전환한다. 비활성화 시 명령 무시."""
+        self._autonomous_mode = enabled
+
+    @property
+    def system_fault(self) -> bool:
+        """시스템 폴트 상태."""
+        return self._system_fault
+
+    def set_system_fault(self, fault: bool) -> None:
+        """시스템 폴트를 설정/해제한다. 활성화 시 모터 출력 차단."""
+        self._system_fault = fault
+
+    @property
+    def is_operational(self) -> bool:
+        """운행 가능 상태인지 반환한다 (e-stop, fault, autonomous 모두 정상)."""
+        return (
+            not self._emergency_stop
+            and not self._system_fault
+            and self._autonomous_mode
+        )
+
     def set_slope(self, pitch: float, roll: float = 0.0) -> None:
         """경사면 각도를 설정한다.
 
@@ -129,6 +178,9 @@ class VehicleDynamics:
         self._current_angular_vel = angular_vel
         self._pitch = 0.0
         self._roll = 0.0
+        self._emergency_stop = False
+        self._autonomous_mode = True
+        self._system_fault = False
         self._update_load_distribution(0.0)
 
     def step(
@@ -153,6 +205,12 @@ class VehicleDynamics:
             current_pose = Pose2D()
 
         cfg = self.config
+
+        # 0. 안전 상태 체크 (우선순위: e-stop > fault > autonomous_mode)
+        if self._emergency_stop or self._system_fault or not self._autonomous_mode:
+            # 명령 무시, 자연 감속
+            commanded_left = 0.0
+            commanded_right = 0.0
 
         # 1. 운동학 모델로 명령 속도를 선속도/각속도로 변환
         target_linear, target_angular = self.kinematic.tracks_to_twist(

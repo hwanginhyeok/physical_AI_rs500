@@ -138,3 +138,101 @@ class TestVehicleDynamics:
         for _ in range(2000):
             pose = dynamics.step(5.0, 5.0, 0.01, pose)
         assert abs(dynamics.current_linear_velocity) <= dynamics.config.max_speed + 0.05
+
+
+class TestVehicleDynamicsSafety:
+    """C50 P1: 비상정지, 자율주행 모드, 시스템 폴트 테스트."""
+
+    @pytest.fixture
+    def dynamics(self):
+        cfg = VehicleDynamicsConfig(mass=200.0, max_speed=1.0)
+        return VehicleDynamics(cfg)
+
+    def test_default_state_operational(self, dynamics):
+        """기본 상태: 운행 가능."""
+        assert dynamics.is_operational
+        assert not dynamics.emergency_stop
+        assert dynamics.autonomous_mode
+        assert not dynamics.system_fault
+
+    def test_emergency_stop_zeroes_command(self, dynamics):
+        """비상정지 시 속도 감소."""
+        pose = Pose2D()
+        for _ in range(200):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+        speed_before = dynamics.current_linear_velocity
+        assert speed_before > 0.1
+
+        dynamics.set_emergency_stop(True)
+        assert not dynamics.is_operational
+        for _ in range(500):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+        assert abs(dynamics.current_linear_velocity) < speed_before
+
+    def test_emergency_stop_release(self, dynamics):
+        """비상정지 해제 후 정상 동작."""
+        dynamics.set_emergency_stop(True)
+        pose = Pose2D()
+        for _ in range(100):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+
+        dynamics.set_emergency_stop(False)
+        for _ in range(500):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+        assert dynamics.current_linear_velocity > 0.1
+
+    def test_autonomous_mode_off_ignores_command(self, dynamics):
+        """자율주행 모드 비활성화 시 명령 무시."""
+        dynamics.set_autonomous_mode(False)
+        assert not dynamics.is_operational
+
+        pose = Pose2D()
+        for _ in range(500):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+        # 명령이 0으로 대체되므로 속도 증가 없음
+        assert abs(dynamics.current_linear_velocity) < 0.15
+
+    def test_autonomous_mode_on_allows_command(self, dynamics):
+        """자율주행 모드 활성화 시 정상 제어."""
+        dynamics.set_autonomous_mode(True)
+        pose = Pose2D()
+        for _ in range(500):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+        assert dynamics.current_linear_velocity > 0.1
+
+    def test_system_fault_blocks_output(self, dynamics):
+        """시스템 폴트 시 출력 차단."""
+        pose = Pose2D()
+        for _ in range(200):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+        speed_before = dynamics.current_linear_velocity
+
+        dynamics.set_system_fault(True)
+        assert not dynamics.is_operational
+        for _ in range(500):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+        assert abs(dynamics.current_linear_velocity) < speed_before
+
+    def test_fault_clear_resumes(self, dynamics):
+        """폴트 해제 후 정상 동작."""
+        dynamics.set_system_fault(True)
+        pose = Pose2D()
+        for _ in range(100):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+
+        dynamics.set_system_fault(False)
+        for _ in range(500):
+            pose = dynamics.step(0.5, 0.5, 0.01, pose)
+        assert dynamics.current_linear_velocity > 0.1
+
+    def test_reset_clears_safety_state(self, dynamics):
+        """리셋 시 안전 상태 초기화."""
+        dynamics.set_emergency_stop(True)
+        dynamics.set_autonomous_mode(False)
+        dynamics.set_system_fault(True)
+
+        dynamics.reset()
+        assert dynamics.is_operational
+        assert not dynamics.emergency_stop
+        assert dynamics.autonomous_mode
+        assert not dynamics.system_fault
