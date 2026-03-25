@@ -146,13 +146,13 @@ class TestMotorProtection:
     def test_cooling_reduces_temperature(self, prot):
         """전류 0이면 온도가 주변 온도로 냉각."""
         prot._temperature = 50.0
-        for _ in range(10000):
+        for _ in range(30000):
             prot.update(
                 command_speed=0.0, actual_speed=0.0,
                 current=0.0, voltage=48.0, dt=0.01,
             )
-        # 100초 냉각 → 주변 온도에 가까워야 함
-        assert prot.temperature < 30.0
+        # 300초(5분) 냉각 → 주변 온도에 가까워야 함 (tau=60s, 5tau=300s)
+        assert prot.temperature < 27.0
 
     def test_zero_command_no_stall(self, prot):
         """명령 0이면 STALL 검사 안 함."""

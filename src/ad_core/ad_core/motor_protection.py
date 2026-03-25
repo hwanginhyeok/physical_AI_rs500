@@ -34,18 +34,25 @@ class ProtectionConfig:
         soft_fuse_time: Soft fuse 지속 시간 임계 (s).
         over_temp_threshold: 과온도 임계 (°C).
         ambient_temp: 주변 온도 (°C).
-        thermal_resistance: 열저항 (°C/W). I²R 발열 모델.
+        winding_resistance: 모터 권선 저항 (Ω). I²R 발열 계산.
+        thermal_resistance: 열저항 (°C/W). 발열→온도 변환 계수.
         cooling_time_constant: 냉각 시정수 (s).
         stall_threshold: STALL 속도 오차 비율 (0~1).
         rated_voltage: 정격 전압 (V).
         voltage_tolerance: 전압 허용 오차 비율 (0~1).
+
+    열 모델 설계:
+        정상상태 온도: T_ss = T_amb + I² × R_winding × R_thermal × tau_cool
+        정격(78A) → T_ss = 25 + 78² × 0.05 × 0.002 × 60 = 61.5°C (65°C 직전)
+        과부하(95A) → T_ss = 25 + 95² × 0.05 × 0.002 × 60 = 79.2°C (65°C 초과 → 알람)
     """
     rated_current: float = 78.0
     max_current: float = 100.0
     soft_fuse_time: float = 2.0
     over_temp_threshold: float = 65.0
     ambient_temp: float = 25.0
-    thermal_resistance: float = 0.05   # °C/W (간이 추정)
+    winding_resistance: float = 0.05   # DB130-48 권선 저항 추정 (Ω)
+    thermal_resistance: float = 0.002  # 열저항 (°C/W), 정격에서 ~60°C 도달하도록 교정
     cooling_time_constant: float = 60.0  # 자연 냉각 시정수 (s)
     stall_threshold: float = 0.15
     rated_voltage: float = 48.0
@@ -135,8 +142,7 @@ class MotorProtection:
 
         # 3. 열 모델 (I²R 발열 + 자연 냉각)
         # 발열: P = I²R → dT = P * R_thermal * dt
-        winding_resistance = 0.05  # 간이 추정 (Ω)
-        power_dissipation = current * current * winding_resistance
+        power_dissipation = current * current * cfg.winding_resistance
         heating = power_dissipation * cfg.thermal_resistance * dt
 
         # 냉각: 뉴턴 냉각 법칙
