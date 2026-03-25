@@ -23,7 +23,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
-| C50 | MD2K 모터 컨트롤러 반영 + C49 정정 + P1 후속작업 | P1 | 그린 | 2026-03-25 | Curtis→MD2K 전면 정정, DrivetrainConfig MD2K 파라미터 확장, SS/SD 가감속 프로파일, 보호기능(motor_protection), CAN 코덱(md2k_codec), VehicleDynamics 안전상태(e-stop/autonomous/fault/brake), 267건 테스트 통과 |
+| C50 | MD2K 모터 컨트롤러 반영 + C49 정정 + P1 후속작업 | P1 | 그린 | 2026-03-25 | [상세](task/C50_md2k_motor_controller.md) Curtis→MD2K 정정, SS/SD 가감속, 보호기능, CAN 코덱, 안전상태, 열 모델 교정, 267건 테스트 통과 |
 | C49 | RS500 시뮬 vs SS500 실차 교차 검증 리포트 | P1 | 그린 | 2026-03-25 | [상세](task/C49_simulation_vs_actual_comparison.md) 36항목 비교, 8일치/7근사/12미반영/9미확보, 15개 후속작업 도출 |
 | C48 | HIH-2 실제 데이터 기반 시뮬레이션 파라미터 교정 | P1 | 그린 | 2026-03-23 | [상세](task/C48_hih2_parameter_update.md) DB130-48 모터+CAN DBC+BLACKTAN 시험→6파일 교정, 218테스트 통과 |
 | C47 | Foxglove 갭 분석 + Phase 1 구현 | P1 | 그린 | 2026-03-22 | YOLO11n+PyTorch 설치, MCAP 녹화 launch, Foxglove 레이아웃 강화, perception 파라미터 연동 |
