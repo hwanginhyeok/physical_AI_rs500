@@ -1,0 +1,52 @@
+name: Tests (ad_core + ad_can_bridge)
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/ad_core/**'
+      - 'src/ad_can_bridge/**'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'src/ad_core/**'
+      - 'src/ad_can_bridge/**'
+      - '.github/workflows/test.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: pip 캐시
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements-test.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: 테스트 의존성 설치
+        run: pip install -r requirements-test.txt
+
+      - name: ad_core 테스트 (267건)
+        run: |
+          cd src/ad_core
+          python -m pytest test/ -v --tb=short -q --timeout=60
+
+      - name: ad_can_bridge 테스트 (24건)
+        env:
+          PYTHONPATH: src/ad_can_bridge:src/ad_core
+        run: |
+          python -m pytest src/ad_can_bridge/test/test_ss500_codec.py -v --tb=short -q --timeout=60
