@@ -17,15 +17,24 @@ class MockParameter:
         self.value = value
 
 
-def make_mock_node():
+def make_mock_node(extra_params=None):
     params = {
         'topics.camera': '/sensor/camera/front',
         'topics.lidar': '/sensor/lidar',
         'topics.gps': '/sensor/gps',
         'topics.imu': '/sensor/imu',
+        'yolo.model_path': '',
+        'yolo.confidence_threshold': 0.5,
+        'crop_row.orchard_type': 'PEAR',
+        'crop_row.enabled': False,
+        'crop_row.process_every_n_frames': 3,
+        'crop_row.no_detect_limit': 10,
     }
+    if extra_params:
+        params.update(extra_params)
     node = MagicMock()
     node.get_parameter = lambda name: MockParameter(params.get(name, ''))
+    node.declare_parameter = lambda name, default: MockParameter(params.get(name, default))
     node.create_subscription = MagicMock(return_value=MagicMock())
     return node
 
@@ -242,3 +251,125 @@ class TestGetPerceptionResult:
         for key in ('obstacles', 'detections', 'fused_objects',
                     'segmentation', 'lane_info', 'position', 'orientation'):
             assert key in result
+
+    def test_result_includes_crop_row_when_enabled(self):
+        """crop_row 활성화 + 감지 결과 있을 때 perception_result에 포함."""
+        pm = PerceptionModule(make_mock_node({'crop_row.enabled': True}))
+        # 초록색 세로 줄무늬 이미지 생성 (행 감지 가능)
+        img = _make_green_stripe_image(480, 640)
+        msg = _numpy_to_image_msg(img)
+        pm._run_crop_row_detection(msg)
+        result = pm.get_perception_result()
+        assert 'crop_row' in result
+        assert 'crop_row_steering_offset' in result
+        assert 'crop_row_heading_error' in result
+        assert 'crop_row_end_detected' in result
+
+    def test_result_no_crop_row_when_disabled(self):
+        """crop_row 비활성화 시 perception_result에 미포함."""
+        pm = PerceptionModule(make_mock_node({'crop_row.enabled': False}))
+        result = pm.get_perception_result()
+        assert 'crop_row' not in result
+
+
+# ── 과수원 행 감지 ─────────────────────────────────────────
+
+
+def _make_green_stripe_image(h, w):
+    """초록색 세로 줄무늬 이미지 생성. 행 감지용."""
+    img = np.zeros((h, w, 3), dtype=np.uint8)
+    # 토양 배경 (갈색)
+    img[:, :] = [100, 80, 60]  # BGR
+    # 초록 줄무늬 (행 2개: x=160, x=480)
+    for cx in [160, 480]:
+        x_start = max(0, cx - 40)
+        x_end = min(w, cx + 40)
+        img[:, x_start:x_end] = [30, 150, 50]  # 초록
+    return img
+
+
+def _numpy_to_image_msg(arr):
+    """numpy 배열을 Image 메시지로 변환."""
+    msg = Image()
+    msg.height, msg.width = arr.shape[:2]
+    msg.encoding = 'bgr8'
+    msg.data = list(arr.tobytes())
+    return msg
+
+
+class TestCropRowDetection:
+    @pytest.fixture
+    def pm_enabled(self):
+        return PerceptionModule(make_mock_node({'crop_row.enabled': True}))
+
+    @pytest.fixture
+    def pm_disabled(self):
+        return PerceptionModule(make_mock_node({'crop_row.enabled': False}))
+
+    def test_disabled_returns_none(self, pm_disabled):
+        """비활성화 시 감지 안 함."""
+        msg = make_image(480, 640, 'rgb8')
+        assert pm_disabled._run_crop_row_detection(msg) is None
+
+    def test_enabled_returns_result(self, pm_enabled):
+        """활성화 + 첫 프레임(스로틀 통과 안 함) → 이전 결과(None)."""
+        msg = make_image(480, 640, 'rgb8')
+        # 첫 프레임(count=1)은 process_every_n=3의 배수가 아님
+        result = pm_enabled._run_crop_row_detection(msg)
+        assert result is None  # 첫 프레임은 스킵
+
+    def test_throttle_every_n_frames(self, pm_enabled):
+        """process_every_n_frames=3 → 3번째 프레임에서 실행."""
+        msg = _numpy_to_image_msg(_make_green_stripe_image(480, 640))
+        # 프레임 1, 2 스킵
+        pm_enabled._run_crop_row_detection(msg)
+        pm_enabled._run_crop_row_detection(msg)
+        # 프레임 3: 실행
+        result = pm_enabled._run_crop_row_detection(msg)
+        assert result is not None
+        assert pm_enabled.crop_row_result is not None
+
+    def test_green_stripe_detects_rows(self, pm_enabled):
+        """초록 줄무늬 이미지에서 행을 감지."""
+        msg = _numpy_to_image_msg(_make_green_stripe_image(480, 640))
+        # 3프레임 돌려서 실행
+        for _ in range(3):
+            pm_enabled._run_crop_row_detection(msg)
+        result = pm_enabled.crop_row_result
+        assert result is not None
+        assert result.num_rows >= 1
+
+    def test_empty_image_no_rows(self, pm_enabled):
+        """빈(검은) 이미지에서 행 미감지."""
+        black_img = np.zeros((480, 640, 3), dtype=np.uint8)
+        msg = _numpy_to_image_msg(black_img)
+        for _ in range(3):
+            pm_enabled._run_crop_row_detection(msg)
+        result = pm_enabled.crop_row_result
+        assert result is not None
+        assert result.num_rows == 0
+
+    def test_crop_row_end_detection(self, pm_enabled):
+        """연속 N회 미감지 시 행 끝 판정."""
+        black_img = np.zeros((480, 640, 3), dtype=np.uint8)
+        msg = _numpy_to_image_msg(black_img)
+        assert not pm_enabled.crop_row_end_detected
+        # no_detect_limit=10, process_every_n=3 → 30프레임 필요
+        for _ in range(30):
+            pm_enabled._run_crop_row_detection(msg)
+        assert pm_enabled.crop_row_end_detected
+
+    def test_crop_row_end_resets_on_detection(self, pm_enabled):
+        """행 감지되면 미감지 카운터 리셋."""
+        black = np.zeros((480, 640, 3), dtype=np.uint8)
+        green = _make_green_stripe_image(480, 640)
+        # 미감지 카운터 올리기
+        for _ in range(15):
+            pm_enabled._run_crop_row_detection(_numpy_to_image_msg(black))
+        count_before = pm_enabled._crop_row_no_detect_count
+        assert count_before > 0
+        # 행 감지되면 리셋
+        for _ in range(3):
+            pm_enabled._run_crop_row_detection(_numpy_to_image_msg(green))
+        if pm_enabled.crop_row_result and pm_enabled.crop_row_result.num_rows > 0:
+            assert pm_enabled._crop_row_no_detect_count == 0

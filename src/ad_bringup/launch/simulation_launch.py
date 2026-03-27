@@ -28,7 +28,7 @@ from launch.actions import (
     ExecuteProcess,
     LogInfo,
 )
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     LaunchConfiguration,
@@ -87,9 +87,21 @@ def generate_launch_description():
         'use_foxglove', default_value='true',
         description='Foxglove Bridge 실행 여부',
     )
+    declare_headless = DeclareLaunchArgument(
+        'headless', default_value='false',
+        description='GUI 없이 서버만 실행 (WSL2 등 디스플레이 없는 환경)',
+    )
     declare_recording = DeclareLaunchArgument(
         'use_recording', default_value='false',
         description='rosbag2 MCAP 녹화 실행 여부',
+    )
+    declare_spawn_x = DeclareLaunchArgument(
+        'spawn_x', default_value='0',
+        description='로봇 스폰 X 위치 (pear_orchard: 0)',
+    )
+    declare_spawn_y = DeclareLaunchArgument(
+        'spawn_y', default_value='0',
+        description='로봇 스폰 Y 위치 (pear_orchard: 3 = 행1-2 사이)',
     )
 
     # ── Launch 설정값 참조 ──
@@ -100,7 +112,10 @@ def generate_launch_description():
     map_yaml = LaunchConfiguration('map')
     autostart = LaunchConfiguration('autostart')
     use_foxglove = LaunchConfiguration('use_foxglove')
+    headless = LaunchConfiguration('headless')
     use_recording = LaunchConfiguration('use_recording')
+    spawn_x = LaunchConfiguration('spawn_x')
+    spawn_y = LaunchConfiguration('spawn_y')
 
     # ================================================================
     # 1. robot_state_publisher: URDF → TF 정적 변환 발행
@@ -123,6 +138,7 @@ def generate_launch_description():
         cmd=[
             'gz', 'sim', '-s',  # 서버 모드 (-s = server only)
             '-r',               # 자동 시작 (-r = run)
+            '--headless-rendering',  # headless 렌더링 (센서 시뮬은 동작)
             world_file,
         ],
         output='screen',
@@ -131,6 +147,7 @@ def generate_launch_description():
     gazebo_gui = ExecuteProcess(
         cmd=['gz', 'sim', '-g'],  # GUI 모드 (-g = GUI only)
         output='screen',
+        condition=UnlessCondition(headless),  # headless=true면 GUI 비실행
     )
 
     # 로봇 스폰
@@ -142,7 +159,7 @@ def generate_launch_description():
         arguments=[
             '-name', 'ss500',
             '-file', default_sdf_model,
-            '-x', '0', '-y', '0', '-z', '0.5',
+            '-x', spawn_x, '-y', spawn_y, '-z', '0.5',
         ],
     )
 
@@ -267,7 +284,10 @@ def generate_launch_description():
         declare_map,
         declare_autostart,
         declare_foxglove,
+        declare_headless,
         declare_recording,
+        declare_spawn_x,
+        declare_spawn_y,
 
         LogInfo(msg='[Simulation] SS500 Gazebo 시뮬레이션 시작'),
 

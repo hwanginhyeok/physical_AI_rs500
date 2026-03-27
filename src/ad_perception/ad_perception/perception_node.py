@@ -4,6 +4,7 @@
 LidarProcessor와 CameraDetector를 통해 장애물 및 객체 탐지 결과를 생성한다.
 SensorFusion을 통해 LiDAR + Camera Late Fusion 결과를 제공한다.
 SemanticSegmenter를 통해 픽셀 단위 시맨틱 세그멘테이션 결과를 제공한다.
+CropRowDetectorCV를 통해 과수원 행 인식 및 조향 오프셋을 제공한다.
 """
 
 from __future__ import annotations
@@ -31,6 +32,11 @@ from ad_core.semantic_segmenter import (
     SegmentationResult,
     SegmentationClass,
 )
+from ad_core.crop_row_detector import (
+    CropRowDetectorCV,
+    RowDetectionResult,
+    OrchardType,
+)
 
 
 class PerceptionModule:
@@ -57,6 +63,9 @@ class PerceptionModule:
         self.lane_info = None                     # 차선 정보
         self.vehicle_position = None              # 차량 현재 위치 (GPS)
         self.vehicle_orientation = None           # 차량 방향 (IMU)
+        self.crop_row_result: Optional[RowDetectionResult] = None  # 과수원 행 감지
+        self._crop_row_frame_count: int = 0       # 5Hz 스로틀 카운터
+        self._crop_row_no_detect_count: int = 0   # 행 미감지 연속 횟수
 
         # YOLO 모델 경로 파라미터 읽기
         yolo_model_path = node.declare_parameter(
@@ -76,6 +85,20 @@ class PerceptionModule:
             if os.path.exists(candidate):
                 yolo_model_path = candidate
 
+        # 과수원 행 감지 파라미터
+        orchard_type_str = node.declare_parameter(
+            'crop_row.orchard_type', 'PEAR'
+        ).value
+        self._crop_row_enabled = node.declare_parameter(
+            'crop_row.enabled', False
+        ).value
+        self._crop_row_process_every_n = node.declare_parameter(
+            'crop_row.process_every_n_frames', 3
+        ).value  # 15Hz 카메라에서 3프레임마다 = 5Hz
+        self._crop_row_no_detect_limit = node.declare_parameter(
+            'crop_row.no_detect_limit', 10
+        ).value  # 5Hz에서 10회 = 2초
+
         # 인지 서브모듈 초기화
         self._lidar_processor = LidarProcessor()
         self._camera_detector = CameraDetector(
@@ -84,6 +107,16 @@ class PerceptionModule:
         )
         self._sensor_fusion = SensorFusion()
         self._semantic_segmenter = SemanticSegmenter()
+
+        # 과수원 행 감지 모듈
+        try:
+            orchard_type = OrchardType[orchard_type_str.upper()]
+        except KeyError:
+            orchard_type = OrchardType.PEAR
+            node.get_logger().warn(
+                f'[인지] 미지원 과수원 유형: {orchard_type_str}, PEAR 사용'
+            )
+        self._crop_row_detector = CropRowDetectorCV(orchard_type=orchard_type)
 
         # 토픽명 파라미터에서 읽기
         camera_topic = node.get_parameter('topics.camera').value
@@ -114,11 +147,12 @@ class PerceptionModule:
     # ------------------------------------------------------------------
 
     def _camera_callback(self, msg: Image) -> None:
-        """카메라 이미지 수신 콜백. 객체 탐지, 세그멘테이션, 센서 융합 수행."""
+        """카메라 이미지 수신 콜백. 객체 탐지, 세그멘테이션, 센서 융합, 행 감지 수행."""
         self._node.get_logger().debug('[인지] 카메라 이미지 수신')
         self.process_camera(msg)
         self._run_segmentation(msg)
         self._run_fusion()
+        self._run_crop_row_detection(msg)
 
     def _lidar_callback(self, msg: PointCloud2) -> None:
         """라이다 포인트클라우드 수신 콜백. 장애물 감지 후 센서 융합 수행."""
@@ -280,6 +314,50 @@ class PerceptionModule:
         return self._semantic_segmenter.get_obstacle_area(self.segmentation)
 
     # ------------------------------------------------------------------
+    # 과수원 행 감지
+    # ------------------------------------------------------------------
+
+    def _run_crop_row_detection(self, msg: Image) -> Optional[RowDetectionResult]:
+        """카메라 이미지에서 과수원 행을 감지한다. 5Hz 스로틀 적용."""
+        if not self._crop_row_enabled or not _HAS_NUMPY:
+            return None
+
+        # 프레임 스로틀: process_every_n_frames 마다 실행
+        self._crop_row_frame_count += 1
+        if self._crop_row_frame_count % self._crop_row_process_every_n != 0:
+            return self.crop_row_result
+
+        image = self._image_to_numpy(msg)
+        if image is None:
+            return None
+
+        result = self._crop_row_detector.detect(image)
+        self.crop_row_result = result
+
+        # 행 미감지 카운터 (행 끝 감지용)
+        if result.num_rows == 0:
+            self._crop_row_no_detect_count += 1
+        else:
+            self._crop_row_no_detect_count = 0
+
+        self._node.get_logger().debug(
+            f'[인지] 행 감지: {result.num_rows}행, '
+            f'offset={result.get_steering_offset():.2f}, '
+            f'heading_err={result.get_heading_error_deg():.1f}°, '
+            f'{result.processing_time_ms:.0f}ms'
+        )
+        return result
+
+    def get_crop_row_result(self) -> Optional[RowDetectionResult]:
+        """현재 과수원 행 감지 결과를 반환한다."""
+        return self.crop_row_result
+
+    @property
+    def crop_row_end_detected(self) -> bool:
+        """행 끝 도달 여부. 연속 N회 행 미감지 시 True."""
+        return self._crop_row_no_detect_count >= self._crop_row_no_detect_limit
+
+    # ------------------------------------------------------------------
     # 센서 융합
     # ------------------------------------------------------------------
 
@@ -316,7 +394,7 @@ class PerceptionModule:
 
     def get_perception_result(self) -> dict:
         """현재 인지 결과를 반환한다."""
-        return {
+        result = {
             'obstacles': self.obstacles,
             'detections': self.detections,
             'fused_objects': self.fused_objects,
@@ -325,6 +403,13 @@ class PerceptionModule:
             'position': self.vehicle_position,
             'orientation': self.vehicle_orientation,
         }
+        # 과수원 행 감지 결과 추가
+        if self._crop_row_enabled and self.crop_row_result is not None:
+            result['crop_row'] = self.crop_row_result
+            result['crop_row_steering_offset'] = self.crop_row_result.get_steering_offset()
+            result['crop_row_heading_error'] = self.crop_row_result.get_heading_error_deg()
+            result['crop_row_end_detected'] = self.crop_row_end_detected
+        return result
 
 
 class PerceptionNode(Node):
@@ -338,6 +423,10 @@ class PerceptionNode(Node):
         self.declare_parameter('topics.lidar', '/sensor/lidar')
         self.declare_parameter('topics.gps', '/sensor/gps')
         self.declare_parameter('topics.imu', '/sensor/imu')
+        self.declare_parameter('crop_row.orchard_type', 'PEAR')
+        self.declare_parameter('crop_row.enabled', False)
+        self.declare_parameter('crop_row.process_every_n_frames', 3)
+        self.declare_parameter('crop_row.no_detect_limit', 10)
 
         # 인지 모듈 초기화
         self.perception = PerceptionModule(self)

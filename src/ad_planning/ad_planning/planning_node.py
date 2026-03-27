@@ -31,6 +31,7 @@ class DrivingMode(Enum):
     EMERGENCY_STOP = auto()
     COVERAGE = auto()
     WAYPOINT_NAV = auto()
+    CROP_ROW_FOLLOW = auto()  # 카메라 온리 과수원 행 추종
 
 
 class PathPlanner:
@@ -188,6 +189,13 @@ class PlanningModule:
             self._plan_avoidance(obstacles)
             return
 
+        # 과수원 행 추종 모드: crop_row 데이터가 있으면 우선
+        crop_row = perception_result.get('crop_row')
+        if crop_row is not None:
+            crop_row_end = perception_result.get('crop_row_end_detected', False)
+            self._plan_crop_row_follow(perception_result, crop_row_end)
+            return
+
         self.current_mode = DrivingMode.LANE_KEEPING
         self._plan_lane_keeping(lane_info)
 
@@ -268,6 +276,11 @@ class PlanningModule:
         elif mode == DrivingMode.LANE_KEEPING:
             lane_info = kwargs.get('lane_info')
             self._plan_lane_keeping(lane_info)
+
+        elif mode == DrivingMode.CROP_ROW_FOLLOW:
+            perception_result = kwargs.get('perception_result', {})
+            crop_row_end = kwargs.get('crop_row_end_detected', False)
+            self._plan_crop_row_follow(perception_result, crop_row_end)
 
         elif mode == DrivingMode.OBSTACLE_AVOIDANCE:
             obstacles = kwargs.get('obstacles', [])
@@ -355,6 +368,55 @@ class PlanningModule:
             self.target_steering = -lane_info['offset'] * 0.1
         else:
             self.target_steering = 0.0
+
+    def _plan_crop_row_follow(self, perception_result: dict,
+                               crop_row_end: bool) -> None:
+        """과수원 행 추종: steering_offset + heading_error 기반 reactive 제어.
+
+        카메라에서 감지한 행 중심 오프셋과 방향 오차를 조합하여
+        행 중앙을 따라 주행한다. 행 끝 도달 시 안전 정지.
+
+        제어 공식:
+            steering = -Kp_lateral * offset - Kp_heading * heading_error
+            (offset: -1~+1, heading_error: deg)
+        """
+        # 행 끝 감지 → 안전 정지
+        if crop_row_end:
+            self.current_mode = DrivingMode.IDLE
+            self.target_speed = 0.0
+            self.target_steering = 0.0
+            self._node.get_logger().info(
+                '[판단] 행 끝 감지 — 안전 정지'
+            )
+            return
+
+        self.current_mode = DrivingMode.CROP_ROW_FOLLOW
+
+        # reactive 조향 계산
+        steering_offset = perception_result.get('crop_row_steering_offset', 0.0)
+        heading_error = perception_result.get('crop_row_heading_error', 0.0)
+
+        # 게인 (스키드 스티어 4km/h 기준 보수적 값)
+        kp_lateral = 0.3   # offset -1~+1에 대한 조향 게인
+        kp_heading = 0.01  # heading error deg에 대한 조향 게인
+
+        self.target_steering = (
+            -kp_lateral * steering_offset
+            - kp_heading * heading_error
+        )
+        # 조향 클램프 (-1 ~ 1)
+        self.target_steering = max(-1.0, min(1.0, self.target_steering))
+
+        # 행 중앙에 가까울수록 빠르게, 오프셋 클수록 느리게
+        speed_factor = max(0.3, 1.0 - abs(steering_offset) * 0.5)
+        self.target_speed = self.max_speed * 0.5 * speed_factor
+
+        self._node.get_logger().debug(
+            f'[판단] 행 추종: offset={steering_offset:.2f}, '
+            f'heading={heading_error:.1f}°, '
+            f'steering={self.target_steering:.3f}, '
+            f'speed={self.target_speed:.2f}'
+        )
 
     def get_plan_result(self) -> dict:
         """현재 주행 계획 결과를 반환."""

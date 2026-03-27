@@ -240,3 +240,97 @@ class TestGetPlanResult:
         assert result['mode'] == 'COVERAGE'
         assert result['total_waypoints'] > 0
         assert result['has_nav_path'] is True
+
+
+# ── CROP_ROW_FOLLOW ──────────────────────────────────────────
+
+
+class TestCropRowFollow:
+    """카메라 온리 과수원 행 추종 모드 테스트."""
+
+    def test_crop_row_follow_enum_exists(self):
+        """CROP_ROW_FOLLOW 모드가 DrivingMode에 존재."""
+        assert hasattr(DrivingMode, 'CROP_ROW_FOLLOW')
+        assert DrivingMode.CROP_ROW_FOLLOW.value is not None
+
+    def test_update_with_crop_row_data(self):
+        """crop_row 데이터가 있으면 CROP_ROW_FOLLOW로 전환."""
+        pm = PlanningModule(make_mock_node())
+        # crop_row가 있는 perception_result mock
+        from unittest.mock import MagicMock
+        mock_result = MagicMock()
+        mock_result.num_rows = 2
+        perception = {
+            'obstacles': [],
+            'crop_row': mock_result,
+            'crop_row_steering_offset': 0.1,
+            'crop_row_heading_error': 2.0,
+            'crop_row_end_detected': False,
+        }
+        pm.update(perception)
+        assert pm.current_mode == DrivingMode.CROP_ROW_FOLLOW
+        assert pm.target_speed > 0
+
+    def test_update_without_crop_row_falls_to_lane_keeping(self):
+        """crop_row 없으면 기존 LANE_KEEPING으로."""
+        pm = PlanningModule(make_mock_node())
+        pm.update({'obstacles': []})
+        assert pm.current_mode == DrivingMode.LANE_KEEPING
+
+    def test_crop_row_end_triggers_stop(self):
+        """행 끝 감지 시 IDLE + 속도 0."""
+        pm = PlanningModule(make_mock_node())
+        from unittest.mock import MagicMock
+        perception = {
+            'obstacles': [],
+            'crop_row': MagicMock(num_rows=0),
+            'crop_row_steering_offset': 0.0,
+            'crop_row_heading_error': 0.0,
+            'crop_row_end_detected': True,
+        }
+        pm.update(perception)
+        assert pm.current_mode == DrivingMode.IDLE
+        assert pm.target_speed == 0.0
+
+    def test_steering_offset_affects_steering(self):
+        """steering_offset가 target_steering에 반영."""
+        pm = PlanningModule(make_mock_node())
+        from unittest.mock import MagicMock
+        # 오른쪽으로 치우침 (offset=0.5) → 왼쪽으로 조향 (음수)
+        perception = {
+            'obstacles': [],
+            'crop_row': MagicMock(num_rows=2),
+            'crop_row_steering_offset': 0.5,
+            'crop_row_heading_error': 0.0,
+            'crop_row_end_detected': False,
+        }
+        pm.update(perception)
+        assert pm.target_steering < 0  # 왼쪽 보정
+
+    def test_emergency_overrides_crop_row(self):
+        """긴급 장애물이 crop_row보다 우선."""
+        pm = PlanningModule(make_mock_node({'safe_distance': 5.0}))
+        from unittest.mock import MagicMock
+        perception = {
+            'obstacles': [{'distance': 1.0}],  # safe_distance * 0.5 = 2.5m 이내
+            'crop_row': MagicMock(num_rows=2),
+            'crop_row_steering_offset': 0.0,
+            'crop_row_heading_error': 0.0,
+            'crop_row_end_detected': False,
+        }
+        pm.update(perception)
+        assert pm.current_mode == DrivingMode.EMERGENCY_STOP
+
+    def test_plan_method_crop_row_follow(self):
+        """plan() 메서드로 CROP_ROW_FOLLOW 직접 호출."""
+        pm = PlanningModule(make_mock_node())
+        pm.plan(
+            DrivingMode.CROP_ROW_FOLLOW,
+            perception_result={
+                'crop_row_steering_offset': -0.3,
+                'crop_row_heading_error': 5.0,
+            },
+            crop_row_end_detected=False,
+        )
+        assert pm.current_mode == DrivingMode.CROP_ROW_FOLLOW
+        assert pm.target_steering > 0  # 왼쪽 치우침 → 오른쪽 보정

@@ -1,0 +1,276 @@
+<?xml version="1.0"?>
+<!--
+  pear_orchard.sdf — 배 과수원 시뮬레이션 월드
+  6x6m 간격 나무 배치, 수고 2m, 줄기+수관부 구조
+  crop_row_detector 카메라 온리 경로 생성 검증용
+-->
+<sdf version="1.9">
+  <world name="pear_orchard">
+
+    <!-- 물리 엔진 설정 -->
+    <physics name="default_physics" type="ode">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+    </physics>
+
+    <!-- 시뮬레이션 플러그인 -->
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system"
+            name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-navsat-system"
+            name="gz::sim::systems::NavSat"/>
+    <plugin filename="gz-sim-contact-system"
+            name="gz::sim::systems::Contact"/>
+
+    <!-- GPS 기준점 (나주 배 과수원 근처) -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <latitude_deg>34.9406</latitude_deg>
+      <longitude_deg>126.7103</longitude_deg>
+      <elevation>30</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+
+    <!-- 조명 -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 50 0 0 0</pose>
+      <diffuse>0.9 0.9 0.85 1</diffuse>
+      <specular>0.3 0.3 0.3 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <light type="directional" name="ambient_fill">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 50 0 0 0</pose>
+      <diffuse>0.3 0.3 0.35 1</diffuse>
+      <specular>0.0 0.0 0.0 1</specular>
+      <direction>0.3 -0.2 -0.8</direction>
+    </light>
+
+    <!-- 하늘 -->
+    <scene>
+      <ambient>0.6 0.6 0.65 1</ambient>
+      <background>0.7 0.8 0.95 1</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <!-- ================================================================ -->
+    <!-- 지면: 60m x 60m 과수원 토양 (갈색) -->
+    <!-- ================================================================ -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="ground_link">
+        <collision name="ground_collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>60 60</size>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>1.5</mu>
+                <mu2>1.5</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="ground_visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>60 60</size>
+            </plane>
+          </geometry>
+          <material>
+            <!-- 과수원 토양 (갈색) -->
+            <ambient>0.45 0.35 0.25 1</ambient>
+            <diffuse>0.5 0.4 0.3 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ================================================================ -->
+    <!-- 배 나무 모델 매크로: 줄기(cylinder) + 수관부(ellipsoid)            -->
+    <!-- 배 과수원: 6x6m 간격, 수고 ~2m, 수관폭 ~2.5m                     -->
+    <!-- 5행 x 8그루 = 40그루                                             -->
+    <!-- 행 방향: X축 (전방), 행간 간격: Y축 6m                            -->
+    <!-- 로봇 시작: (0, 3, 0) — 1행과 2행 사이 중앙                       -->
+    <!-- ================================================================ -->
+
+    <!-- === 행 1 (Y=0) === -->
+    <model name="tree_r1_01"><static>true</static><pose>3 0 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r1_02"><static>true</static><pose>9 0 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r1_03"><static>true</static><pose>15 0 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r1_04"><static>true</static><pose>21 0 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r1_05"><static>true</static><pose>27 0 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r1_06"><static>true</static><pose>33 0 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+
+    <!-- === 행 2 (Y=6) === -->
+    <model name="tree_r2_01"><static>true</static><pose>3 6 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r2_02"><static>true</static><pose>9 6 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r2_03"><static>true</static><pose>15 6 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r2_04"><static>true</static><pose>21 6 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r2_05"><static>true</static><pose>27 6 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r2_06"><static>true</static><pose>33 6 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+
+    <!-- === 행 3 (Y=12) === -->
+    <model name="tree_r3_01"><static>true</static><pose>3 12 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.1</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.5 0 0 0</pose></link>
+    </model>
+    <model name="tree_r3_02"><static>true</static><pose>9 12 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.1</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.5 0 0 0</pose></link>
+    </model>
+    <model name="tree_r3_03"><static>true</static><pose>15 12 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.1</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.5 0 0 0</pose></link>
+    </model>
+    <model name="tree_r3_04"><static>true</static><pose>21 12 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.1</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.5 0 0 0</pose></link>
+    </model>
+    <model name="tree_r3_05"><static>true</static><pose>27 12 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.1</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.5 0 0 0</pose></link>
+    </model>
+    <model name="tree_r3_06"><static>true</static><pose>33 12 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.1</radius></sphere></geometry><material><ambient>0.15 0.45 0.1 1</ambient><diffuse>0.2 0.55 0.15 1</diffuse></material></visual><pose>0 0 1.5 0 0 0</pose></link>
+    </model>
+
+    <!-- === 행 4 (Y=18) === -->
+    <model name="tree_r4_01"><static>true</static><pose>3 18 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r4_02"><static>true</static><pose>9 18 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r4_03"><static>true</static><pose>15 18 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r4_04"><static>true</static><pose>21 18 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r4_05"><static>true</static><pose>27 18 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+    <model name="tree_r4_06"><static>true</static><pose>33 18 0 0 0 0</pose>
+      <link name="trunk"><visual name="v"><geometry><cylinder><radius>0.08</radius><length>1.0</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient><diffuse>0.45 0.3 0.15 1</diffuse></material></visual><pose>0 0 0.5 0 0 0</pose></link>
+      <link name="canopy"><visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry><material><ambient>0.18 0.48 0.12 1</ambient><diffuse>0.22 0.58 0.17 1</diffuse></material></visual><pose>0 0 1.6 0 0 0</pose></link>
+    </model>
+
+    <!-- ================================================================ -->
+    <!-- 행 끝 쇠기둥 (각 행 시작/끝에 1개씩)                              -->
+    <!-- 배 과수원: 쇠기둥에 쇠줄 연결하여 나무 지지                       -->
+    <!-- ================================================================ -->
+    <model name="post_r1_start"><static>true</static><pose>0 0 0 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><material><ambient>0.3 0.3 0.35 1</ambient><diffuse>0.4 0.4 0.45 1</diffuse></material></visual><pose>0 0 1.0 0 0 0</pose>
+      <collision name="c"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><pose>0 0 1.0 0 0 0</pose></collision></link>
+    </model>
+    <model name="post_r1_end"><static>true</static><pose>36 0 0 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><material><ambient>0.3 0.3 0.35 1</ambient><diffuse>0.4 0.4 0.45 1</diffuse></material></visual><pose>0 0 1.0 0 0 0</pose>
+      <collision name="c"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><pose>0 0 1.0 0 0 0</pose></collision></link>
+    </model>
+    <model name="post_r2_start"><static>true</static><pose>0 6 0 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><material><ambient>0.3 0.3 0.35 1</ambient><diffuse>0.4 0.4 0.45 1</diffuse></material></visual><pose>0 0 1.0 0 0 0</pose>
+      <collision name="c"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><pose>0 0 1.0 0 0 0</pose></collision></link>
+    </model>
+    <model name="post_r2_end"><static>true</static><pose>36 6 0 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><material><ambient>0.3 0.3 0.35 1</ambient><diffuse>0.4 0.4 0.45 1</diffuse></material></visual><pose>0 0 1.0 0 0 0</pose>
+      <collision name="c"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><pose>0 0 1.0 0 0 0</pose></collision></link>
+    </model>
+    <model name="post_r3_start"><static>true</static><pose>0 12 0 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><material><ambient>0.3 0.3 0.35 1</ambient><diffuse>0.4 0.4 0.45 1</diffuse></material></visual><pose>0 0 1.0 0 0 0</pose>
+      <collision name="c"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><pose>0 0 1.0 0 0 0</pose></collision></link>
+    </model>
+    <model name="post_r3_end"><static>true</static><pose>36 12 0 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><material><ambient>0.3 0.3 0.35 1</ambient><diffuse>0.4 0.4 0.45 1</diffuse></material></visual><pose>0 0 1.0 0 0 0</pose>
+      <collision name="c"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><pose>0 0 1.0 0 0 0</pose></collision></link>
+    </model>
+    <model name="post_r4_start"><static>true</static><pose>0 18 0 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><material><ambient>0.3 0.3 0.35 1</ambient><diffuse>0.4 0.4 0.45 1</diffuse></material></visual><pose>0 0 1.0 0 0 0</pose>
+      <collision name="c"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><pose>0 0 1.0 0 0 0</pose></collision></link>
+    </model>
+    <model name="post_r4_end"><static>true</static><pose>36 18 0 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><material><ambient>0.3 0.3 0.35 1</ambient><diffuse>0.4 0.4 0.45 1</diffuse></material></visual><pose>0 0 1.0 0 0 0</pose>
+      <collision name="c"><geometry><cylinder><radius>0.04</radius><length>2.0</length></cylinder></geometry><pose>0 0 1.0 0 0 0</pose></collision></link>
+    </model>
+
+    <!-- ================================================================ -->
+    <!-- 행간 풀/잡초 표현 (통로 바닥에 약간 다른 색상의 박스)             -->
+    <!-- ================================================================ -->
+    <model name="grass_strip_1"><static>true</static>
+      <pose>18 3 0.005 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><box><size>36 4 0.01</size></box></geometry>
+        <material><ambient>0.35 0.5 0.25 1</ambient><diffuse>0.4 0.55 0.3 1</diffuse></material></visual></link>
+    </model>
+    <model name="grass_strip_2"><static>true</static>
+      <pose>18 9 0.005 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><box><size>36 4 0.01</size></box></geometry>
+        <material><ambient>0.35 0.5 0.25 1</ambient><diffuse>0.4 0.55 0.3 1</diffuse></material></visual></link>
+    </model>
+    <model name="grass_strip_3"><static>true</static>
+      <pose>18 15 0.005 0 0 0</pose>
+      <link name="link"><visual name="v"><geometry><box><size>36 4 0.01</size></box></geometry>
+        <material><ambient>0.35 0.5 0.25 1</ambient><diffuse>0.4 0.55 0.3 1</diffuse></material></visual></link>
+    </model>
+
+  </world>
+</sdf>
