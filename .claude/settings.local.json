@@ -66,7 +66,10 @@
       "WebFetch(domain:www.atlantis-press.com)",
       "WebFetch(domain:www.ecorisq.org)",
       "WebFetch(domain:proceedings.sbmac.org.br)",
-      "WebFetch(domain:www.geotechdata.info)"
+      "WebFetch(domain:www.geotechdata.info)",
+      "mcp__claude_ai_Notion__notion-search",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "Skill(plan-eng-review)"
     ]
   }
 }

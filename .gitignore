@@ -54,3 +54,4 @@ models/*.engine
 rosbag2_data/
 *.mcap
 *.db3
+results/
