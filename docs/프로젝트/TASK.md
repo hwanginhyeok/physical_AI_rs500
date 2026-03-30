@@ -1,6 +1,6 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-30
+> 마지막 갱신: 2026-03-30 (야간작업 + 오늘 세션 반영)
 
 ## 현재 진행 중
 
@@ -13,9 +13,9 @@
 |---|------|--------|------|------|------|
 | T01 | LIO-SAM 실제 구동 테스트 | P2 | — | 예정 | Phase 2 |
 | T02 | crop_row_detector DL 교체 (DeepLabV3) | P2 | — | 예정 | Phase 2, 실제 데이터 필요 |
-| T04 | 미션 매니저 (과수원 자동 순회) | P2 | — | 예정 | Phase 2, U턴/행 전환 포함 |
-| T05 | 카메라 피드 타임아웃 안전 정지 | P2 | — | 예정 | 실차 배포 전 필수 |
-| T06 | CameraIntrinsics 시뮬 카메라 동기화 | P3 | — | 예정 | Waypoint 변환 단계 전 |
+| T04 | 미션 매니저 (과수원 자동 순회) | P2 | — | 예정 | Step 2 스킵 결정. Approach B(카메라 재정렬 U턴): 행 끝 감지 → 선회 → crop_row 재감지 시 정렬. T05 완료 후 착수 권장 |
+| T05 | 카메라 피드 타임아웃 안전 정지 | P2 | — | 예정 | 실차 배포 전 필수. T04 착수 전 선행 권장 |
+| T06 | CameraIntrinsics 시뮬 카메라 동기화 | P3 | — | 예정 | Step 2 스킵으로 당장 불필요 (fx=395, cx=320, cy=240). Waypoint 변환 시 재검토 |
 
 ---
 
@@ -102,4 +102,5 @@
 - [x] ~~Drivetrain 정상상태 오차 17.65% 검토~~ (2026-03-22 종료, 현재 모델 정상 수렴 확인, 실차 데이터 확보 시 재검토)
 - [ ] 카메라 피드 타임아웃 안전 정지 (T05, 실차 배포 전 필수)
 - [ ] CameraIntrinsics 시뮬 카메라 동기화 — fx=395, cx=320, cy=240 (T06, Waypoint 변환 전)
-- [ ] pixel→world Waypoint 변환 (Reactive 검증 후, homography 수관부 문제 해결 필요)
+- [x] ~~pixel→world Waypoint 변환~~ (2026-03-30 스킵 결정. Step 2 건너뛰고 T04 고정 기하 U턴으로 직행)
+- [ ] Foxglove 시각 검증 — pear_orchard.sdf에서 `/sensor/camera/front` 이미지 + `/perception/crop_row` 토픽 확인 (crop_row_test_launch.py 사용)
