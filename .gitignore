@@ -55,3 +55,7 @@ rosbag2_data/
 *.mcap
 *.db3
 results/
+
+# 환경변수
+.env
+.env.*
