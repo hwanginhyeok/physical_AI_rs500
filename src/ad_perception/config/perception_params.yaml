@@ -16,3 +16,10 @@ perception_node:
     segmentation:
       model_type: "enet"  # "enet" 또는 "bisenetv2"
       input_size: 512
+
+    # 과수원 행 감지 설정
+    crop_row:
+      enabled: true
+      orchard_type: "PEAR"
+      process_every_n_frames: 3   # 15Hz 카메라에서 5Hz 처리
+      no_detect_limit: 10         # 5Hz × 10회 = 2초 미감지 → 행 끝

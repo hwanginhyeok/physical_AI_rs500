@@ -15,7 +15,7 @@ from typing import List, Optional
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, PointCloud2, PointField, NavSatFix, Imu
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Float32MultiArray
 
 try:
     import numpy as np
@@ -85,18 +85,14 @@ class PerceptionModule:
             if os.path.exists(candidate):
                 yolo_model_path = candidate
 
-        # 과수원 행 감지 파라미터
-        orchard_type_str = node.declare_parameter(
-            'crop_row.orchard_type', 'PEAR'
-        ).value
-        self._crop_row_enabled = node.declare_parameter(
-            'crop_row.enabled', False
-        ).value
-        self._crop_row_process_every_n = node.declare_parameter(
-            'crop_row.process_every_n_frames', 3
+        # 과수원 행 감지 파라미터 (PerceptionNode에서 이미 선언됨)
+        orchard_type_str = node.get_parameter('crop_row.orchard_type').value
+        self._crop_row_enabled = node.get_parameter('crop_row.enabled').value
+        self._crop_row_process_every_n = node.get_parameter(
+            'crop_row.process_every_n_frames'
         ).value  # 15Hz 카메라에서 3프레임마다 = 5Hz
-        self._crop_row_no_detect_limit = node.declare_parameter(
-            'crop_row.no_detect_limit', 10
+        self._crop_row_no_detect_limit = node.get_parameter(
+            'crop_row.no_detect_limit'
         ).value  # 5Hz에서 10회 = 2초
 
         # 인지 서브모듈 초기화
@@ -431,7 +427,42 @@ class PerceptionNode(Node):
         # 인지 모듈 초기화
         self.perception = PerceptionModule(self)
 
+        # crop_row 결과 퍼블리셔 (Float32MultiArray)
+        # [0]=row_detected, [1]=steering_offset, [2]=heading_error_deg, [3]=end_detected
+        self._crop_row_pub = self.create_publisher(
+            Float32MultiArray, '/perception/crop_row', 10)
+
+        # 10Hz 타이머로 crop_row 결과 퍼블리시
+        self.create_timer(0.1, self._publish_crop_row)
+
         self.get_logger().info('[인지 노드] 시작')
+
+    def _publish_crop_row(self) -> None:
+        """10Hz 타이머: crop_row 감지 결과를 토픽으로 퍼블리시.
+
+        메시지 레이아웃 (Float32MultiArray.data):
+            [0] row_detected   : 1.0 = 감지됨, 0.0 = 미감지
+            [1] steering_offset: -1.0(좌)~+1.0(우)
+            [2] heading_error  : 도(degree), 행 기준 방향 오차
+            [3] end_detected   : 1.0 = 행 끝 감지, 0.0 = 아님
+        """
+        result = self.perception.get_perception_result()
+        crop_row = result.get('crop_row')
+
+        if crop_row is not None:
+            row_detected = 1.0
+            steering_offset = float(result.get('crop_row_steering_offset', 0.0))
+            heading_error = float(result.get('crop_row_heading_error', 0.0))
+            end_detected = 1.0 if result.get('crop_row_end_detected', False) else 0.0
+        else:
+            row_detected = 0.0
+            steering_offset = 0.0
+            heading_error = 0.0
+            end_detected = 0.0
+
+        msg = Float32MultiArray()
+        msg.data = [row_detected, steering_offset, heading_error, end_detected]
+        self._crop_row_pub.publish(msg)
 
 
 def main(args=None):

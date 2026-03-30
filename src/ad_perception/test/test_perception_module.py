@@ -254,7 +254,11 @@ class TestGetPerceptionResult:
 
     def test_result_includes_crop_row_when_enabled(self):
         """crop_row 활성화 + 감지 결과 있을 때 perception_result에 포함."""
-        pm = PerceptionModule(make_mock_node({'crop_row.enabled': True}))
+        # process_every_n_frames=1: 첫 호출에서 바로 감지 실행
+        pm = PerceptionModule(make_mock_node({
+            'crop_row.enabled': True,
+            'crop_row.process_every_n_frames': 1,
+        }))
         # 초록색 세로 줄무늬 이미지 생성 (행 감지 가능)
         img = _make_green_stripe_image(480, 640)
         msg = _numpy_to_image_msg(img)
