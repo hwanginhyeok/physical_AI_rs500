@@ -10,9 +10,9 @@ from typing import List, Tuple, Optional
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Twist
 from nav_msgs.msg import Path
-from std_msgs.msg import Header
+from std_msgs.msg import Header, Float32MultiArray
 
 from ad_core.coverage_planner import (
     CoveragePlanner,
@@ -450,7 +450,58 @@ class PlanningNode(Node):
         # 판단 모듈 초기화
         self.planning = PlanningModule(self)
 
+        # /cmd_vel 퍼블리셔 (geometry_msgs/Twist → can_bridge 수신)
+        self._cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+
+        # /perception/crop_row 구독 → 행 추종 모드 트리거
+        self.create_subscription(
+            Float32MultiArray,
+            '/perception/crop_row',
+            self._crop_row_callback,
+            10,
+        )
+
         self.get_logger().info('[판단 노드] 시작')
+
+    def _crop_row_callback(self, msg: Float32MultiArray) -> None:
+        """crop_row 토픽 수신 → 판단 모듈 업데이트 → cmd_vel 퍼블리시.
+
+        메시지 레이아웃 (Float32MultiArray.data):
+            [0] row_detected   : 1.0 = 감지됨, 0.0 = 미감지
+            [1] steering_offset: -1.0(좌)~+1.0(우)
+            [2] heading_error  : 도(degree)
+            [3] end_detected   : 1.0 = 행 끝, 0.0 = 아님
+        """
+        if len(msg.data) < 4:
+            return
+
+        row_detected = msg.data[0] > 0.5
+        steering_offset = float(msg.data[1])
+        heading_error = float(msg.data[2])
+        end_detected = msg.data[3] > 0.5
+
+        # 판단 모듈이 기대하는 perception_result dict 구성
+        # crop_row: 행 미감지이더라도 end_detected=True면 non-None으로 유지
+        # → update()에서 _plan_crop_row_follow가 호출되어 정지 신호 처리 가능
+        crop_row_entry = {'row_detected': row_detected} if row_detected else None
+        if end_detected and crop_row_entry is None:
+            crop_row_entry = {'row_detected': False}  # 행 끝 정지 신호 보존
+        perception_result: dict = {
+            'obstacles': [],
+            'crop_row': crop_row_entry,
+            'crop_row_steering_offset': steering_offset,
+            'crop_row_heading_error': heading_error,
+            'crop_row_end_detected': end_detected,
+        }
+
+        self.planning.update(perception_result)
+
+        # target_speed / target_steering → Twist 변환 후 퍼블리시
+        twist = Twist()
+        twist.linear.x = float(self.planning.target_speed)
+        # target_steering: -1~1 → angular.z (rad/s 단위, 스케일 1.0)
+        twist.angular.z = float(self.planning.target_steering)
+        self._cmd_vel_pub.publish(twist)
 
 
 def main(args=None):
