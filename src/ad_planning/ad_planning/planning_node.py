@@ -5,6 +5,7 @@ Boustrophedon, Spiral, Racetrack 3종 패턴을 지원한다.
 """
 
 import math
+import time
 from enum import Enum, auto
 from typing import List, Tuple, Optional
 
@@ -159,6 +160,10 @@ class PlanningModule:
 
         self.max_speed = node.get_parameter('max_speed').value
         self.safe_distance = node.get_parameter('safe_distance').value
+
+        # T05: 카메라 watchdog 상태
+        self._last_crop_row_time: Optional[float] = None  # 첫 메시지 전 None → 발화 금지
+        self._camera_timed_out: bool = False
 
         self._path_planner = PathPlanner(node)
 
@@ -363,7 +368,8 @@ class PlanningModule:
         self.target_steering = 0.0
 
     def _plan_lane_keeping(self, lane_info):
-        self.target_speed = self.max_speed
+        # T05 버그수정: crop_row 미감지 시 max_speed(3.0m/s) → 0.1배 안전 속도
+        self.target_speed = self.max_speed * 0.1
         if lane_info and 'offset' in lane_info:
             self.target_steering = -lane_info['offset'] * 0.1
         else:
@@ -418,6 +424,33 @@ class PlanningModule:
             f'speed={self.target_speed:.2f}'
         )
 
+    # ------------------------------------------------------------------
+    # T05: 카메라 watchdog
+    # ------------------------------------------------------------------
+
+    def record_camera_message(self, now: float) -> None:
+        """crop_row 메시지 수신 시 호출 — heartbeat 갱신 및 타임아웃 복구."""
+        if self._camera_timed_out:
+            self._node.get_logger().info('[판단] 카메라 피드 복구 — 정상 행 추종 재개')
+            self._camera_timed_out = False
+        self._last_crop_row_time = now
+
+    def is_camera_timed_out(self, now: float, timeout: float) -> bool:
+        """카메라 타임아웃 여부 반환.
+
+        Returns:
+            True  — 타임아웃 발생 (첫 발화만 True, 이후 중복 발화 방지)
+            False — 정상 또는 콜드스타트(첫 메시지 미수신)
+        """
+        if self._last_crop_row_time is None:
+            return False  # 콜드스타트: 첫 메시지 전 발화 금지
+        if self._camera_timed_out:
+            return False  # 이미 타임아웃 상태 — 중복 발화 방지
+        if (now - self._last_crop_row_time) > timeout:
+            self._camera_timed_out = True
+            return True
+        return False
+
     def get_plan_result(self) -> dict:
         """현재 주행 계획 결과를 반환."""
         result = {
@@ -446,6 +479,9 @@ class PlanningNode(Node):
         # 파라미터 선언
         self.declare_parameter('max_speed', 3.0)
         self.declare_parameter('safe_distance', 5.0)
+        self.declare_parameter('camera_timeout_sec', 2.0)  # T05: 카메라 타임아웃 임계값
+
+        self._camera_timeout_sec: float = self.get_parameter('camera_timeout_sec').value
 
         # 판단 모듈 초기화
         self.planning = PlanningModule(self)
@@ -461,6 +497,9 @@ class PlanningNode(Node):
             10,
         )
 
+        # T05: 0.5Hz watchdog 타이머 (2초마다 카메라 타임아웃 체크)
+        self.create_timer(0.5, self._watchdog_check)
+
         self.get_logger().info('[판단 노드] 시작')
 
     def _crop_row_callback(self, msg: Float32MultiArray) -> None:
@@ -474,6 +513,9 @@ class PlanningNode(Node):
         """
         if len(msg.data) < 4:
             return
+
+        # T05: heartbeat 갱신 (PerceptionNode가 살아있음을 기록)
+        self.planning.record_camera_message(time.monotonic())
 
         row_detected = msg.data[0] > 0.5
         steering_offset = float(msg.data[1])
@@ -502,6 +544,24 @@ class PlanningNode(Node):
         # target_steering: -1~1 → angular.z (rad/s 단위, 스케일 1.0)
         twist.angular.z = float(self.planning.target_steering)
         self._cmd_vel_pub.publish(twist)
+
+    def _watchdog_check(self) -> None:
+        """T05: 0.5Hz watchdog — 카메라 타임아웃 시 비상 정지 퍼블리시."""
+        if self.planning.is_camera_timed_out(
+            time.monotonic(), self._camera_timeout_sec
+        ):
+            self.get_logger().warn(
+                f'[판단] 카메라 피드 타임아웃 '
+                f'({self._camera_timeout_sec}s 초과) — 비상 정지'
+            )
+            self._publish_stop()
+
+    def _publish_stop(self) -> None:
+        """cmd_vel=0 퍼블리시."""
+        stop = Twist()
+        stop.linear.x = 0.0
+        stop.angular.z = 0.0
+        self._cmd_vel_pub.publish(stop)
 
 
 def main(args=None):

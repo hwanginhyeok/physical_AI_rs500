@@ -119,9 +119,10 @@ class TestPlanningUpdate:
         return PlanningModule(make_mock_node())
 
     def test_no_obstacles_lane_keeping(self, pm):
+        # T05 버그수정: crop_row 미감지 LANE_KEEPING 모드에서 안전 속도(max_speed * 0.1)
         pm.update({'obstacles': []})
         assert pm.current_mode == DrivingMode.LANE_KEEPING
-        assert pm.target_speed == pm.max_speed
+        assert pm.target_speed == pytest.approx(pm.max_speed * 0.1, abs=1e-9)
 
     def test_lane_keeping_with_offset(self, pm):
         pm.update({'obstacles': [], 'lane_info': {'offset': 2.0}})
@@ -334,3 +335,66 @@ class TestCropRowFollow:
         )
         assert pm.current_mode == DrivingMode.CROP_ROW_FOLLOW
         assert pm.target_steering > 0  # 왼쪽 치우침 → 오른쪽 보정
+
+
+# ── T05: 카메라 Watchdog ──────────────────────────────────────
+
+
+class TestCameraWatchdog:
+    """T05 카메라 피드 타임아웃 안전정지 — watchdog 단위 테스트."""
+
+    def test_cold_start_no_fire(self):
+        """첫 crop_row 메시지 수신 전에는 watchdog 발화 금지."""
+        pm = PlanningModule(make_mock_node())
+        # _last_crop_row_time == None → 발화 없음
+        assert pm.is_camera_timed_out(now=1000.0, timeout=2.0) is False
+        assert pm._camera_timed_out is False
+
+    def test_normal_operation_no_fire(self):
+        """5Hz 메시지 수신 중 elapsed < timeout → 발화 없음."""
+        pm = PlanningModule(make_mock_node())
+        pm.record_camera_message(now=1000.0)
+        # 1.99초 후 체크 — timeout=2.0 미달
+        assert pm.is_camera_timed_out(now=1001.99, timeout=2.0) is False
+
+    def test_fires_on_timeout(self):
+        """elapsed > timeout → 발화 (CRITICAL 안전 기능)."""
+        pm = PlanningModule(make_mock_node())
+        pm.record_camera_message(now=1000.0)
+        # 2.01초 후 체크 — timeout=2.0 초과
+        assert pm.is_camera_timed_out(now=1002.01, timeout=2.0) is True
+        assert pm._camera_timed_out is True
+
+    def test_no_double_fire(self):
+        """이미 타임아웃 상태에서 watchdog 재호출 시 중복 발화 금지."""
+        pm = PlanningModule(make_mock_node())
+        pm.record_camera_message(now=1000.0)
+        assert pm.is_camera_timed_out(now=1002.01, timeout=2.0) is True
+        # 두 번째 호출 — False 반환 (중복 발화 없음)
+        assert pm.is_camera_timed_out(now=1002.02, timeout=2.0) is False
+
+    def test_recovery_resets_flag(self):
+        """새 메시지 수신 시 _camera_timed_out=False + 복구 로그."""
+        pm = PlanningModule(make_mock_node())
+        pm.record_camera_message(now=1000.0)
+        pm.is_camera_timed_out(now=1002.01, timeout=2.0)  # 타임아웃 발화
+        assert pm._camera_timed_out is True
+        # 카메라 복구 — 새 메시지
+        pm.record_camera_message(now=1002.5)
+        assert pm._camera_timed_out is False
+
+    def test_fires_again_after_recovery(self):
+        """복구 후 2차 타임아웃도 정상 발화."""
+        pm = PlanningModule(make_mock_node())
+        # 1차 타임아웃
+        pm.record_camera_message(now=1000.0)
+        pm.is_camera_timed_out(now=1002.01, timeout=2.0)
+        # 복구
+        pm.record_camera_message(now=1003.0)
+        # 2차 타임아웃
+        assert pm.is_camera_timed_out(now=1005.01, timeout=2.0) is True
+
+    def test_default_timeout_parameter_exists(self):
+        """camera_timeout_sec 파라미터가 기본값 2.0으로 존재."""
+        node = make_mock_node({'camera_timeout_sec': 2.0})
+        assert node.get_parameter('camera_timeout_sec').value == 2.0
