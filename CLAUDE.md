@@ -1,32 +1,80 @@
-# 프로젝트 규칙
+# 자율주행 RS500 — 프로젝트 규칙
+
+> ROS2 기반 과수원 자율주행 궤도 차량(RS500) 소프트웨어 프로젝트.
+> 인지(카메라)→판단(행 추종)→제어(CAN/모터) 파이프라인.
+
+---
 
 ## 세션 시작 프로토콜
 
-세션이 시작되면 반드시 다음 순서를 따른다:
+1. **Task 확인** — `docs/프로젝트/TASK.md` 점검 (진행 중, 지연, 블로커)
+2. **미팅** — 사용자에게 현재 상황 브리핑
+3. **방향성 논의** — 오늘 작업의 우선순위와 방향을 함께 결정
 
-1. **규칙 로딩** — `.claude/rules/` 하위 모든 `.md` 파일을 읽는다 (건너뛰지 않는다)
-2. **Task 확인** — `docs/프로젝트/TASK.md` 점검 (진행 중, 지연, 블로커)
-3. **미팅** — 사용자에게 현재 상황 브리핑
-4. **방향성 논의** — 오늘 작업의 우선순위와 방향을 함께 결정
+---
 
-이 프로토콜을 생략하지 않는다. 1번은 다른 어떤 행동보다 먼저 수행한다.
+## 프로젝트 구조
+
+```
+physical_AI_rs500/
+├── src/
+│   ├── ad_bringup/       # 런치 파일, 파라미터 YAML
+│   ├── ad_can_bridge/    # CAN 통신 (MD2K 모터 컨트롤러)
+│   ├── ad_control/       # 모터 제어, 안전 정지
+│   ├── ad_core/          # 공통 유틸, 상수
+│   ├── ad_interfaces/    # ROS2 커스텀 메시지/서비스
+│   ├── ad_perception/    # 카메라 인지 (crop_row 검출)
+│   └── ad_planning/      # 경로 판단, 행 추종
+├── docs/프로젝트/
+│   ├── TASK.md           # 태스크 통합 관리
+│   └── task/             # 태스크 상세 로그
+└── .claude/
+    ├── rules/            # 세션 규칙 (자동 로딩)
+    └── skills/           # 작업별 스킬 (필요 시 로딩)
+```
+
+## Commands
+
+```bash
+# 빌드
+colcon build
+
+# 테스트 전체 실행
+colcon test && colcon test-result --verbose
+
+# 특정 패키지 테스트
+colcon test --packages-select ad_control
+PYTHONPATH="src/ad_control:$PYTHONPATH" python3 -m pytest src/ad_control/test/ -v
+
+# 런치
+ros2 launch ad_bringup rs500.launch.py
+```
+
+## Tech Stack
+
+- **ROS2** (Humble) — 노드 간 통신, 런치, 파라미터
+- **Python 3** — 모든 노드 구현
+- **CAN** — MD2K 모터 컨트롤러 제어
+- **GitHub Actions** — CI 파이프라인 (colcon build + test)
 
 ---
 
 ## 핵심 원칙
 
-- **비판적 사고 파트너** — 새 기능·아키텍처·기술 선택은 먼저 질문하고 논의. 버그 수정·합의된 구현은 바로 실행.
-- **TASK 실시간 관리** — `docs/프로젝트/TASK.md` 단일 파일에서 통합 관리. 착수/완료/발견 시 즉시 갱신.
+- **비판적 사고 파트너** — 새 기능/아키텍처/기술 선택은 먼저 질문하고 논의. 버그 수정/합의된 구현은 바로 실행. 상세: `.claude/rules/critical-thinking.md`
+- **TASK 실시간 관리** — `docs/프로젝트/TASK.md` 단일 파일에서 통합 관리. 착수/완료/발견 시 즉시 갱신. 상세: `.claude/rules/task-management.md`
 
 ---
 
-## 매뉴얼 체계
+## Rules (자동 로딩)
 
-### Rules (`.claude/rules/`) — 세션 시작 시 전체 로딩
+| 파일 | 내용 |
+|------|------|
+| `critical-thinking.md` | 바로 실행 vs 논의 기준, 질문 패턴 |
+| `task-management.md` | TASK.md 구조, 상태 흐름, 갱신 트리거 |
 
-모든 세션에 적용되는 행동 규칙. 세션 시작 프로토콜 1번에서 강제 로딩.
+## Skills (작업 시 참조)
 
-### Skills (`.claude/skills/`) — 작업 시점에 선택 로딩
-
-특정 작업 수행 시 필요한 절차/체크리스트. 해당 작업 착수 전에 읽는다.
-스킬 파일에 `트리거` 섹션이 있으면 해당 조건에서 반드시 로딩한다.
+| 파일 | 트리거 |
+|------|--------|
+| `simulation-report.md` | 시뮬레이션 테스트 리포트 작성 시 |

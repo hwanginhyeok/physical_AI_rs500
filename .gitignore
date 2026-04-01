@@ -59,3 +59,11 @@ results/
 # 환경변수
 .env
 .env.*
+
+# 야간작업 임시 파일
+tonight_prompt_done.txt
+tonight_prompt_backup_*.txt
+logs/
+
+# 브리핑 진행 로그
+overnight_progress.log
