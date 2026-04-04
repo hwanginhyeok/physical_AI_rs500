@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'perception_node = ad_perception.perception_node:main',
             'localization_node = ad_perception.localization_node:main',
+            'synthetic_image_publisher = ad_perception.synthetic_image_publisher:main',
         ],
     },
 )

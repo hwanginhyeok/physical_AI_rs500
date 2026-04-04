@@ -1,11 +1,12 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-03-31 (T05 구현 완료)
+> 마지막 갱신: 2026-04-04 (T07 합성 이미지 퍼블리셔)
 
 ## 현재 진행 중
 
 | # | 작업 | 중요도 | 담당 | 상태 | 비고 |
 |---|------|--------|------|------|------|
+| T07 | 합성 이미지 기반 perception 검증 | P2 | 그린 | 진행 | Gazebo 없이 crop_row 파이프라인 테스트. 6시나리오, 28테스트 |
 
 ## 작업 현황
 
@@ -14,7 +15,6 @@
 | T01 | LIO-SAM 실제 구동 테스트 | P2 | — | 예정 | Phase 2 |
 | T02 | crop_row_detector DL 교체 (DeepLabV3) | P2 | — | 예정 | Phase 2, 실제 데이터 필요 |
 | T04 | 미션 매니저 (과수원 자동 순회) | P2 | — | 예정 | Step 2 스킵 결정. Approach B(카메라 재정렬 U턴): 행 끝 감지 → 선회 → crop_row 재감지 시 정렬. T05 완료 후 착수 권장 |
-| T05 | 카메라 피드 타임아웃 안전 정지 | P2 | 그린 | 완료 | PR#1, 460테스트 통과. PerceptionNode heartbeat + PlanningModule watchdog + _plan_lane_keeping 버그수정 |
 | T06 | CameraIntrinsics 시뮬 카메라 동기화 | P3 | — | 예정 | Step 2 스킵으로 당장 불필요 (fx=395, cx=320, cy=240). Waypoint 변환 시 재검토 |
 
 ---
@@ -23,6 +23,7 @@
 
 | # | 작업 | 중요도 | 담당 | 완료일 | 상세 |
 |---|------|--------|------|--------|------|
+| T05 | 카메라 피드 타임아웃 안전 정지 | P2 | 그린 | 2026-03-31 | PR#1, 460테스트 통과. PerceptionNode heartbeat + PlanningModule watchdog + _plan_lane_keeping 버그수정 |
 | C52 | 카메라 온리 과수원 행 추종 (Reactive) | P1 | 그린 | 2026-03-30 | ROS 배선 완성: perception→crop_row 토픽→planning→cmd_vel, 파라미터 중복선언 버그 수정, Foxglove 런치 추가, 346건 통과 |
 | T03 | CI/CD 파이프라인 (GitHub Actions) | P2 | 그린 | 2026-03-26 | C51에서 구현 |
 | C51 | 야간작업: CI 파이프라인 + 파라미터 검증 + README 갱신 | P1 | 그린 | 2026-03-26 | GitHub Actions CI (291건), 파라미터 검증 테스트 (69건), README 전면 갱신, 총 360건 테스트 |
@@ -103,4 +104,4 @@
 - [x] ~~카메라 피드 타임아웃 안전 정지 (T05)~~ (2026-03-31 완료, PR#1)
 - [ ] CameraIntrinsics 시뮬 카메라 동기화 — fx=395, cx=320, cy=240 (T06, Waypoint 변환 전)
 - [x] ~~pixel→world Waypoint 변환~~ (2026-03-30 스킵 결정. Step 2 건너뛰고 T04 고정 기하 U턴으로 직행)
-- [ ] Foxglove 시각 검증 — pear_orchard.sdf에서 `/sensor/camera/front` 이미지 + `/perception/crop_row` 토픽 확인 (crop_row_test_launch.py 사용)
+- [ ] Foxglove 시각 검증 — synthetic_test_launch.py 또는 crop_row_test_launch.py로 `/sensor/camera/front` + `/perception/crop_row` 확인 (T07)
