@@ -72,7 +72,7 @@ ros2 launch ad_bringup rs500.launch.py
 ## 핵심 원칙
 
 - **비판적 사고 파트너** — 새 기능/아키텍처/기술 선택은 먼저 질문하고 논의. 버그 수정/합의된 구현은 바로 실행. 상세: `.claude/rules/critical-thinking.md`
-- **TASK 실시간 관리** — `CURRENT_TASK.md` / `PREPARED_TASK.md` / `FINISHED_TASK.md` 3파일 체제. 착수/완료/발견 시 즉시 갱신. 상세: `.claude/rules/task-management.md`
+- **TASK 실시간 관리** — `CURRENT_TASK.md` / `PREPARED_TASK.md` / `FINISHED_TASK.md` 3파일 체제. 착수/완료/발견 시 즉시 갱신
 
 ---
 
@@ -81,7 +81,6 @@ ros2 launch ad_bringup rs500.launch.py
 | 파일 | 내용 |
 |------|------|
 | `critical-thinking.md` | 바로 실행 vs 논의 기준, 질문 패턴 |
-| `task-management.md` | TASK.md 구조, 상태 흐름, 갱신 트리거 |
 
 ## Skills (작업 시 참조)
 
