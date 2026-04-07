@@ -1,12 +1,12 @@
 # TASK 관리
 
-> 마지막 갱신: 2026-04-04 (T07 합성 이미지 퍼블리셔)
+> 마지막 갱신: 2026-04-06 (T08 실차 배포 태스크 등록)
 
 ## 현재 진행 중
 
 | # | 작업 | 중요도 | 담당 | 상태 | 비고 |
 |---|------|--------|------|------|------|
-| T07 | 합성 이미지 기반 perception 검증 | P2 | 그린 | 진행 | Gazebo 없이 crop_row 파이프라인 테스트. 6시나리오, 28테스트 |
+| T07 | 합성 이미지 기반 perception 검증 | P2 | 인성 | 요청 | 코드+테스트 완료. **Foxglove에서 실행 확인 필요**: `ros2 launch ad_bringup synthetic_test_launch.py` → ws://localhost:8765 접속. [가이드](../synthetic_test_guide.md) |
 
 ## 작업 현황
 
@@ -16,6 +16,7 @@
 | T02 | crop_row_detector DL 교체 (DeepLabV3) | P2 | — | 예정 | Phase 2, 실제 데이터 필요 |
 | T04 | 미션 매니저 (과수원 자동 순회) | P2 | — | 예정 | Step 2 스킵 결정. Approach B(카메라 재정렬 U턴): 행 끝 감지 → 선회 → crop_row 재감지 시 정렬. T05 완료 후 착수 권장 |
 | T06 | CameraIntrinsics 시뮬 카메라 동기화 | P3 | — | 예정 | Step 2 스킵으로 당장 불필요 (fx=395, cx=320, cy=240). Waypoint 변환 시 재검토 |
+| T08 | 실차 배포 — Advantech PC 환경 세팅 | P1 | 인혁 | 진행 | 놀고있는 RS500 1대 활용. **HW 확인 완료**(22.04, 8코어, 16GB, 234GB NVMe, CAN0/1, video0~3). ROS2 미설치. **다음 단계: 네트워크 연결(USB WiFi 동글 or LAN 케이블) → SSH 접근 → Tailscale → ROS2 Humble 설치**. 이후: 카메라 드라이버, CanVehicleInterface, IMU/GPS, 실차 launch 구현 |
 
 ---
 
