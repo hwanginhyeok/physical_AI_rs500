@@ -7,4 +7,4 @@
 - Current: 2개
 - Prepared: 4개 (P1: 0, P2: 3, P3: 1)
 - Finished: 0개 (4월~)
-- Archive: [TASK_ARCHIVE/2026-03.md](TASK_ARCHIVE/2026-03.md) (50건)
+- Archive: [TASK_ARCHIVE/2026-03.md](TASK_ARCHIVE/2026-03.md) (52건)

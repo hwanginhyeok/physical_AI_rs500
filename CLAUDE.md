@@ -56,8 +56,11 @@ colcon test && colcon test-result --verbose
 colcon test --packages-select ad_control
 PYTHONPATH="src/ad_control:$PYTHONPATH" python3 -m pytest src/ad_control/test/ -v
 
-# 런치
-ros2 launch ad_bringup rs500.launch.py
+# 런치 (주요)
+ros2 launch ad_bringup full_system_launch.py      # 전체 시스템
+ros2 launch ad_bringup simulation_launch.py       # Gazebo 시뮬레이션
+ros2 launch ad_bringup synthetic_test_launch.py   # 합성 이미지 테스트
+ros2 launch ad_bringup crop_row_test_launch.py    # crop_row 단독 테스트
 ```
 
 ## Tech Stack
