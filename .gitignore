@@ -67,3 +67,6 @@ logs/
 
 # 브리핑 진행 로그
 overnight_progress.log
+
+# Claude Code 로컬 설정
+.claude/settings.local.json
