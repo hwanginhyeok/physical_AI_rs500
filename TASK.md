@@ -4,7 +4,7 @@
 
 ## 요약
 
-- Current: 2개
+- Current: 2개 (T07, T08 — 블로커 정체 중)
 - Prepared: 4개 (P1: 0, P2: 3, P3: 1)
-- Finished: 0개 (4월~)
+- Finished: 1개 (4월~) — T05
 - Archive: [TASK_ARCHIVE/2026-03.md](TASK_ARCHIVE/2026-03.md) (52건)
