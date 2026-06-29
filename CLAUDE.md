@@ -1,92 +1,92 @@
-# 자율주행 RS500 — 프로젝트 규칙
+# Autonomous Driving RS500 — Project Rules
 
-> ROS2 기반 과수원 자율주행 궤도 차량(RS500) 소프트웨어 프로젝트.
-> 인지(카메라)→판단(행 추종)→제어(CAN/모터) 파이프라인.
+> ROS2-based orchard autonomous-driving tracked vehicle (RS500) software project.
+> Perception (camera) → Decision (row following) → Control (CAN/motor) pipeline.
 
 ## Tasks
 
 - [CURRENT_TASK.md](CURRENT_TASK.md) | [PREPARED_TASK.md](PREPARED_TASK.md) | [FINISHED_TASK.md](FINISHED_TASK.md)
-- [DIFFICULTY.md](DIFFICULTY.md) — 어려웠던 문제 & 노하우
+- [DIFFICULTY.md](DIFFICULTY.md) — Difficult problems & know-how
 
 ---
 
-## 세션 시작 프로토콜
+## Session Start Protocol
 
-1. **Task 확인** — `CURRENT_TASK.md` 점검 (진행 중, blocked, 블로커)
-2. **미팅** — 사용자에게 현재 상황 브리핑
-3. **방향성 논의** — 오늘 작업의 우선순위와 방향을 함께 결정
+1. **Check Tasks** — Review `CURRENT_TASK.md` (in progress, blocked, blockers)
+2. **Meeting** — Brief the user on the current situation
+3. **Direction Discussion** — Decide today's work priorities and direction together
 
 ---
 
-## 프로젝트 구조
+## Project Structure
 
 ```
 physical_AI_rs500/
 ├── src/
-│   ├── ad_bringup/       # 런치 파일, 파라미터 YAML
-│   ├── ad_can_bridge/    # CAN 통신 (MD2K 모터 컨트롤러)
-│   ├── ad_control/       # 모터 제어, 안전 정지
-│   ├── ad_core/          # 공통 유틸, 상수
-│   ├── ad_interfaces/    # ROS2 커스텀 메시지/서비스
-│   ├── ad_perception/    # 카메라 인지 (crop_row 검출)
-│   └── ad_planning/      # 경로 판단, 행 추종
-├── TASK.md               # 태스크 인덱스
-├── CURRENT_TASK.md       # 진행 중
-├── PREPARED_TASK.md      # 예정 + TODO
-├── FINISHED_TASK.md      # 완료 (당월)
-├── TASK_ARCHIVE/         # 월별 완료 아카이브
-├── DIFFICULTY.md         # 어려웠던 문제 & 노하우
+│   ├── ad_bringup/       # Launch files, parameter YAML
+│   ├── ad_can_bridge/    # CAN communication (MD2K motor controller)
+│   ├── ad_control/       # Motor control, safety stop
+│   ├── ad_core/          # Common utils, constants
+│   ├── ad_interfaces/    # ROS2 custom messages/services
+│   ├── ad_perception/    # Camera perception (crop_row detection)
+│   └── ad_planning/      # Path decision, row following
+├── TASK.md               # Task index
+├── CURRENT_TASK.md       # In progress
+├── PREPARED_TASK.md      # Planned + TODO
+├── FINISHED_TASK.md      # Completed (current month)
+├── TASK_ARCHIVE/         # Monthly completion archive
+├── DIFFICULTY.md         # Difficult problems & know-how
 ├── docs/프로젝트/
-│   └── task/             # 태스크 상세 로그
+│   └── task/             # Task detail logs
 └── .claude/
-    ├── rules/            # 세션 규칙 (자동 로딩)
-    └── skills/           # 작업별 스킬 (필요 시 로딩)
+    ├── rules/            # Session rules (auto-loaded)
+    └── skills/           # Per-task skills (loaded when needed)
 ```
 
 ## Commands
 
 ```bash
-# 빌드
+# Build
 colcon build
 
-# 테스트 전체 실행
+# Run all tests
 colcon test && colcon test-result --verbose
 
-# 특정 패키지 테스트
+# Test a specific package
 colcon test --packages-select ad_control
 PYTHONPATH="src/ad_control:$PYTHONPATH" python3 -m pytest src/ad_control/test/ -v
 
-# 런치 (주요)
-ros2 launch ad_bringup full_system_launch.py      # 전체 시스템
-ros2 launch ad_bringup simulation_launch.py       # Gazebo 시뮬레이션
-ros2 launch ad_bringup synthetic_test_launch.py   # 합성 이미지 테스트
-ros2 launch ad_bringup crop_row_test_launch.py    # crop_row 단독 테스트
+# Launch (main)
+ros2 launch ad_bringup full_system_launch.py      # Full system
+ros2 launch ad_bringup simulation_launch.py       # Gazebo simulation
+ros2 launch ad_bringup synthetic_test_launch.py   # Synthetic image test
+ros2 launch ad_bringup crop_row_test_launch.py    # crop_row standalone test
 ```
 
 ## Tech Stack
 
-- **ROS2** (Humble) — 노드 간 통신, 런치, 파라미터
-- **Python 3** — 모든 노드 구현
-- **CAN** — MD2K 모터 컨트롤러 제어
-- **GitHub Actions** — CI 파이프라인 (colcon build + test)
+- **ROS2** (Humble) — Inter-node communication, launch, parameters
+- **Python 3** — All node implementations
+- **CAN** — MD2K motor controller control
+- **GitHub Actions** — CI pipeline (colcon build + test)
 
 ---
 
-## 핵심 원칙
+## Core Principles
 
-- **비판적 사고 파트너** — 새 기능/아키텍처/기술 선택은 먼저 질문하고 논의. 버그 수정/합의된 구현은 바로 실행. 상세: `.claude/rules/critical-thinking.md`
-- **TASK 실시간 관리** — `CURRENT_TASK.md` / `PREPARED_TASK.md` / `FINISHED_TASK.md` 3파일 체제. 착수/완료/발견 시 즉시 갱신
+- **Critical thinking partner** — For new features/architecture/technology choices, ask questions and discuss first. For bug fixes/agreed-upon implementations, execute immediately. Details: `.claude/rules/critical-thinking.md`
+- **Real-time TASK management** — `CURRENT_TASK.md` / `PREPARED_TASK.md` / `FINISHED_TASK.md` 3-file system. Update immediately on start/completion/discovery
 
 ---
 
-## Rules (자동 로딩)
+## Rules (auto-loaded)
 
-| 파일 | 내용 |
+| File | Content |
 |------|------|
-| `critical-thinking.md` | 바로 실행 vs 논의 기준, 질문 패턴 |
+| `critical-thinking.md` | Execute-immediately vs discuss criteria, question patterns |
 
-## Skills (작업 시 참조)
+## Skills (referenced during work)
 
-| 파일 | 트리거 |
+| File | Trigger |
 |------|--------|
-| `simulation-report.md` | 시뮬레이션 테스트 리포트 작성 시 |
+| `simulation-report.md` | When writing a simulation test report |

@@ -1,26 +1,26 @@
 # Prepared Tasks
 
-> 착수 대기 중인 작업
+> Tasks awaiting kickoff
 
-| # | 태스크 | 우선순위 | depends | 비고 |
+| # | Task | Priority | depends | Notes |
 |---|--------|----------|---------|------|
-| T01 | LIO-SAM 실제 구동 테스트 | P2 | T08 (실차 환경) | Phase 2 |
-| T02 | crop_row_detector DL 교체 (DeepLabV3) | P2 | 실제 카메라 데이터 | Phase 2. T08에서 데이터 수집 후 착수 가능 |
-| T04 | 미션 매니저 (과수원 자동 순회) | P2 | T05 ✅ | Approach B: 행 끝 감지 → 선회 → crop_row 재감지 시 정렬 |
-| T06 | CameraIntrinsics 시뮬 카메라 동기화 | P3 | — | fx=395, cx=320, cy=240. Waypoint 변환 시 재검토 |
+| T01 | LIO-SAM live operation test | P2 | T08 (real-vehicle environment) | Phase 2 |
+| T02 | crop_row_detector DL replacement (DeepLabV3) | P2 | Real camera data | Phase 2. Can start after data collection in T08 |
+| T04 | Mission manager (automatic orchard patrol) | P2 | T05 ✅ | Approach B: row-end detection → turn → re-align when crop_row is re-detected |
+| T06 | CameraIntrinsics simulated camera sync | P3 | — | fx=395, cx=320, cy=240. Revisit when converting Waypoints |
 
 ---
 
-## TODO (백로그)
+## TODO (backlog)
 
-- [ ] 과수원 실제 카메라 데이터 확보 후 crop_row_detector 튜닝 (Phase 1.5)
-- [ ] DL 모델 (DeepLabV3/U-Net) 기반 작물 행 인식 교체 (Phase 2, 데이터 확보 후)
-- [ ] LIO-SAM 실제 설치 및 실행 테스트 (WSL2 환경)
-- [ ] matplotlib/numpy 호환 해결 후 시나리오 시뮬레이션 + 리포트 재실행 (C48 잔여)
-- [ ] HIH-2 xlsx 파일 (제품규격서, R&D) 파싱하여 차량 질량/크기 정확값 반영
-- [ ] 실차 데이터 확보 시 System Identification으로 물리 파라미터 튜닝
-- [ ] YOLO 모델 가중치 파일 확보 및 추론 파이프라인 검증
-- [ ] CameraIntrinsics 시뮬 카메라 동기화 — fx=395, cx=320, cy=240 (T06, Waypoint 변환 전)
-- [ ] Foxglove 시각 검증 — synthetic_test_launch.py로 `/sensor/camera/front` + `/perception/crop_row` 확인 (T07)
-- [ ] 지형 traversability 분류 (Wild Visual Navigation) 검토
-- [ ] CI/CD headless 시뮬레이션 파이프라인 구축
+- [ ] Tune crop_row_detector after securing real orchard camera data (Phase 1.5)
+- [ ] Replace crop-row recognition with a DL model (DeepLabV3/U-Net) (Phase 2, after securing data)
+- [ ] Install and run LIO-SAM for real and test it (WSL2 environment)
+- [ ] Re-run scenario simulation + report after resolving matplotlib/numpy compatibility (C48 remainder)
+- [ ] Parse HIH-2 xlsx files (product spec sheet, R&D) to reflect accurate vehicle mass/size values
+- [ ] Tune physical parameters via System Identification once real-vehicle data is secured
+- [ ] Secure YOLO model weight files and verify the inference pipeline
+- [ ] CameraIntrinsics simulated camera sync — fx=395, cx=320, cy=240 (T06, before Waypoint conversion)
+- [ ] Foxglove visual verification — confirm `/sensor/camera/front` + `/perception/crop_row` via synthetic_test_launch.py (T07)
+- [ ] Review terrain traversability classification (Wild Visual Navigation)
+- [ ] Build a CI/CD headless simulation pipeline
